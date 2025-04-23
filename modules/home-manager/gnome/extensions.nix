@@ -15,10 +15,12 @@
     };
 
     "org/gnome/shell/extensions/user-theme" = {
-      name = "'Catppuccin-Dark'";
+      name = "Catppuccin-Dark";
     };
-  };
 
+
+  };
+  # /org/gnome/shell/extensions/user-theme/
   home.packages = with pkgs.gnomeExtensions; [
     user-themes
     color-picker

@@ -9,4 +9,6 @@
       package = pkgs.catppuccin-gtk-theme;
     };
   };
+
+  home.sessionVariables.GTK_THEME = "Catppuccin-Dark";
 }

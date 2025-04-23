@@ -14,7 +14,7 @@
     
       userSettings = {
 	      "editor.fontSize" = 13;
-	      "workbench.colorTheme" = "Catppuccin Frappé";
+	      "workbench.colorTheme" = "Catppuccin Macchiato";
       };
     };
   };

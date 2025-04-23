@@ -19,5 +19,6 @@
     steam
     lutris
     gnome-tweaks
+    dconf-editor
   ];
 }
