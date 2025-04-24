@@ -11,6 +11,8 @@
     gnome-logs
     geary
     totem
+    epiphany
+    firefox
   ];
   
   environment.systemPackages = with pkgs; [
@@ -20,7 +22,7 @@
     lutris
     gnome-tweaks
     dconf-editor
-    flat-remix-icon-theme
+    colloid-icon-theme
     graphite-cursors
   ];
 }

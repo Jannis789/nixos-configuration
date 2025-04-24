@@ -10,12 +10,12 @@
     };
 
     iconTheme = {
-      name = "Flat-Remix-Violet-Dark";
-      package = pkgs.flat-remix-icon-theme;
+      name = "Colloid";
+      package = pkgs.colloid-icon-theme;
     };
 
     cursorTheme = {
-      name = "Graphite-dark";
+      name = "graphite-dark";
       package = pkgs.graphite-cursors;
     };
 
