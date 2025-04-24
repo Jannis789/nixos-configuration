@@ -20,5 +20,7 @@
     lutris
     gnome-tweaks
     dconf-editor
+    flat-remix-icon-theme
+    graphite-cursors
   ];
 }
