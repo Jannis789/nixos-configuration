@@ -10,6 +10,7 @@
   nixpkgs.config.allowUnfree = true;
 
   imports = [
+    ../../modules/home-manager/development/cli.nix
     ../../modules/home-manager/development/vscode.nix
     ../../modules/home-manager/gnome/dconf.nix
     ../../modules/home-manager/gnome/extensions.nix
