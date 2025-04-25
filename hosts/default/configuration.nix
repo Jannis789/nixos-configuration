@@ -13,11 +13,12 @@
       ../../pkgs/gtk.nix
       ../../pkgs/cli.nix
       ../../pkgs/web.nix
+      ../../pkgs/grub.nix
       inputs.home-manager.nixosModules.default
     ];
 
   # Bootloader.
-  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = "nixos"; # Define your hostname.
