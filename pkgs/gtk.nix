@@ -17,9 +17,6 @@
   
   environment.systemPackages = with pkgs; [
     fragments
-    protonplus
-    steam
-    lutris
     gnome-tweaks
     dconf-editor
     colloid-icon-theme
