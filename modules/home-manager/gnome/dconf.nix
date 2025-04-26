@@ -16,5 +16,10 @@
         "steam.desktop"
       ];
     };
+
+    "org/gnome/desktop/background" = {
+      color-shading-type = "solid";
+      picture-uri-dark = "file://" +  ../../../img/nix-wallpaper-catppuccin-macchiato.png;
+    };
   };
 }
