@@ -1,0 +1,45 @@
+diff --git a/data/theme/gnome-shell-sass/_default-colors.scss b/data/theme/gnome-shell-sass/_default-colors.scss
+index bf18541..d8f845c 100644
+--- a/data/theme/gnome-shell-sass/_default-colors.scss
++++ b/data/theme/gnome-shell-sass/_default-colors.scss
+@@ -1,8 +1,8 @@
+ // Named Colors
+ 
+ // base colors
+-$_base_color_dark: desaturate($dark_4, 100%);
+-$_base_color_light: desaturate($light_2, 100%);
++$_base_color_dark: $dark_4;
++$_base_color_light: $light_2;
+ 
+ // colors for destructive elements
+ $destructive_bg_color: if($variant == 'light', $red_3, $red_4);
+diff --git a/data/theme/gnome-shell-sass/_palette.scss b/data/theme/gnome-shell-sass/_palette.scss
+index 78847d9..17a8784 100644
+--- a/data/theme/gnome-shell-sass/_palette.scss
++++ b/data/theme/gnome-shell-sass/_palette.scss
+@@ -34,13 +34,13 @@ $brown_2: #b5835a;
+ $brown_3: #986a44;
+ $brown_4: #865e3c;
+ $brown_5: #63452c;
+-$light_1: #ffffff;
+-$light_2: #f6f5f4;
+-$light_3: #deddda;
+-$light_4: #c0bfbc;
+-$light_5: #9a9996;
+-$dark_1: #77767b;
+-$dark_2: #5e5c64;
+-$dark_3: #3d3846;
+-$dark_4: #241f31;
+-$dark_5: #000000;
+\ No newline at end of file
++$light_1: #cad3f5;
++$light_2: #b8c0e0;
++$light_3: #a5adcb;
++$light_4: #939ab7;
++$light_5: #8087a2;
++$dark_1: #494d64;
++$dark_2: #363a4f;
++$dark_3: #24273a;
++$dark_4: #1e2030;
++$dark_5: #181926;
+\ No newline at end of file
