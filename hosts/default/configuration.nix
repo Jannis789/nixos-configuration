@@ -15,6 +15,7 @@
       ../../pkgs/web.nix
       ../../pkgs/grub.nix
       ../../pkgs/game.nix
+      ../../overlays/gdm-colors/package.nix
       inputs.home-manager.nixosModules.default
     ];
 
@@ -140,17 +141,4 @@
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.11"; # Did you read the comment?
 
-  nixpkgs = {
-    overlays = [
-      (self: super: {
-        gnome-shell = super.gnome-shell.overrideAttrs (old: {
-          patches = (old.patches or []) ++ [
-            (pkgs.substituteAll {
-              src = ../../patches/gdm-colors.patch;
-            })
-          ];
-        });
-      })
-    ];
-  };
 }
