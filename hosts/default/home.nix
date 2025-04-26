@@ -15,6 +15,7 @@
     ../../modules/home-manager/gnome/dconf.nix
     ../../modules/home-manager/gnome/extensions.nix
     ../../modules/home-manager/gnome/gtk.nix
+    ../../modules/home-manager/web.nix
   ];
 
   # This value determines the Home Manager release that your configuration is
@@ -86,4 +87,6 @@
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+  programs.librewolf.enable = true;
 }

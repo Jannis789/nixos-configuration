@@ -10,6 +10,11 @@
     };
 
     nixos-grub-themes.url = "github:jeslie0/nixos-grub-themes";
+
+    firefox-addons = {
+      url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs:
