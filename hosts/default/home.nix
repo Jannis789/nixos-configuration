@@ -1,5 +1,5 @@
 # home.nix
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -89,4 +89,10 @@
   programs.home-manager.enable = true;
 
   programs.librewolf.enable = true;
+
+  programs.starship.enable = true;
+
+  programs.bash.enable = true;
+
+  home.file.".bashrc".source = lib.mkForce ../../.dotfiles/.bashrc;
 }
