@@ -3,6 +3,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
+# use nvf instead
+alias vi='nix run github:notashelf/nvf'
+alias nvim='nix run github:notashelf/nvf'
 # Schnelle Git-Befehle
 alias gs='git status'
 alias ga='git add .'

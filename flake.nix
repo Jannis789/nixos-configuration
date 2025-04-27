@@ -15,9 +15,11 @@
       url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nvf.url = "github:notashelf/nvf";
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs:
+  outputs = { self, nixpkgs, nvf, home-manager, ... }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -33,6 +35,7 @@
         specialArgs = { inherit inputs; };
         modules = [
           ./hosts/default/configuration.nix
+          nvf.nixosModules.default
           home-manager.nixosModules.default
         ];
       };

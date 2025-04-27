@@ -23,4 +23,20 @@
     enable = true;
     terminal = "blackbox";
   };
+
+  programs.nvf = {
+    enable = true;
+    settings = {
+      vim.viAlias = false;
+      vim.vimAlias = true;
+      vim.lsp = {
+        enable = true;
+      };
+      vim.theme = {
+        enable = true;
+        name = "catppuccin";
+        style = "macchiato";
+      };
+    };
+  };
 }
