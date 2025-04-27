@@ -48,6 +48,11 @@
     #   echo "Hello, ${config.home.username}!"
     # '')
     pkgs.catppuccin-gtk-theme
+    pkgs.blesh
+    pkgs.atuin
+    pkgs.nix-bash-completions
+    pkgs.zoxide
+    pkgs.starship
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
@@ -94,5 +99,12 @@
 
   programs.bash.enable = true;
 
-  home.file.".bashrc".source = lib.mkForce ../../.dotfiles/.bashrc;
+  programs.bash.bashrcExtra = builtins.readFile ../../.dotfiles/.bashrc;
+
+  home.file = {
+    ".config" = {
+      source = ../../.dotfiles/.config;
+      recursive = true;
+    };
+  };
 }

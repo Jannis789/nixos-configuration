@@ -21,5 +21,10 @@
       color-shading-type = "solid";
       picture-uri-dark = "file://" +  ../../../img/nix-wallpaper-catppuccin-macchiato.png;
     };
+
+    "org/gnome/Console" = {
+      use-system-font = false;
+      custom-font = "FiraCode Nerd Font Mono 12";
+    };
   };
 }

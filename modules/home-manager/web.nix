@@ -120,46 +120,13 @@ in {
           "sidebar.visibility" = "always-show";
           "sidebar.expandOnHover" = true;
           "browser.uiCustomization.state" = ''
-            {"placements":{"widget-overflow-fixed-list":[],"nav-bar":["sidebar-button","back-button","forward-button","stop-reload-button","customizableui-special-spring1","vertical-spacer","urlbar-container","customizableui-special-spring2","save-to-pocket-button","downloads-button","fxa-toolbar-menu-button","unified-extensions-button"],"toolbar-menubar":["menubar-items"],"TabsToolbar":["tabbrowser-tabs","new-tab-button","alltabs-button"],"vertical-tabs":[],"PersonalToolbar":["personal-bookmarks"],"unified-extensions-area":["7esoorv3_alefvanoon_anonaddy_me-browser-action","addon_darkreader_org-browser-action","ublock0_raymondhill_net-browser-action","jid1-mnnxcxisbpnsxq_jetpack-browser-action","_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action"]},"seen":["7esoorv3_alefvanoon_anonaddy_me-browser-action","addon_darkreader_org-browser-action","ublock0_raymondhill_net-browser-action","jid1-mnnxcxisbpnsxq_jetpack-browser-action","_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action","developer-button"],"dirtyAreaCache":["unified-extensions-area"],"currentVersion":21,"newElementCount":2}          
+            {"placements":{"widget-overflow-fixed-list":[],"unified-extensions-area":["7esoorv3_alefvanoon_anonaddy_me-browser-action","addon_darkreader_org-browser-action","ublock0_raymondhill_net-browser-action","jid1-mnnxcxisbpnsxq_jetpack-browser-action","_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action"],"nav-bar":["sidebar-button","back-button","forward-button","stop-reload-button","firefox-view-button","vertical-spacer","urlbar-container","customizableui-special-spring2","save-to-pocket-button","downloads-button","fxa-toolbar-menu-button","unified-extensions-button","new-tab-button","alltabs-button"],"toolbar-menubar":["menubar-items"],"TabsToolbar":[],"vertical-tabs":["tabbrowser-tabs"],"PersonalToolbar":["personal-bookmarks"]},"seen":["7esoorv3_alefvanoon_anonaddy_me-browser-action","addon_darkreader_org-browser-action","ublock0_raymondhill_net-browser-action","jid1-mnnxcxisbpnsxq_jetpack-browser-action","_446900e4-71c2-419f-a6a7-df9c091e268b_-browser-action","developer-button"],"dirtyAreaCache":["unified-extensions-area","nav-bar","toolbar-menubar","TabsToolbar","vertical-tabs","PersonalToolbar"],"currentVersion":21,"newElementCount":3}
           '';
         };
       };
 
       policies = {
-        Cookies.Allow = map (d: "https://${d}") [
-          "github.com"
-          "codeberg.org"
-          "gitlab.com"
-          "gitlab.gnome.org"
-          "proton.me"
-          "purelymail.com"
-          "addy.io"
-          "simplelogin.com"
-          "huggingface.co"
-          "vercel.com"
-          "netlify.com"
-          "neon.tech"
-          "penpot.app"
-          "figma.com"
-          "fancade.com"
-          "fancade.club"
-          "discord.com"
-          "spotify.com"
-          "epicgames.com"
-          "steamcommunity.com"
-          "steampowered.com"
-          "adventofcode.com"
-          "hypehype.com"
-          "tilde.zone"
-          "feddit.org"
-          "nope.chat"
-          "flaci.com"
-          "lernraum-berlin.de"
-          "monkeytype.com"
-          "typst.app"
-          "keybr.com"
-          "cachix.org"
-        ];
+        Cookies.Allow = map (d: "https://${d}") [];
       };
     };
   };
