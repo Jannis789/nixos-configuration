@@ -13,6 +13,7 @@
     totem
     epiphany
     firefox
+    gnome-console
   ];
   
   environment.systemPackages = with pkgs; [
@@ -21,5 +22,7 @@
     dconf-editor
     colloid-icon-theme
     graphite-cursors
+    nautilus-open-any-terminal
+    blackbox-terminal
   ];
 }

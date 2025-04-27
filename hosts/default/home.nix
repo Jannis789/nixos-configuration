@@ -106,5 +106,10 @@
       source = ../../.dotfiles/.config;
       recursive = true;
     };
+    ".local" = {
+      # BugFix: .dotfiles/.local/share/locale/de/LC_MESSAGES/nautilus-open-any-terminal.mo
+      source = ../../.dotfiles/.local;
+      recursive = true;
+    };
   };
 }

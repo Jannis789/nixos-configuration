@@ -9,7 +9,7 @@
     "org/gnome/shell" = {
 
       favorite-apps = [
-        "org.gnome.Console.desktop"
+        "com.raggesilver.BlackBox.desktop"
         "librewolf.desktop"
         "code.desktop"
         "org.gnome.Nautilus.desktop"
@@ -25,6 +25,10 @@
     "org/gnome/Console" = {
       use-system-font = false;
       custom-font = "FiraCode Nerd Font Mono 12";
+    };
+
+    "com/raggesilver/BlackBox" = {
+      font = "FiraCode Nerd Font Medium 12";
     };
   };
 }

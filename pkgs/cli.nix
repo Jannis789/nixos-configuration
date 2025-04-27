@@ -12,6 +12,7 @@
     zoxide
     nix-bash-completions
     blesh
+    gettext
   ];
 
   fonts.packages = with pkgs; [
@@ -19,4 +20,9 @@
     nerd-fonts.droid-sans-mono
     nerd-fonts.symbols-only
   ];
+  
+  programs.nautilus-open-any-terminal = {
+    enable = true;
+    terminal = "blackbox";
+  };
 }
