@@ -4,7 +4,6 @@
   environment.systemPackages = with pkgs; [
     btop
     fastfetch
-    vim 
     wget
     git
     starship
@@ -12,7 +11,6 @@
     zoxide
     nix-bash-completions
     blesh
-    gettext
   ];
 
   fonts.packages = with pkgs; [

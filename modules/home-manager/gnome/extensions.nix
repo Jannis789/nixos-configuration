@@ -22,7 +22,7 @@
     "org/gnome/shell/extensions/dash-to-dock" = {
       dock-position = "LEFT";
       apply-custom-theme = true;
-      extended-height = true;
+      extend-height = true;
       custom-theme-shrink = true;
       force-straight-corner = true;
       dock-fixed = true;
