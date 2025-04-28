@@ -12,7 +12,6 @@
       ../../users/root-user.nix
       ../../pkgs/gtk.nix
       ../../pkgs/cli.nix
-      ../../pkgs/web.nix
       ../../pkgs/grub.nix
       ../../pkgs/game.nix
       ../../overlays/gdm-colors/package.nix
@@ -87,9 +86,6 @@
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
-
-  # Install firefox.
-  programs.firefox.enable = true;
   
   root-user.enable = true;
   root-user.userName = "jannis";
