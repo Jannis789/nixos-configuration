@@ -1,0 +1,3 @@
+[submodule ".dotfiles/.ssh"]
+	path = .dotfiles/.ssh
+	url = https://github.com/Jannis789/ssh_keys.git
