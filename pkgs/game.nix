@@ -15,7 +15,7 @@
     enable = true;
     remotePlay.openFirewall = true;
     dedicatedServer.openFirewall = true;
-    localNetworkGameTransfers.openFirewall = true; 
+    localNetworkGameTransfers.openFirewall = true;
     gamescopeSession.enable = true;
   };
 
@@ -24,10 +24,9 @@
     enable32Bit = true;
   };
 
-  services.xserver.videoDrivers = ["amdgpu"];
+  services.xserver.videoDrivers = [ "amdgpu" ];
 
   environment.sessionVariables = rec {
-    STEAM_EXTRA_COMPAT_TOOLS_PATHS = 
-      "/home/$USER/.steam/root/compatibilitytools.d";
+    STEAM_EXTRA_COMPAT_TOOLS_PATHS = "/home/$USER/.steam/root/compatibilitytools.d";
   };
 }

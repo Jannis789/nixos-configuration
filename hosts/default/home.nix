@@ -1,5 +1,10 @@
 # hosts/default/home.nix
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # User Configuration

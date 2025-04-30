@@ -3,20 +3,25 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, inputs, ... }:
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ../../users/root-user.nix
-      ../../pkgs/gtk.nix
-      ../../pkgs/cli.nix
-      ../../pkgs/grub.nix
-      ../../pkgs/game.nix
-      ../../overlays/gdm-colors/package.nix
-      inputs.home-manager.nixosModules.default
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    ../../users/root-user.nix
+    ../../pkgs/gtk.nix
+    ../../pkgs/cli.nix
+    ../../pkgs/grub.nix
+    ../../pkgs/game.nix
+    ../../overlays/gdm-colors/package.nix
+    inputs.home-manager.nixosModules.default
+  ];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = false;
@@ -81,19 +86,19 @@
     # no need to redefine it in your config for now)
     #media-session.enable = true;
   };
-  
+
   services.spice-vdagentd.enable = true;
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
-  
+
   root-user.enable = true;
   root-user.userName = "jannis";
   root-user.userPassword = "Jannis21";
-  
+
   home-manager = {
     backupFileExtension = "backup";
-    extraSpecialArgs = {inherit inputs;};
+    extraSpecialArgs = { inherit inputs; };
     users = {
       "jannis" = import ./home.nix;
     };
@@ -110,7 +115,10 @@
     vscode
   ];
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;

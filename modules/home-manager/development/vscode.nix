@@ -1,6 +1,6 @@
-{ config, pkgs , ... }:
+{ config, pkgs, ... }:
 
-{  
+{
   programs.vscode = {
     enable = true;
     profiles.default = {
@@ -11,10 +11,10 @@
         jnoortheen.nix-ide
         catppuccin.catppuccin-vsc
       ];
-    
+
       userSettings = {
-	      "editor.fontSize" = 13;
-	      "workbench.colorTheme" = "Catppuccin Macchiato";
+        "editor.fontSize" = 13;
+        "workbench.colorTheme" = "Catppuccin Macchiato";
       };
     };
   };

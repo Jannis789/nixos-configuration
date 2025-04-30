@@ -1,6 +1,6 @@
-{ config, pkgs , ... }:
+{ config, pkgs, ... }:
 
-{  
+{
   dconf.settings = {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
@@ -19,7 +19,7 @@
 
     "org/gnome/desktop/background" = {
       color-shading-type = "solid";
-      picture-uri-dark = "file://" +  ../../../img/nix-wallpaper-catppuccin-macchiato.png;
+      picture-uri-dark = "file://" + ../../../img/nix-wallpaper-catppuccin-macchiato.png;
     };
 
     "org/gnome/Console" = {
@@ -30,7 +30,7 @@
     "com/raggesilver/BlackBox" = {
       font = "FiraCode Nerd Font Medium 12";
     };
-    
+
     "com/raggesilver/BlackBox" = {
       "theme-dark" = "Catppuccin Mocha";
     };

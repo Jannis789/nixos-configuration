@@ -1,4 +1,10 @@
-{ lib, pkgs, inputs, ... }: {
+{
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
+{
   programs.librewolf = {
     enable = true;
     profiles.default = {

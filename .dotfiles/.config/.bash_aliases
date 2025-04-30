@@ -3,6 +3,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
+alias upgrade='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration?submodules=1#default --upgrade'
+alias update='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration?submodules=1#default'
+
 # use nvf instead
 alias vi='nix run github:notashelf/nvf'
 alias nvim='nix run github:notashelf/nvf'

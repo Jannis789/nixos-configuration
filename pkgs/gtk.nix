@@ -15,7 +15,7 @@
     firefox
     gnome-console
   ];
-  
+
   environment.systemPackages = with pkgs; [
     fragments
     gnome-tweaks

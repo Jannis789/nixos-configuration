@@ -1,6 +1,6 @@
-{ config, pkgs , ... }:
+{ config, pkgs, ... }:
 
-{  
+{
   programs.btop = {
     enable = true;
     settings = {
@@ -26,7 +26,7 @@
 
   programs.git = {
     enable = true;
-    userName  = "Jannis Rustige";
+    userName = "Jannis Rustige";
     userEmail = "jannis.rustige@gmail.com";
   };
 }

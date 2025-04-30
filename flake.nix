@@ -14,13 +14,20 @@
     nvf.url = "github:notashelf/nvf";
   };
 
-  outputs = { self, nixpkgs, nvf, home-manager, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      nvf,
+      home-manager,
+      ...
+    }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
         overlays = [ self.overlays.default ];
-        config = {};
+        config = { };
       };
     in
     {
