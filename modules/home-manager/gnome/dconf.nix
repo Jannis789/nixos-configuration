@@ -30,5 +30,9 @@
     "com/raggesilver/BlackBox" = {
       font = "FiraCode Nerd Font Medium 12";
     };
+    
+    "com/raggesilver/BlackBox" = {
+      "theme-dark" = "Catppuccin Mocha";
+    };
   };
 }

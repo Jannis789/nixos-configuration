@@ -17,6 +17,16 @@
       sync_frequency = "5m";
       sync_address = "https://api.atuin.sh";
       search_mode = "fuzzy";
+      theme = {
+        name = "catppuccin-mocha-blue";
+      };
     };
+    flags = [ "--disable-up-arrow" ];
+  };
+
+  programs.git = {
+    enable = true;
+    userName  = "Jannis Rustige";
+    userEmail = "jannis.rustige@gmail.com";
   };
 }
