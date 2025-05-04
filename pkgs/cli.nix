@@ -13,6 +13,7 @@
     blesh
     nixfmt-rfc-style
     git-credential-manager
+    openssh
   ];
 
   fonts.packages = with pkgs; [
@@ -40,12 +41,5 @@
         style = "macchiato";
       };
     };
-  };
-
-  programs.git = {
-    extraConfig.credential.helper = "manager";
-    extraConfig.credential."https://github.com".username = "Jannis789";
-    extraConfig.credential.credentialStore = "cache";
-    enable = true;
   };
 }

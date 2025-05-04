@@ -25,8 +25,11 @@
   };
 
   programs.git = {
-    enable = true;
     userName = "Jannis Rustige";
     userEmail = "jannis.rustige@gmail.com";
+    extraConfig.credential.helper = "manager";
+    extraConfig.credential."https://github.com".username = "Jannis789";
+    extraConfig.credential.credentialStore = "cache";
+    enable = true;
   };
 }

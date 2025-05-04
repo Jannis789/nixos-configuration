@@ -96,6 +96,10 @@
   root-user.userName = "jannis";
   root-user.userPassword = "Jannis21";
 
+  users.users."jannis".openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFfq2ljLyzRX+kVATeeqR3KGOpo9ECOhTvkUN58FoZ/A jrustige@wonko"
+  ];
+
   home-manager = {
     backupFileExtension = "backup";
     extraSpecialArgs = { inherit inputs; };

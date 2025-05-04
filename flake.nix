@@ -42,7 +42,9 @@
         ];
       };
 
-      packages.${system}.catppuccin-gtk-theme = pkgs.catppuccin-gtk-theme;
+      packages.${system} = {
+        catppuccin-gtk-theme = pkgs.catppuccin-gtk-theme;
+      };
 
       overlays.default = import ./overlays/overlays.nix;
     };

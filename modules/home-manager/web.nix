@@ -52,6 +52,16 @@
           installation_mode = "force_installed";
         };
       };
+
+      Cookies.Allow = map (d: "https://${d}") [
+        "github.com"
+        "youtube.com"
+        "reddit.com"
+        "twitch.tv"
+        "git.prodressnet.de"
+        "nextcloud.prodress.de"
+        "one.zoho.eu"
+      ];
     };
   };
 }

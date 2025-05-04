@@ -20,6 +20,7 @@
     ../../modules/home-manager/gnome/extensions.nix
     ../../modules/home-manager/gnome/gtk.nix
     ../../modules/home-manager/web.nix
+    ../../modules/home-manager/steam-theme.nix
   ];
 
   home.stateVersion = "25.05";
