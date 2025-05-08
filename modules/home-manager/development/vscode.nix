@@ -10,10 +10,15 @@
         esbenp.prettier-vscode
         jnoortheen.nix-ide
         catppuccin.catppuccin-vsc
+        ms-python.debugpy 
+        ms-python.vscode-pylance
+        redhat.vscode-xml
+        bodil.blueprint-gtk
       ];
 
       userSettings = {
-        "editor.fontSize" = 13;
+        "editor.fontSize" = 12;
+        "editor.fontFamily" = "FiraCode Nerd Font";
         "workbench.colorTheme" = "Catppuccin Mocha";
       };
     };

@@ -35,7 +35,8 @@
           install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
           installation_mode = "force_installed";
         };
-        "langpack-de@firefox.mozilla.org" = {
+        "langpack-de@firefox.mozilla.org" = { 
+          # de-DE language pack, older version, sould be updated in the future, the newer one was not working
           install_url = "https://addons.mozilla.org/firefox/downloads/file/4473963/deutsch_de_language_pack-137.0.20250414.91429.xpi";
           installation_mode = "force_installed";
         };
@@ -61,6 +62,8 @@
         "git.prodressnet.de"
         "nextcloud.prodress.de"
         "one.zoho.eu"
+        "teams.microsoft.com"
+        "accounts.google.com"
       ];
     };
   };

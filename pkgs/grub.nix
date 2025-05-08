@@ -11,6 +11,6 @@
     efiSupport = true;
     theme = inputs.nixos-grub-themes.packages.${pkgs.system}.hyperfluent;
     devices = [ "nodev" ];
-    gfxmodeEfi = "1920x1080";
+    gfxmodeEfi = "2560x1440";
   };
 }
