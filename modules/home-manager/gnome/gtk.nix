@@ -1,3 +1,5 @@
+# modules/home-manager/gnome/gtk.nix
+
 { config, pkgs, ... }:
 
 {

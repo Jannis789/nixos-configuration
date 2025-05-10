@@ -1,4 +1,5 @@
 # hosts/default/home.nix
+
 {
   config,
   lib,

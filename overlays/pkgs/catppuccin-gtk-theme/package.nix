@@ -1,3 +1,5 @@
+# overlays/pkgs/catppuccin-gtk-theme/package.nix
+
 {
   lib,
   stdenvNoCC,
@@ -77,7 +79,7 @@ lib.checkListOfEnum "${pname}: colorVariants" colorVariantList colorVariants lib
     src = fetchFromGitHub {
       owner = "Fausto-Korpsvart";
       repo = "Catppuccin-GTK-Theme";
-      rev = "23827b334c481dfdf0c5cee0f339328e56eba5a4";
+      rev = "c961826d027ed93fae12a9a309616e36d140e6b9";
       hash = "sha256-fhT8ny58aF7NUsGk4EHguTDGA0w62vMJIMeKZ4/kiYU=";
     };
 
@@ -119,11 +121,7 @@ lib.checkListOfEnum "${pname}: colorVariants" colorVariantList colorVariants lib
       description = "GTK theme based on the Catppuccin colour palette";
       homepage = "https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme";
       license = lib.licenses.gpl3Plus;
-      maintainers = with lib.maintainers; [
-        garaiza-93
-        Madouura
-        d3vil0p3r
-      ];
+      maintainers = with lib.maintainers; [];
       platforms = lib.platforms.unix;
     };
   }

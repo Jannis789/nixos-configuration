@@ -12,14 +12,17 @@
     nixos-grub-themes.url = "github:jeslie0/nixos-grub-themes";
 
     nvf.url = "github:notashelf/nvf";
+
+    nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      nvf,
       home-manager,
+      nvf,
+      nix-flatpak,
       ...
     }@inputs:
     let
@@ -37,8 +40,9 @@
         specialArgs = { inherit inputs; };
         modules = [
           ./hosts/default/configuration.nix
-          nvf.nixosModules.default
           home-manager.nixosModules.default
+          nvf.nixosModules.default
+          nix-flatpak.nixosModules.nix-flatpak
         ];
       };
 
