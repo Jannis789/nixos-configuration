@@ -18,7 +18,7 @@
   darwin-user.enable = true;
   darwin-user.userName = "jrustige";
   darwin-user.userPassword = "prodata";
-  
+
   home-manager = {
     backupFileExtension = "backup";
     extraSpecialArgs = { inherit inputs; };
@@ -26,6 +26,8 @@
       "jrustige" = import ./home.nix;
     };
   };
+
+  programs.bash.blesh.enable = true;
 
   system.stateVersion = 6;
 }
