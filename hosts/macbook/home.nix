@@ -20,13 +20,15 @@
   
   programs.home-manager.enable = true;
 
+  programs.bash = {
+    enable = true;
+    bashrcExtra = builtins.readFile ../../.dotfiles/.bashrc;;
+  };
+
   home.file = {
     ".config" = {
       source = ../../.dotfiles-darwin/.config;
       recursive = true;
-    };
-    ".bashrc" = {
-      source = ../../.dotfiles-darwin/.bashrc;
     };
   };
 }
