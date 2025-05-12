@@ -17,14 +17,8 @@
   ];
 
   home.stateVersion = "25.05";
-
+  
   programs.home-manager.enable = true;
-
-  home.packages = [
-    pkgs.blesh
-  ];
-
-  programs.bash.blesh.enable = true;
 
   home.file = {
     ".config" = {
