@@ -27,7 +27,7 @@
     };
   };
 
-  home.packages = with pkgs; [
+  home.packages = [
     blesh
   ];
 
