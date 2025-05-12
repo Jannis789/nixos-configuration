@@ -19,6 +19,8 @@
   darwin-user.userName = "jrustige";
   darwin-user.userPassword = "prodata";
 
+  environment.variables.LANG = "de_DE.UTF-8";
+
   home-manager = {
     backupFileExtension = "backup";
     extraSpecialArgs = { inherit inputs; };
