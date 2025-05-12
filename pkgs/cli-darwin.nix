@@ -87,7 +87,6 @@
           kotlin.enable = true;
           lua.enable = true;
           markdown.enable = true;
-          nim.enable = true;
           nix.enable = true;
           python.enable = true;
           ruby.enable = true;
