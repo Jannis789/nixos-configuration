@@ -54,8 +54,8 @@
         system = "aarch64-darwin"; # oder "x86_64-darwin" je nach Mac
         modules = [
           ./hosts/macbook/configuration.nix
-          nvf.nixosModules.default
           home-manager.darwinModules.home-manager
+          nvf.nixosModules.default
         ];
         specialArgs = { inherit inputs; };
       };
