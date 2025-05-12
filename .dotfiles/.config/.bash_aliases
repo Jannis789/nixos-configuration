@@ -5,6 +5,7 @@ alias ....='cd ../../..'
 
 alias upgrade='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration?submodules=1#default --upgrade'
 alias update='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration?submodules=1#default'
+alias clean-nix='nix-collect-garbage -d'
 
 # use nvf instead
 alias vi='nix run github:notashelf/nvf'
@@ -14,9 +15,6 @@ alias gs='git status'
 alias ga='git add .'
 alias gc='git commit -m'
 alias gp='git push'
-
-# Schnellere Updates
-alias rebuild='sudo nixos-rebuild switch --flake /etc/nixos#default --show-trace'
 
 # Colorize ls
 alias ls='ls --color=auto -lah'
