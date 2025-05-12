@@ -14,6 +14,18 @@
 
   home.stateVersion = "25.05";
 
-  # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+    home.file = {
+    ".config" = {
+      source = ../../.dotfiles-darwin/.config;
+      recursive = true;
+    };
+    ".local" = {
+      # BugFix: .dotfiles/.local/share/locale/de/LC_MESSAGES/nautilus-open-any-terminal.mo
+      source = ../../.dotfiles-darwin/.local;
+      recursive = true;
+    };
+    
+  };
 }

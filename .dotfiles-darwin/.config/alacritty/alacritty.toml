@@ -1,0 +1,14 @@
+[font]
+size = 16.0
+
+[font.normal]
+family = "Agave Nerd Font"
+style = "Regular"
+
+[keyboard]
+bindings = [
+  { key = "C", mods = "Control", chars = "\u0003" },          # Ctrl+C → ^C
+  { key = "A", mods = "Control", chars = "\u0001" },          # Ctrl+A → ^A
+  { key = "C", mods = "Control|Shift", action = "Copy" },      # Ctrl+Shift+C → Copy
+  { key = "V", mods = "Control", action = "Paste"}
+]
