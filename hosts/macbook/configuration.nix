@@ -11,6 +11,7 @@
 {
   imports = [
     ../../users/darwin-user.nix
+    ../../pkgs/cli-darwin.nix
     inputs.home-manager.darwinModules.home-manager
   ];
 

@@ -12,6 +12,10 @@
   home.homeDirectory = "/Users/jrustige";
   nixpkgs.config.allowUnfree = true;
 
+  imports = [
+    ../../modules/home-manager/development/cli-darwin.nix
+  ];
+
   home.stateVersion = "25.05";
 
   programs.home-manager.enable = true;
