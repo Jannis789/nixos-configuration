@@ -16,16 +16,13 @@
 
   programs.home-manager.enable = true;
 
-    home.file = {
+  home.file = {
     ".config" = {
       source = ../../.dotfiles-darwin/.config;
       recursive = true;
     };
-    ".local" = {
-      # BugFix: .dotfiles/.local/share/locale/de/LC_MESSAGES/nautilus-open-any-terminal.mo
-      source = ../../.dotfiles-darwin/.local;
-      recursive = true;
+    ".bashrc" = {
+      source = ../../.dotfiles-darwin/.bashrc;
     };
-    
   };
 }
