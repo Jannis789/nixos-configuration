@@ -2,6 +2,7 @@
 
 {
   environment.systemPackages = with pkgs; [
+    blesh
     btop
     fastfetch
     wget
@@ -21,6 +22,14 @@
     nerd-fonts.droid-sans-mono
     nerd-fonts.symbols-only
   ];
+
+
+  programs.bash = {
+    blesh.enable = false;
+    undistractMe.enable = true;
+
+    completion.enable = true;
+  };
 
   programs.nvf = {
     enable = true;

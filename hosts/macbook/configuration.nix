@@ -27,12 +27,5 @@
     };
   };
 
-  programs.bash = {
-    blesh.enable = false;
-    undistractMe.enable = true;
-
-    completion.enable = true;
-  };
-
   system.stateVersion = 6;
 }
