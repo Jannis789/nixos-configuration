@@ -10,7 +10,6 @@
     atuin
     zoxide
     nix-bash-completions
-    blesh
     nixfmt-rfc-style
     git-credential-manager
     openssh
