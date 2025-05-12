@@ -28,7 +28,7 @@
   };
 
   home.packages = [
-    blesh
+    pkgs.blesh
   ];
 
   programs.bash.blesh.enable = true;
