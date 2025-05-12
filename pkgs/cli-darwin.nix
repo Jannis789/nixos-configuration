@@ -24,8 +24,6 @@
   ];
 
   programs.bash = {
-    undistractMe.enable = true;
-
     completion.enable = true;
   };
 
