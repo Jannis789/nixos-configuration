@@ -17,6 +17,7 @@
     ../../pkgs/grub.nix
     ../../pkgs/game.nix
     ../../pkgs/flatpak.nix
+    ../../pkgs/virt-manager.nix
     ../../overlays/gdm-colors/package.nix
     inputs.home-manager.nixosModules.default
   ];

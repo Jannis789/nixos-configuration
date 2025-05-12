@@ -1,4 +1,4 @@
-# pkgs/flatpak.nix
+# pk<gs/flatpak.nix
 
 { config, pkgs, ... }:
 
@@ -16,9 +16,9 @@
       };
     };
     packages = [
-      { appId = "re.sonny.Workbench"; origin = "flathub";  }
-      { appId = "com.github.tchx84.Flatseal"; origin = "flathub";  }
-      { appId = "org.gnome.Builder"; origin = "flathub";  }
+      { appId = "re.sonny.Workbench"; origin = "flathub"; }
+      { appId = "com.github.tchx84.Flatseal"; origin = "flathub"; }
+      { appId = "org.gnome.Builder"; origin = "flathub"; }
     ];
   };
 }

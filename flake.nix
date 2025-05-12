@@ -4,27 +4,31 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nixos-grub-themes.url = "github:jeslie0/nixos-grub-themes";
 
     nvf.url = "github:notashelf/nvf";
 
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    darwin.url = "github:lnl7/nix-darwin";
+    darwin.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
-    {
+    inputs@{
       self,
       nixpkgs,
       home-manager,
       nvf,
       nix-flatpak,
+      darwin,
       ...
-    }@inputs:
+    }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -34,7 +38,6 @@
       };
     in
     {
-      # NixOS-Konfiguration
       nixosConfigurations.default = nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = { inherit inputs; };
@@ -44,6 +47,17 @@
           nvf.nixosModules.default
           nix-flatpak.nixosModules.nix-flatpak
         ];
+      };
+
+      # ✅ NEU: macOS-Konfiguration
+      darwinConfigurations.macbook = darwin.lib.darwinSystem {
+        system = "aarch64-darwin"; # oder "x86_64-darwin" je nach Mac
+        modules = [
+          ./hosts/macbook/configuration.nix
+          nvf.nixosModules.default
+          home-manager.darwinModules.home-manager
+        ];
+        specialArgs = { inherit inputs; };
       };
 
       packages.${system} = {
