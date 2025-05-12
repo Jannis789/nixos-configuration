@@ -27,11 +27,5 @@
     };
   };
 
-  home.packages = [
-    pkgs.blesh
-  ];
-
-  programs.bash.blesh.enable = true;
-
   system.stateVersion = 6;
 }

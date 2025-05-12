@@ -20,6 +20,12 @@
 
   programs.home-manager.enable = true;
 
+  home.packages = [
+    pkgs.blesh
+  ];
+
+  programs.bash.blesh.enable = true;
+
   home.file = {
     ".config" = {
       source = ../../.dotfiles-darwin/.config;
