@@ -22,7 +22,7 @@
 
   programs.bash = {
     enable = true;
-    bashrcExtra = builtins.readFile ../../.dotfiles/.bashrc;
+    bashrcExtra = builtins.readFile ../../.dotfiles-darwin/.bashrc;
   };
 
   home.file = {
