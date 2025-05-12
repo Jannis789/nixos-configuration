@@ -9,7 +9,7 @@
 
 {
   home.username = "jrustige";
-  home.homeDirectory = "/home/jrustige";
+  home.homeDirectory = "/Users/jrustige";
   nixpkgs.config.allowUnfree = true;
 
   home.stateVersion = "25.05";
