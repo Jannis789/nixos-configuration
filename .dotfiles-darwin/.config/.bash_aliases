@@ -3,7 +3,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
-alias upgrade='nix run nix-darwin --extra-experimental-features nix-command --extra-experimental-features flakes -- switch --flake ~/nixos-configuration/#macbook'
+alias upgrade='nix run nix-darwin --extra-experimental-features nix-command --extra-experimental-features flakes -- switch --flake ~/Documents/nixos-configuration/#macbook'
 alias clean-nix='nix-collect-garbage -d'
 
 # use nvf instead
