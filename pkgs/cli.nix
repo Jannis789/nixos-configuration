@@ -15,6 +15,7 @@
     git-credential-manager
     openssh
     wl-clipboard
+    unzip
   ];
 
   fonts.packages = with pkgs; [
