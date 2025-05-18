@@ -47,8 +47,6 @@
           style = "mocha";
         };
 
-        useSystemClipboard = true;
-
         options = {
           guifont = "FiraCode Nerd Font Medium:h12";
           termguicolors = true;
@@ -74,7 +72,6 @@
         };
 
         languages = {
-          enableLSP = true;
           enableFormat = true;
           enableTreesitter = true;
           enableExtraDiagnostics = true;

@@ -80,7 +80,7 @@ lib.checkListOfEnum "${pname}: colorVariants" colorVariantList colorVariants lib
       owner = "Fausto-Korpsvart";
       repo = "Catppuccin-GTK-Theme";
       rev = "c961826d027ed93fae12a9a309616e36d140e6b9";
-      hash = "sha256-fhT8ny58aF7NUsGk4EHguTDGA0w62vMJIMeKZ4/kiYU=";
+      hash = "sha256-7F4FrhM+kBFPeLp2mjmYkoDiF9iKDUkC27LUBuFyz7g=";
     };
 
     propagatedUserEnvPkgs = [ gtk-engine-murrine ];
