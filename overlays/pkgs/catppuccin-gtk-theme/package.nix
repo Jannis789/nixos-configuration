@@ -54,74 +54,68 @@ let
     "Mocha"
   ];
 in
-lib.checkListOfEnum "${pname}: colorVariants" colorVariantList colorVariants lib.checkListOfEnum
-  "${pname}: sizeVariants"
-  sizeVariantList
-  sizeVariants
-  lib.checkListOfEnum
-  "${pname}: themeVariants"
-  themeVariantList
-  themeVariants
-  lib.checkListOfEnum
-  "${pname}: tweakVariants"
-  tweakVariantList
-  tweakVariants
-  lib.checkListOfEnum
-  "${pname}: iconVariants"
-  iconVariantList
-  iconVariants
+lib.checkListOfEnum "${pname}: colorVariants" colorVariantList colorVariants
+  (lib.checkListOfEnum "${pname}: sizeVariants" sizeVariantList sizeVariants
+    (lib.checkListOfEnum "${pname}: themeVariants" themeVariantList themeVariants
+      (lib.checkListOfEnum "${pname}: tweakVariants" tweakVariantList tweakVariants
+        (lib.checkListOfEnum "${pname}: iconVariants" iconVariantList iconVariants
 
-  stdenvNoCC.mkDerivation
-  {
-    inherit pname;
-    version = "0-unstable-2025-04-17";
+          (stdenvNoCC.mkDerivation {
+            inherit pname;
+            version = "0-unstable-2025-04-17";
 
-    src = fetchFromGitHub {
-      owner = "Fausto-Korpsvart";
-      repo = "Catppuccin-GTK-Theme";
-      rev = "c961826d027ed93fae12a9a309616e36d140e6b9";
-      hash = "sha256-7F4FrhM+kBFPeLp2mjmYkoDiF9iKDUkC27LUBuFyz7g=";
-    };
+            src = fetchFromGitHub {
+              owner = "Fausto-Korpsvart";
+              repo = "Catppuccin-GTK-Theme";
+              rev = "c961826d027ed93fae12a9a309616e36d140e6b9";
+              hash = "sha256-7F4FrhM+kBFPeLp2mjmYkoDiF9iKDUkC27LUBuFyz7g=";
+            };
 
-    propagatedUserEnvPkgs = [ gtk-engine-murrine ];
+            propagatedUserEnvPkgs = [ gtk-engine-murrine ];
 
-    nativeBuildInputs = [
-      gnome-shell
-      sassc
-    ];
-    buildInputs = [ gnome-themes-extra ];
+            nativeBuildInputs = [
+              gnome-shell
+              sassc
+            ];
+            buildInputs = [ gnome-themes-extra ];
 
-    dontBuild = true;
+            dontBuild = true;
 
-    passthru.updateScript = unstableGitUpdater { };
+            passthru.updateScript = unstableGitUpdater { };
 
-    postPatch = ''
-      patchShebangs themes/install.sh
-    '';
+            postPatch = ''
+              patchShebangs themes/install.sh
+            '';
 
-    installPhase = ''
-      runHook preInstall
-      mkdir -p $out/share/themes
-      cd themes
-      ./install.sh -n Catppuccin \
-      ${lib.optionalString (colorVariants != [ ]) "-c " + toString colorVariants} \
-      ${lib.optionalString (sizeVariants != [ ]) "-s " + toString sizeVariants} \
-      ${lib.optionalString (themeVariants != [ ]) "-t " + toString themeVariants} \
-      ${lib.optionalString (tweakVariants != [ ]) "--tweaks " + toString tweakVariants} \
-      -d "$out/share/themes"
-      cd ../icons
-      ${lib.optionalString (iconVariants != [ ]) ''
-        mkdir -p $out/share/icons
-        cp -a ${toString (map (v: "Catppuccin-${v}") iconVariants)} $out/share/icons/
-      ''}
-      runHook postInstall
-    '';
+            installPhase = ''
+              runHook preInstall
+              export HOME=$TMPDIR
+              mkdir -p $out/share/themes
+              cd themes
+              ./install.sh -n Catppuccin \
+              ${lib.optionalString (colorVariants != [ ]) "-c " + toString colorVariants} \
+              ${lib.optionalString (sizeVariants != [ ]) "-s " + toString sizeVariants} \
+              ${lib.optionalString (themeVariants != [ ]) "-t " + toString themeVariants} \
+              ${lib.optionalString (tweakVariants != [ ]) "--tweaks " + toString tweakVariants} \
+              -l \
+              -d "$out/share/themes"
+              cd ../icons
+              ${lib.optionalString (iconVariants != [ ]) ''
+                mkdir -p $out/share/icons
+                cp -a ${toString (map (v: "Catppuccin-${v}") iconVariants)} $out/share/icons/
+              ''}
+              runHook postInstall
+            '';
 
-    meta = {
-      description = "GTK theme based on the Catppuccin colour palette";
-      homepage = "https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme";
-      license = lib.licenses.gpl3Plus;
-      maintainers = with lib.maintainers; [];
-      platforms = lib.platforms.unix;
-    };
-  }
+            meta = {
+              description = "GTK theme based on the Catppuccin colour palette";
+              homepage = "https://github.com/Fausto-Korpsvart/Catppuccin-GTK-Theme";
+              license = lib.licenses.gpl3Plus;
+              maintainers = with lib.maintainers; [];
+              platforms = lib.platforms.unix;
+            };
+          })
+        )
+      )
+    )
+  )
