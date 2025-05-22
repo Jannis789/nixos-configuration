@@ -8,6 +8,125 @@
   programs.librewolf = {
     enable = true;
     profiles.default = {
+      name = "Default";
+      search = {
+        default = "Startpage";
+        force = true;
+        engines = {
+          google.metaData.hidden = true;
+          bing.metaData.hidden = true;
+          "Startpage" = {
+            urls = [ { template = "https://www.startpage.com/sp/search?query={searchTerms}"; } ];
+            icon = "https://www.startpage.com/sp/cdn/favicons/favicon-96x96.png";
+            definedAliases = [
+              "@sp"
+              "@startpage"
+            ];
+          };
+          "Noogle" = {
+            urls = [ { template = "https://noogle.dev/q?term={searchTerms}"; } ];
+            icon = "https://noogle.dev/favicon.png";
+            definedAliases = [
+              "@ng"
+              "@noogle"
+            ];
+          };
+          "Nix Documentation" = {
+            urls = [ { template = "https://nix.dev/search.html?q={searchTerms}"; } ];
+            icon = "https://nix.dev/_static/favicon.png";
+            definedAliases = [
+              "@nxd"
+              "@nixdocs"
+            ];
+          };
+          "Nix Manual" = {
+            urls = [ { template = "https://nix.dev/manual/nix/latest/?search={searchTerms}"; } ];
+            icon = "https://nix.dev/manual/nix/latest/favicon.svg";
+            definedAliases = [
+              "@nxm"
+              "@nixmanual"
+            ];
+          };
+          "Nix Packages" = {
+            urls = [ { template = "https://search.nixos.org/packages?channel=unstable&query={searchTerms}"; } ];
+            icon = "https://search.nixos.org/favicon.png";
+            definedAliases = [
+              "@nxp"
+              "@nixpackages"
+            ];
+          };
+          "Searchix" = {
+            urls = [ { template = "https://searchix.alanpearce.eu/all/search?query={searchTerms}"; } ];
+            definedAliases = [
+              "@sx"
+              "@searchix"
+            ];
+          };
+          "NixOS Options" = {
+            urls = [ { template = "https://search.nixos.org/options?query={searchTerms}"; } ];
+            icon = "https://search.nixos.org/favicon.png";
+            definedAliases = [
+              "@noo"
+              "@nixosops"
+            ];
+          };
+          "NixOS Wiki" = {
+            urls = [ { template = "https://nixos.wiki/index.php?search={searchTerms}"; } ];
+            icon = "https://nixos.wiki/favicon.png";
+            definedAliases = [
+              "@now"
+              "@nixoswiki"
+            ];
+          };
+          "Home Manager Options" = {
+            urls = [ { template = "https://home-manager-options.extranix.com/?query={searchTerms}"; } ];
+            icon = "https://home-manager-options.extranix.com/images/favicon.png";
+            definedAliases = [
+              "@hmo"
+              "@homemmanageropts"
+            ];
+          };
+          "Flake Parts Docs" = {
+            urls = [ { template = "https://flake.parts/?search={searchTerms}"; } ];
+            icon = "https://flake.parts/favicon.svg";
+            definedAliases = [
+              "@fpd"
+              "flakepartsdocs"
+            ];
+          };
+          "NixVim Docs" = {
+            urls = [ { template = "https://nix-community.github.io/nixvim/?search={searchTerms}"; } ];
+            icon = "https://nix-community.github.io/nixvim/favicon.svg";
+            definedAliases = [
+              "@nvd"
+              "@nixvimdocs"
+            ];
+          };
+          "Fancade Wiki" = {
+            urls = [ { template = "https://www.fancade.com/wiki/gollum/search?q={searchTerms}"; } ];
+            icon = "https://www.fancade.com/favicon.ico";
+            definedAliases = [
+              "@fcw"
+              "@fancadewiki"
+            ];
+          };
+          "Deepl" = {
+            urls = [ { template = "https://www.deepl.com/en/translator#en/en/{searchTerms}"; } ];
+            icon = "https://static.deepl.com/img/logo/deepl-logo-blue.svg";
+            definedAliases = [
+              "@dpl"
+              "@deepl"
+            ];
+          };
+          "youtube" = {
+            urls = [ { template = "https://www.youtube.com/results?search_query={searchTerms}"; } ];
+            icon = "https://www.youtube.com/s/desktop/fc303b88/img/logos/favicon.ico";
+            definedAliases = [
+              "@yt"
+            ];
+          };
+        };
+      };
       settings = {
         "intl.locale.requested" = "de,en-US";
         "extensions.autoDisableScopes" = 0;

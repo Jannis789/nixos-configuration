@@ -14,6 +14,7 @@
     epiphany
     firefox
     gnome-console
+    gnome-system-monitor
   ];
 
   environment.systemPackages = with pkgs; [
@@ -24,5 +25,6 @@
     graphite-cursors
     nautilus-open-any-terminal
     blackbox-terminal
+    mission-center
   ];
 }
