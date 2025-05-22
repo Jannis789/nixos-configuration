@@ -7,9 +7,6 @@ alias upgrade='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration
 alias update='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration?submodules=1#default'
 alias clean-nix='nix-collect-garbage -d'
 
-# use nvf instead
-alias vi='nix run github:notashelf/nvf'
-alias nvim='nix run github:notashelf/nvf'
 # Schnelle Git-Befehle
 alias gs='git status'
 alias ga='git add .'

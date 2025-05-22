@@ -10,6 +10,7 @@
         global = {
           Context.filesystems = [
             "home"
+            "~/.themes"
           ];
           Environment = {
             GTK_THEME = "Catppuccin-Dark";

@@ -6,9 +6,6 @@ alias ....='cd ../../..'
 alias upgrade='nix run nix-darwin --extra-experimental-features nix-command --extra-experimental-features flakes -- switch --flake ~/Documents/nixos-configuration/#macbook'
 alias clean-nix='nix-collect-garbage -d'
 
-# use nvf instead
-alias vi='nix run github:notashelf/nvf'
-alias nvim='nix run github:notashelf/nvf'
 # Schnelle Git-Befehle
 alias gs='git status'
 alias ga='git add .'

@@ -61,5 +61,8 @@
       source = ../../.dotfiles/.ssh;
       recursive = true;
     };
+    ".themes" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${pkgs.catppuccin-gtk-theme}/share/themes";
+    };
   };
 }

@@ -6,8 +6,6 @@
 
     nixos-grub-themes.url = "github:jeslie0/nixos-grub-themes";
 
-    nvf.url = "github:notashelf/nvf";
-
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
 
     home-manager = {
@@ -24,7 +22,6 @@
       self,
       nixpkgs,
       home-manager,
-      nvf,
       nix-flatpak,
       darwin,
       ...
@@ -44,7 +41,6 @@
         modules = [
           ./hosts/default/configuration.nix
           home-manager.nixosModules.default
-          nvf.nixosModules.default
           nix-flatpak.nixosModules.nix-flatpak
         ];
       };
@@ -55,7 +51,6 @@
         modules = [
           ./hosts/macbook/configuration.nix
           home-manager.darwinModules.home-manager
-          nvf.nixosModules.default
         ];
         specialArgs = { inherit inputs; };
       };
