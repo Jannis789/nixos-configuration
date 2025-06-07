@@ -28,4 +28,8 @@
     enable = true;
     terminal = "blackbox";
   };
+  
+  programs.nixvim = {
+    enable = true;
+  };
 }

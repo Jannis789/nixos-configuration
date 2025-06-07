@@ -7,6 +7,10 @@ alias upgrade='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration
 alias update='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration?submodules=1#default'
 alias clean-nix='nix-collect-garbage -d'
 
+alias nixvim='nix run "github:Jannis789/nixvim?ref=main"'
+alias nvim='nix run "github:Jannis789/nixvim?ref=main"'
+alias vi='nix run "github:Jannis789/nixvim?ref=main"'
+
 # Schnelle Git-Befehle
 alias gs='git status'
 alias ga='git add .'
