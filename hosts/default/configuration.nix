@@ -20,6 +20,7 @@
     ../../pkgs/etc.nix
     ../../overlays/gdm-colors/package.nix
     inputs.home-manager.nixosModules.default
+    inputs.nixvim.nixosModules.nixvim
   ];
 
   # Bootloader.

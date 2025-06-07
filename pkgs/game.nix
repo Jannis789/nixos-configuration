@@ -9,6 +9,7 @@
     mangohud
     protonup
     heroic
+    gamescope
   ];
 
   programs.steam = {
@@ -17,7 +18,19 @@
     dedicatedServer.openFirewall = true;
     localNetworkGameTransfers.openFirewall = true;
     gamescopeSession.enable = true;
-    extraCompatPackages = [ pkgs.proton-ge-bin ];
+    extraCompatPackages = [ 
+      pkgs.proton-ge-bin 
+      pkgs.xorg.libXcursor
+      pkgs.xorg.libXi
+      pkgs.xorg.libXinerama
+      pkgs.xorg.libXScrnSaver
+      pkgs.libpng
+      pkgs.libpulseaudio
+      pkgs.libvorbis
+      pkgs.stdenv.cc.cc.lib
+      pkgs.libkrb5
+      pkgs.keyutils  
+    ];
   };
 
   hardware.graphics = {
