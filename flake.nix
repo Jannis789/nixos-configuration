@@ -32,6 +32,7 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
+      overlays = [ self.overlays.default ];
       config = { };
     };
   in
@@ -56,6 +57,12 @@
       ];
       specialArgs = { inherit inputs; };
     };
+
+    packages.${system} = {
+      andromeda-gtk-theme = pkgs.andromeda-gtk-theme;
+    };
+
+    overlays.default = import ./overlays/extra-pkgs.nix;
 
   };
 }

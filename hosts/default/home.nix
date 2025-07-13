@@ -27,14 +27,13 @@
   home.stateVersion = "25.11";
   home.enableNixpkgsReleaseCheck = false;
 
-  nixpkgs.overlays = [ (import ../../overlays/overlays.nix) ];
-
   home.packages = [
     pkgs.blesh
     pkgs.atuin
     pkgs.nix-bash-completions
     pkgs.zoxide
     pkgs.starship
+    pkgs.andromeda-gtk-theme
   ];
 
   # Let Home Manager install and manage itself.
@@ -63,5 +62,11 @@
     ".themes" = {
       source = config.lib.file.mkOutOfStoreSymlink "${pkgs.magnetic-catppuccin-gtk}/share/themes";
     };
+  };
+
+  xdg.configFile = {
+    "gtk-4.0/assets".source = "${config.gtk.theme.package}/share/themes/${config.gtk.theme.name}/gtk-4.0/assets";
+    "gtk-4.0/gtk.css".source = "${config.gtk.theme.package}/share/themes/${config.gtk.theme.name}/gtk-4.0/gtk.css";
+    "gtk-4.0/gtk-dark.css".source = "${config.gtk.theme.package}/share/themes/${config.gtk.theme.name}/gtk-4.0/gtk-dark.css";
   };
 }
