@@ -19,6 +19,7 @@
 
   environment.systemPackages = with pkgs; [
     fragments
+    magnetic-catppuccin-gtk
     gnome-tweaks
     dconf-editor
     colloid-icon-theme

@@ -30,7 +30,6 @@
   nixpkgs.overlays = [ (import ../../overlays/overlays.nix) ];
 
   home.packages = [
-    pkgs.catppuccin-gtk-theme
     pkgs.blesh
     pkgs.atuin
     pkgs.nix-bash-completions
@@ -62,7 +61,7 @@
       recursive = true;
     };
     ".themes" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${pkgs.catppuccin-gtk-theme}/share/themes";
+      source = config.lib.file.mkOutOfStoreSymlink "${pkgs.magnetic-catppuccin-gtk}/share/themes";
     };
   };
 }

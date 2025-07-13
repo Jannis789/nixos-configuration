@@ -32,7 +32,6 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
-      overlays = [ self.overlays.default ];
       config = { };
     };
   in
@@ -58,10 +57,5 @@
       specialArgs = { inherit inputs; };
     };
 
-    packages.${system} = {
-      catppuccin-gtk-theme = pkgs.catppuccin-gtk-theme;
-    };
-
-    overlays.default = import ./overlays/overlays.nix;
   };
 }

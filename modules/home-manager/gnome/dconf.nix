@@ -34,5 +34,10 @@
     "com/raggesilver/BlackBox" = {
       "theme-dark" = "Catppuccin Mocha";
     };
+    
+    "org/gnome/desktop/remote-desktop/rdp" = {
+      enable = true;
+      view-only = false;
+    };
   };
 }

@@ -16,7 +16,7 @@
     };
 
     "org/gnome/shell/extensions/user-theme" = {
-      name = "Catppuccin-Dark";
+      name = "Catppuccin-GTK-Dark";
     };
 
     "org/gnome/shell/extensions/dash-to-dock" = {

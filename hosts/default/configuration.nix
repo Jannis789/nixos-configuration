@@ -18,6 +18,7 @@
     ../../pkgs/flatpak.nix
     ../../pkgs/virt-manager.nix
     ../../pkgs/etc.nix
+    ../../pkgs/rdp.nix
     ../../overlays/gdm-colors/package.nix
     inputs.home-manager.nixosModules.default
     inputs.nixvim.nixosModules.nixvim

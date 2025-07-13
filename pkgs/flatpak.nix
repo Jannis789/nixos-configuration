@@ -13,7 +13,7 @@
             "~/.themes"
           ];
           Environment = {
-            GTK_THEME = "Catppuccin-Dark";
+            GTK_THEME = "Catppuccin-GTK-Dark";
           };
         };
       };

@@ -8,7 +8,7 @@
 
     theme = {
       name = "Catppuccin-Dark";
-      package = pkgs.catppuccin-gtk-theme;
+      package = pkgs.magnetic-catppuccin-gtk;
     };
 
     iconTheme = {
@@ -22,5 +22,5 @@
     };
   };
 
-  home.sessionVariables.GTK_THEME = "Catppuccin-Dark";
+  home.sessionVariables.GTK_THEME = "Catppuccin-GTK-Dark";
 }
