@@ -21,7 +21,6 @@
     ../../modules/home-manager/gnome/extensions.nix
     ../../modules/home-manager/gnome/gtk.nix
     ../../modules/home-manager/web.nix
-    ../../modules/home-manager/steam-theme.nix
   ];
 
   home.stateVersion = "25.11";
@@ -34,7 +33,6 @@
     pkgs.zoxide
     pkgs.starship
     pkgs.andromeda-gtk-theme
-    pkgs.blackbox-terminal
   ];
 
   # Let Home Manager install and manage itself.
@@ -48,12 +46,12 @@
 
   home.file = {
     ".config" = {
-      source = ../../.dotfiles/.config;
+      source = ../../.dotfiles-laptop/.config;
       recursive = true;
     };
     ".local" = {
-      # BugFix: .dotfiles/.local/share/locale/de/LC_MESSAGES/nautilus-open-any-terminal.mo
-      source = ../../.dotfiles/.local;
+      # BugFix: .dotfiles-laptop/.local/share/locale/de/LC_MESSAGES/nautilus-open-any-terminal.mo
+      source = ../../.dotfiles-laptop/.local;
       recursive = true;
     };
     ".ssh" = {

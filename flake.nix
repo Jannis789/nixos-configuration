@@ -32,7 +32,7 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
-      overlays = [ self.overlays.default ];
+      overlays = [ self.overlays.laptop ];
       config = { };
     };
   in
@@ -43,6 +43,17 @@
       specialArgs = { inherit inputs; };
       modules = [
         ./hosts/default/configuration.nix
+        home-manager.nixosModules.default
+        nix-flatpak.nixosModules.nix-flatpak
+      ];
+    };
+
+    # NixOS-Konfiguration (laptop)
+    nixosConfigurations.laptop = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs; };
+      modules = [
+        ./hosts/laptop/configuration.nix
         home-manager.nixosModules.default
         nix-flatpak.nixosModules.nix-flatpak
       ];
