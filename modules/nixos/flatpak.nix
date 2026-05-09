@@ -40,6 +40,10 @@ in
           appId = "io.github.tobagin.karere";
           origin = "flathub";
         }
+        {
+          appId = "com.rustdesk.RustDesk";
+          origin = "flathub";
+        }
       ];
 
       overrides = {

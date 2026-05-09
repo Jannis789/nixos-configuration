@@ -54,6 +54,7 @@
       keeweb
       joplin-desktop
       rewaita-custom
+      helium
 
       protonplus
       steam

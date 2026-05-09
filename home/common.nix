@@ -22,8 +22,6 @@ in
     ../modules/home-manager/starship.nix
     ../modules/home-manager/atuin.nix
     ../modules/home-manager/vscode.nix
-    ../modules/home-manager/zen-browser.nix
-    inputs.zen-browser.homeModules.beta
   ];
 
   programs = {
@@ -49,12 +47,6 @@ in
   atuin.profile = "default";
   vscode.profile = "default";
 
-  zen-browser = {
-    profile = "default";
-    theme = "Mocha";
-    accent = "Lavender";
-  };
-
   gnome = {
     extensions = {
       install = [
@@ -79,7 +71,7 @@ in
 
     shell = {
       favoriteApps = [
-        "zen-beta.desktop"
+        "helium.desktop"
         "com.mitchellh.ghostty.desktop"
         "code.desktop"
         "org.gnome.Nautilus.desktop"

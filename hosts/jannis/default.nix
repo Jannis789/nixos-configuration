@@ -7,7 +7,7 @@
 
 {
   networking.hostName = "jannis";
-
+  programs.nix-ld.enable = true;
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
