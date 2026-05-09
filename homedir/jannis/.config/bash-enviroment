@@ -1,0 +1,9 @@
+# Bash History verbessern
+HISTSIZE=50000
+HISTFILESIZE=100000
+
+# History wird nicht überschrieben, sondern angehängt
+shopt -s histappend
+
+# Auto-Korrektur bei kleinen Tippfehlern im Pfad
+shopt -s cdspell

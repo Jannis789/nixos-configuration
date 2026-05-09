@@ -1,0 +1,13 @@
+diff --git a/data/theme/gnome-shell-sass/_default-colors.scss b/data/theme/gnome-shell-sass/_default-colors.scss
+index df7bfb6..6ef02a4 100644
+--- a/data/theme/gnome-shell-sass/_default-colors.scss
++++ b/data/theme/gnome-shell-sass/_default-colors.scss
+@@ -1,7 +1,7 @@
+ // Named Colors
+ 
+ // base colors
+-$_base_color_dark: #222226;
++$_base_color_dark: #1e1e2e;
+ $_base_color_light: #fafafb;
+ 
+ // accent colors

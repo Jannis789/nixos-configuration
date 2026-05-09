@@ -1,0 +1,6 @@
+[CX 2.4G Wireless Receiver Media Keys]
+MatchVendor=0x3554
+MatchProduct=0xfa09
+# Erzwingt, dass libinput Media Keys erkennt
+AttrKeyboard=true
+AttrSendEventsMode=enabled
