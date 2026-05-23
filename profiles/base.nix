@@ -38,6 +38,7 @@ in
       extraGroups = [
         "wheel"
         "networkmanager"
+        "hermes"
       ];
     };
 

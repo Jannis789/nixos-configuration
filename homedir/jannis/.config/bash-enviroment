@@ -7,3 +7,5 @@ shopt -s histappend
 
 # Auto-Korrektur bei kleinen Tippfehlern im Pfad
 shopt -s cdspell
+
+export HERMES_HOME="/var/lib/hermes/.hermes"

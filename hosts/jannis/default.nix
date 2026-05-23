@@ -13,7 +13,7 @@
     enable = true;
     addToSystemPackages = true;
     settings.model = "zai/glm-5.1";
-    environmentFiles = [ ./../../secrets/hermes-env ];
+    environmentFiles = [ "/home/jannis/Dokumente/nixos-configuration/secrets/hermes-env" ];
   };
 
   hardware.graphics = {
