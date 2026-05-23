@@ -12,6 +12,8 @@
     nixvim.url = "github:Jannis789/nixvim?ref=main";
 
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs =

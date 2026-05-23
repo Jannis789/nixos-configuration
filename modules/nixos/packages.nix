@@ -27,6 +27,8 @@
       git-credential-manager
       opencode
       ollama
+      ollama-rocm
+      ollama-vulkan
       openssh
       wl-clipboard
       unzip

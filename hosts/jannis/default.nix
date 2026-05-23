@@ -8,6 +8,14 @@
 {
   networking.hostName = "jannis";
   programs.nix-ld.enable = true;
+
+  services.hermes-agent = {
+    enable = true;
+    addToSystemPackages = true;
+    settings.model = "zai/glm-5.1";
+    environmentFiles = [ ./../../secrets/hermes-env ];
+  };
+
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

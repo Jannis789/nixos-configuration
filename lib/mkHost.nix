@@ -33,6 +33,7 @@ in
 
       inputs.home-manager.nixosModules.home-manager
       inputs.nix-flatpak.nixosModules.nix-flatpak
+      inputs.hermes-agent.nixosModules.default
 
       {
         system.userName = userName;

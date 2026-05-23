@@ -5,6 +5,5 @@ alias ....='cd ../../..'
 
 alias ls='ls --color=auto -lah'
 
-alias update='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration#jannis'
-alias upgrade='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration#jannis --upgrade-all'
+alias upgrade='sudo nixos-rebuild switch --flake ~/Dokumente/nixos-configuration#jannis'
 alias clean-nix='nix-collect-garbage -d'

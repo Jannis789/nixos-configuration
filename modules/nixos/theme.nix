@@ -53,6 +53,10 @@ let
       name = "Papirus-Dark";
       pkg = pkgs.papirus-icon-theme;
     };
+    kora = {
+      name = "kora";
+      pkg = pkgs.kora-icon-theme;
+    };
     adwaita = {
       name = "Adwaita";
       pkg = null;
@@ -179,6 +183,7 @@ in
         type = lib.types.enum [
           "hatter"
           "papirus"
+          "kora"
           "adwaita"
           "none"
         ];
