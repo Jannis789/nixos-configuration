@@ -55,10 +55,10 @@
           timeout = 30;
         };
 
-        # Session-Titel generieren — fast egal, Air reicht
+        # Session-Titel generieren — OpenRouter, falls Z.AI-Knappheit
         title_generation = {
-          provider = "zai";
-          model = "GLM-4.5-Air";
+          provider = "openrouter";
+          model = "openrouter/google/gemini-2.5-flash-exp-03-25";
           timeout = 30;
         };
 
