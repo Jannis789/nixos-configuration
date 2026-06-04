@@ -1,20 +1,12 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ config, lib, pkgs, ... }:
 
 {
   networking.hostName = "jannis";
   programs.nix-ld.enable = true;
 
-  services.hermes-agent = {
-    enable = true;
-    addToSystemPackages = true;
-    settings.model = "zai/glm-5.1";
-    environmentFiles = [ "/home/jannis/Dokumente/nixos-configuration/secrets/hermes-env" ];
-  };
+  imports = [
+    ../../modules/nixos/hermes-agent.nix
+  ];
 
   hardware.graphics = {
     enable = true;

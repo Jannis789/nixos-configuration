@@ -36,6 +36,10 @@ in
       inputs.hermes-agent.nixosModules.default
 
       {
+        nixpkgs.overlays = [ inputs.cachyos-kernel.overlays.default ];
+      }
+
+      {
         system.userName = userName;
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;

@@ -14,6 +14,8 @@
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
 
     hermes-agent.url = "github:NousResearch/hermes-agent";
+
+    cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
   };
 
   outputs =
