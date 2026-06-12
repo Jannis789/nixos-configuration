@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 {
   networking.hostName = "jannis";
@@ -39,7 +39,7 @@
   };
 
   users.users.jannis.openssh.authorizedKeys.keyFiles = [
-    ../../secrets/ssh-authorized-keys
+    "${inputs.secrets}/ssh-authorized-keys"
   ];
 
   networking.firewall.allowedTCPPorts = [ 3389 22 ];

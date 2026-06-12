@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -33,7 +34,7 @@
   };
 
   users.users.jannis.openssh.authorizedKeys.keyFiles = [
-    ../../secrets/ssh-authorized-keys
+    "${inputs.secrets}/ssh-authorized-keys"
   ];
 
   networking.firewall.allowedTCPPorts = [ 22 ];

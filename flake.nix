@@ -2,11 +2,12 @@
   description = "NixOS Multi-Host Configuration";
 
   inputs = {
-    self = {
-      url = "git+file:./?submodules=1";
-    };
-
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    secrets = {
+      url = "github:Jannis789/secrets";
+      flake = false;
+    };
 
     home-manager = {
       url = "github:nix-community/home-manager";
