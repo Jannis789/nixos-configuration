@@ -28,10 +28,13 @@
     wantedBy = [ "graphical.target" ];
   };
 
+  # Wake-on-LAN für enp6s0 aktivieren
+  networking.interfaces.enp6s0.wakeOnLan.enable = true;
+
   # SSH — Port 4422 (22 ist oft von FritzBox blockiert)
   services.openssh = {
     enable = true;
-    ports = [ 4422 ];
+    ports = [ 22 4422 ];
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;
@@ -43,5 +46,5 @@
     "${inputs.secrets}/ssh-authorized-keys"
   ];
 
-  networking.firewall.allowedTCPPorts = [ 3389 4422 ];
+  networking.firewall.allowedTCPPorts = [ 3389 22 4422 ];
 }
