@@ -33,7 +33,7 @@
   };
 
   users.users.jannis.openssh.authorizedKeys.keyFiles = [
-    ../secret/ssh-authorized-keys
+    ../../secrets/ssh-authorized-keys
   ];
 
   networking.firewall.allowedTCPPorts = [ 22 ];
