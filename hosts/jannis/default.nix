@@ -28,9 +28,10 @@
     wantedBy = [ "graphical.target" ];
   };
 
-  # SSH
+  # SSH — Port 4422 (22 ist oft von FritzBox blockiert)
   services.openssh = {
     enable = true;
+    ports = [ 4422 ];
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;
@@ -42,5 +43,5 @@
     "${inputs.secrets}/ssh-authorized-keys"
   ];
 
-  networking.firewall.allowedTCPPorts = [ 3389 22 ];
+  networking.firewall.allowedTCPPorts = [ 3389 4422 ];
 }
