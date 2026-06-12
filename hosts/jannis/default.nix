@@ -21,4 +21,26 @@
       vulkan-loader
     ];
   };
+
+  services.gnome.gnome-remote-desktop.enable = true;
+
+  systemd.services.gnome-remote-desktop = {
+    wantedBy = [ "graphical.target" ];
+  };
+
+  # SSH
+  services.openssh = {
+    enable = true;
+    settings = {
+      PermitRootLogin = "no";
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+    };
+  };
+
+  users.users.jannis.openssh.authorizedKeys.keyFiles = [
+    ../secret/ssh-authorized-keys
+  ];
+
+  networking.firewall.allowedTCPPorts = [ 3389 22 ];
 }

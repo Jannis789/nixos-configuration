@@ -103,4 +103,10 @@
       "/home/jannis/Dokumente/nixos-configuration/secrets/hermes-env"
     ];
   };
+
+  # .env Datei bei jedem Boot auf korrekte Permissions setzen
+  # (Activation-Script setzt es, aber läuft nur bei nixos-rebuild switch)
+  systemd.tmpfiles.rules = [
+    "f /var/lib/hermes/.hermes/.env 0640 hermes hermes - -"
+  ];
 }
