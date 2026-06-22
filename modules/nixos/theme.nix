@@ -45,10 +45,6 @@ let
   };
 
   iconRegistry = {
-    hatter = {
-      name = "Hatter";
-      pkg = pkgs.hatter-icon-theme;
-    };
     papirus = {
       name = "Papirus-Dark";
       pkg = pkgs.papirus-icon-theme;
@@ -150,14 +146,13 @@ in
             "frappe"
             "macchiato"
             "black"
+            "blackness"
             "float"
-            "outline"
             "macos"
           ]
         );
         default = [
           "macos"
-          "outline"
         ];
       };
     };
@@ -167,7 +162,6 @@ in
         type = lib.types.enum [
           "catppuccin"
           "graphite"
-          "colloid"
           "orchis"
           "juno"
           "rewaita"
@@ -181,7 +175,6 @@ in
     icons = {
       name = lib.mkOption {
         type = lib.types.enum [
-          "hatter"
           "papirus"
           "kora"
           "adwaita"
@@ -250,8 +243,6 @@ in
           "Catppuccin-GTK-Theme-${capitalize cfg.catppuccin.accent}-${capitalize cfg.catppuccin.shade}"
         else if cfg.gtk.name == "graphite" then
           "Graphite-Dark"
-        else if cfg.gtk.name == "colloid" then
-          "Colloid-Dark"
         else if cfg.gtk.name == "orchis" then
           "Orchis-Dark"
         else if cfg.gtk.name == "juno" then
@@ -267,8 +258,6 @@ in
           pkgs.catppuccin-gtk
         else if cfg.gtk.name == "graphite" then
           pkgs.graphite-gtk-theme
-        else if cfg.gtk.name == "colloid" then
-          pkgs.colloid-gtk-theme
         else if cfg.gtk.name == "orchis" then
           pkgs.orchis-theme
         else if cfg.gtk.name == "juno" then

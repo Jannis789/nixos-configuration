@@ -76,6 +76,7 @@ in
         "code.desktop"
         "org.gnome.Nautilus.desktop"
         "steam.desktop"
+        "hermes-desktop.desktop"
       ];
     };
 
@@ -97,4 +98,22 @@ in
   home.packages = [
     inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
+
+  # Hermes-Desktop User-Level XDG-Integration: das Upstream-Paket aus
+  # inputs.hermes-agent.packages.<system>.desktop liefert kein .desktop-File
+  # und keinen Icon-Theme-Treffer. Wir packen es hier NICHT in einen runCommand-
+  # Wrap, sondern legen nur einen User-Level .desktop-Eintrag in
+  # ~/.local/share/applications/ an und nutzen das Upstream-Icon direkt.
+  # Damit ist die Aenderung vollstaendig zrueckrollbar und greift nicht in
+  # die Upstream-Derivation ein.
+  xdg.desktopEntries.hermes-desktop = {
+    name = "Hermes Agent";
+    genericName = "AI Assistant";
+    comment = "Native Electron desktop shell for Hermes Agent";
+    exec = "${pkgs.hermes-desktop}/bin/hermes-desktop %U";
+    icon = "${pkgs.hermes-desktop}/share/hermes-desktop/dist/hermes.png";
+    categories = [ "Utility" ];
+    terminal = false;
+    type = "Application";
+  };
 }

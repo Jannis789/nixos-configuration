@@ -32,7 +32,7 @@
 }:
 
 let
-  version = "0.12.1.1";
+  version = "0.13.4.1";
   runtimeLibs = [
     glib
     nspr
@@ -65,7 +65,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/imputnet/helium-linux/releases/download/${version}/helium-${version}-x86_64_linux.tar.xz";
-    hash = "sha256-LQTffKZUf5HMm/Dgy8UlbLtGldz3ptQm2qPx4fXzY54=";
+    hash = "sha256-rt//wcAnH7n1ol/PfP37axHpIUKrWXSQN6SisGtE7hw=";
   };
 
   sourceRoot = ".";
