@@ -4,14 +4,25 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    secrets = {
-      # `path:`-URL statt `git+file`: Nix kopiert das lokale Verzeichnis
-      # 1:1 in den Store, OHNE den Git-Tracker des Submoduls zu konsultieren.
-      # Damit sind untracked Files wie `hermes-api.nix` fuer die Flake-Eval
-      # sichtbar — ohne dass plaintext-Kennwoerter in eine Git-History
-      # wandern muessten. (Vorher: `git+file:./secrets?ref=main` warf
-      # `error: Path 'secrets/hermes-api.nix' is not tracked by Git`.)
-      url = "path:./secrets";
+    "private-keys" = {
+      # Indirektion: hermes-api.nix liegt physisch im `secrets/`-
+      # Submodul (single-source-of-truth), aber
+      # `private-keys/hermes-api.nix` ist eine HARDCOPY (kein symlink)
+      # in einem NON-SUBMODULE-Verzeichnis hier im parent-Repo.
+      # Begruendung: Nix's `path:`-Fetcher treated Verzeichnisse MIT
+      # `.git`-Marker (egal ob submodule oder plain repo) per
+      # git-archive-Semantik — er kopiert NUR HEAD-tracked Files in
+      # den Store. Working-tree-untracked Files wie `secrets/hermes-
+      # api.nix` waeren ueber `path:./secrets` daher nicht erreichbar
+      # (Empirik: build fail mit `path '...-source/secrets/hermes-
+      # api.nix' does not exist`).
+      # Im `private-keys/`-Verzeichnis ist KEIN `.git`-Marker →
+      # plain filesystem copy → hermes-api.nix ist im Store verfuegbar.
+      # plaintext-Keys bleiben OUT OF GIT: `private-keys/` ist in
+      # .gitignore, Source-of-Truth im privaten secrets-Submodul.
+      # TODO spaeter: sops-nix/agenix → kein plaintext im Nix-Store,
+      # decrypt-on-boot nach /run/secrets/.
+      url = "path:./private-keys";
       flake = false;
     };
 

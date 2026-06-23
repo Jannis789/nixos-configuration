@@ -382,6 +382,19 @@
         "type": "github"
       }
     },
+    "private-keys": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782248009,
+        "narHash": "sha256-zSBHC0fg6f0u40BentGj/brvgnuzEPWyQbC+aaXjiyg=",
+        "path": "/home/jannis/Dokumente/nixos-configuration/private-keys",
+        "type": "path"
+      },
+      "original": {
+        "path": "./private-keys",
+        "type": "path"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -478,7 +491,7 @@
         "nix-flatpak": "nix-flatpak",
         "nixpkgs": "nixpkgs_3",
         "nixvim": "nixvim",
-        "secrets": "secrets_2"
+        "private-keys": "private-keys"
       }
     },
     "secrets": {
@@ -497,18 +510,6 @@
         "type": "git",
         "url": "ssh://git@github.com/Jannis789/secrets.git"
       }
-    },
-    "secrets_2": {
-      "flake": false,
-      "locked": {
-        "path": "./secrets",
-        "type": "path"
-      },
-      "original": {
-        "path": "./secrets",
-        "type": "path"
-      },
-      "parent": []
     },
     "systems": {
       "locked": {

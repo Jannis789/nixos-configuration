@@ -15,7 +15,7 @@ let
   # dort unter `services.hermes-agent.environment` (Upstream-Option,
   # die der NixOS-Aktivator in $HERMES_HOME/.env seedet; KEIN
   # `systemd.services.X.environment`, das waere die falsche Schicht).
-  hermesApi = import (inputs.secrets + "/hermes-api.nix");
+  hermesApi = import (inputs."private-keys" + "/hermes-api.nix");
 in
 {
   home.username = userName;

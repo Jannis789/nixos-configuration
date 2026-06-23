@@ -25,7 +25,7 @@ let
   # `builtins.path` aus einem Flake-Kontext heraus denselben
   # Git-Tracker triggert wie plain `import`. `path:`-Inputs sind
   # die offizielle Nix-Workaround dafuer.
-  apiKeys = import (inputs.secrets + "/hermes-api.nix");
+  apiKeys = import (inputs."private-keys" + "/hermes-api.nix");
 
   # Flatten per-provider Modellliste zu namespaced model.entries.
   # Key shape: "<provider-id>/<model-name>"; collision-safe weil
