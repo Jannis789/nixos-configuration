@@ -1,0 +1,7 @@
+# Nix build artifacts (symlinks created by `nix build`, `nix develop`, etc.)
+/result
+/result-*
+
+# Local flake/dev scratch
+.direnv/
+.envrc.local

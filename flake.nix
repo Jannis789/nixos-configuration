@@ -5,7 +5,13 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     secrets = {
-      url = "git+file:./secrets?ref=main";
+      # `path:`-URL statt `git+file`: Nix kopiert das lokale Verzeichnis
+      # 1:1 in den Store, OHNE den Git-Tracker des Submoduls zu konsultieren.
+      # Damit sind untracked Files wie `hermes-api.nix` fuer die Flake-Eval
+      # sichtbar — ohne dass plaintext-Kennwoerter in eine Git-History
+      # wandern muessten. (Vorher: `git+file:./secrets?ref=main` warf
+      # `error: Path 'secrets/hermes-api.nix' is not tracked by Git`.)
+      url = "path:./secrets";
       flake = false;
     };
 

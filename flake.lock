@@ -501,19 +501,14 @@
     "secrets_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1781285352,
-        "narHash": "sha256-/ZD9ZVZzbNoI9/TUvUfU+ynxa2EOI8bFy/nE6sSqoTQ=",
-        "ref": "main",
-        "rev": "7fd3111383dd88d4080b61d7b14f677f58959fad",
-        "revCount": 4,
-        "type": "git",
-        "url": "file:./secrets"
+        "path": "./secrets",
+        "type": "path"
       },
       "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "file:./secrets"
-      }
+        "path": "./secrets",
+        "type": "path"
+      },
+      "parent": []
     },
     "systems": {
       "locked": {
