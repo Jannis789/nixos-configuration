@@ -60,14 +60,22 @@ let
         "glm-4.5-flash"
       ];
     }
-    {
+  ];
+
+  # ── providers (Section 3 im Picker) — openmodell ─────────────────────
+  # resolve_user_provider() liest key_env und transport korrekt.
+  # Braucht transport = "anthropic_messages" weil openmodel.ai nur
+  # Anthropic Messages spricht, kein OpenAI chat/completions.
+  openmodellProvider = {
+    openmodell = {
       name = "openmodell";
       base_url = "https://api.openmodel.ai/v1";
       key_env = "CUSTOM_OPENMODEL_KEY";
+      transport = "anthropic_messages";
       discover_models = false;
       models = [ "deepseek-v4-flash" ];
-    }
-  ];
+    };
+  };
 
   # ── model.models (Routing-Tabelle) ────────────────────────────────────
   # Flat: model-Name → Routing. Openai-compat für custom_providers,
@@ -132,8 +140,11 @@ in
         models = modelRouting;
       };
 
-      # ── Custom Provider (ollama, zai, openmodel) ──────────────────────
+      # ── Custom Provider (ollama, zai) — openai-compat ─────────────────
       custom_providers = myProviders;
+
+      # ── User Provider (openmodell) — anthropic-messages compat ───────
+      providers = openmodellProvider;
 
       # ── model_catalog — nous-Restriktion ──────────────────────────────
       # Nur der `nous`-Provider bekommt ein eigenes Catalog-JSON mit den
