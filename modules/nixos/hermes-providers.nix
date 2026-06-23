@@ -24,7 +24,7 @@
 #   nous     → openrouter/owl-alpha, deepseek/deepseek-v4-flash,
 #              qwen/qwen3.7-plus, minimax/minimax-m3, stepfun/step-3.7-flash:free,
 #              google/gemma-4-31b-it, tencent/hy3-preview
-#   openmodel → deepseek-v4-flash
+#   openmodel → deepseek-v4-flash (anthropic-compat, /v1/messages)
 #
 {
   # ── ollama (lokal, OpenAI-compat Layer auf Port 11434) ────────────────
@@ -67,11 +67,11 @@
     ];
   };
 
-  # ── openmodel.ai (OpenAI-compat auf https://api.openmodel.ai/v1) ──────
+  # ── openmodel.ai (Anthropic-compat /v1/messages) ──────────────────────
   # Kollidiert im Modellnamen "deepseek-v4-flash" mit nous — wird im
   # hermes-agent.nix-flatten durch Namespace-Prefix disambiguiert.
   openmodel = {
-    provider = "openai";
+    provider = "anthropic";
     base_url = "https://api.openmodel.ai/v1";
     api_key_env = "OPENMODEL_API_KEY";
     models = [ "deepseek-v4-flash" ];

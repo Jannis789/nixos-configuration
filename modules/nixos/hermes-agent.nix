@@ -14,7 +14,7 @@
 #   NOUS_API_KEY       — nativer nous-Plugin (built-in, model_catalog
 #                        restricted).
 #   CUSTOM_ZAI_KEY     — openai-compat routing zu api.z.ai.
-#   CUSTOM_OPENMODEL_KEY — openai-compat routing zu api.openmodel.ai.
+#   CUSTOM_OPENMODEL_KEY — anthropic-compat routing zu api.openmodel.ai.
 #   KEIN ZAI_API_KEY / OPENMODEL_API_KEY / OPENAI_API_KEY —
 #     damit Section 1/2 keine built-in zai/openai Einträge zeigt.
 { config, lib, pkgs, inputs, ... }:
@@ -110,9 +110,9 @@ let
     "google/gemma-4-31b-it" = { provider = "nous"; };
     "tencent/hy3-preview" = { provider = "nous"; };
 
-    # openmodel.ai (openai-compat)
+    # openmodel.ai (anthropic-compat — /v1/messages, nicht /v1/chat/completions)
     "deepseek-v4-flash" = {
-      provider = "openai";
+      provider = "anthropic";
       base_url = "https://api.openmodel.ai/v1";
       api_key_env = "CUSTOM_OPENMODEL_KEY";
     };
