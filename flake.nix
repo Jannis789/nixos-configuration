@@ -4,25 +4,22 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    "private-keys" = {
-      # Indirektion: hermes-api.nix liegt physisch im `secrets/`-
-      # Submodul (single-source-of-truth), aber
-      # `private-keys/hermes-api.nix` ist eine HARDCOPY (kein symlink)
-      # in einem NON-SUBMODULE-Verzeichnis hier im parent-Repo.
-      # Begruendung: Nix's `path:`-Fetcher treated Verzeichnisse MIT
-      # `.git`-Marker (egal ob submodule oder plain repo) per
-      # git-archive-Semantik — er kopiert NUR HEAD-tracked Files in
-      # den Store. Working-tree-untracked Files wie `secrets/hermes-
-      # api.nix` waeren ueber `path:./secrets` daher nicht erreichbar
-      # (Empirik: build fail mit `path '...-source/secrets/hermes-
-      # api.nix' does not exist`).
-      # Im `private-keys/`-Verzeichnis ist KEIN `.git`-Marker →
-      # plain filesystem copy → hermes-api.nix ist im Store verfuegbar.
-      # plaintext-Keys bleiben OUT OF GIT: `private-keys/` ist in
-      # .gitignore, Source-of-Truth im privaten secrets-Submodul.
+    secrets = {
+      # Privates Git-Submodul (`secrets/`, gitignored im Host-Repo).
+      # `git+file:` fetcht das Submodul als eigenes Git-Repo und kopiert
+      # dessen HEAD-getrackte Files (hermes-api.nix, ssh-authorized-keys,
+      # nvim-env) in den Store. WICHTIG: jede neue Secret-Datei muss im
+      # Submodul committet werden, sonst ist sie fuer die Flake-Eval
+      # unsichtbar (git-archive-Semantik).
+      # `path:./secrets` funktioniert NICHT: der path:-Fetcher loest
+      # relativ zum Parent-Flake-Store-Snapshot auf, und dort ist das
+      # Submodul nur ein leerer gitlink (Inhalt nicht expandiert) →
+      # `hermes-api.nix does not exist`.
+      # plaintext-Keys bleiben OUT OF GIT des Host-Repos: Source-of-
+      # Truth ist ausschliesslich das private secrets-Submodul.
       # TODO spaeter: sops-nix/agenix → kein plaintext im Nix-Store,
       # decrypt-on-boot nach /run/secrets/.
-      url = "path:./private-keys";
+      url = "git+file:./secrets";
       flake = false;
     };
 

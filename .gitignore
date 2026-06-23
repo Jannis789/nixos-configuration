@@ -5,9 +5,3 @@
 # Local flake/dev scratch
 .direnv/
 .envrc.local
-
-# Hardcopy indirection for hermes-api.nix (source-of-truth lives in the
-# secrets/ submodule, this is a non-submodule sibling so Nix's path:-
-# Fetcher can do plain filesystem copy into the store without consulting
-# any git-tracker — which would otherwise drop untracked files).
-private-keys/

@@ -16,16 +16,12 @@
 
 let
   catalog = import ./hermes-providers.nix;
-  # `inputs.secrets` ist ein `path:`-Flake-Input (siehe flake.nix).
-  # Nix kopiert das Verzeichnis 1:1 in den Store, OHNE den
-  # Git-Tracker des Submodul-Repos zu konsultieren. Damit ist
-  # die untracked `hermes-api.nix` fuer die Flake-Eval sichtbar —
-  # KEIN plaintext-Key muss in eine Git-History wandern.
-  # Vorheriger Versuch mit `builtins.path` ist gescheitert, weil
-  # `builtins.path` aus einem Flake-Kontext heraus denselben
-  # Git-Tracker triggert wie plain `import`. `path:`-Inputs sind
-  # die offizielle Nix-Workaround dafuer.
-  apiKeys = import (inputs."private-keys" + "/hermes-api.nix");
+  # `inputs.secrets` ist ein `path:`-Flake-Input auf das private
+  # secrets-Submodul (siehe flake.nix). Der `path:`-Fetcher kopiert
+  # die im Submodul committeten Files in den Store — `hermes-api.nix`
+  # ist dort getrackt, daher fuer die Flake-Eval sichtbar. KEIN
+  # plaintext-Key wandert in die Host-Repo-Git-History.
+  apiKeys = import (inputs.secrets + "/hermes-api.nix");
 
   # Flatten per-provider Modellliste zu namespaced model.entries.
   # Key shape: "<provider-id>/<model-name>"; collision-safe weil
