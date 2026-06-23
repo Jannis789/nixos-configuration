@@ -131,6 +131,7 @@ in
   services.hermes-agent = {
     enable = true;
     addToSystemPackages = true;
+    extraDependencyGroups = [ "anthropic" ];
 
     settings = {
       # ── Modell ────────────────────────────────────────────────────────
