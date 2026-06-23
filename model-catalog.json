@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-23T22:00:00Z",
+  "metadata": {},
+  "providers": {
+    "nous": {
+      "metadata": {},
+      "models": [
+        {"id": "openrouter/owl-alpha"},
+        {"id": "deepseek/deepseek-v4-flash"},
+        {"id": "qwen/qwen3.7-plus"},
+        {"id": "minimax/minimax-m3"},
+        {"id": "stepfun/step-3.7-flash:free"},
+        {"id": "google/gemma-4-31b-it"},
+        {"id": "tencent/hy3-preview"}
+      ]
+    }
+  }
+}

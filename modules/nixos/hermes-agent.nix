@@ -1,41 +1,123 @@
 # modules/nixos/hermes-agent.nix
 #
-# Hermes-Agent NixOS Service. Der Service-Unit (`hermes-agent.service`)
-# bekommt seine Env-Vars (API-Keys) direkt ueber
-# `systemd.services.hermes-agent.environment` aus
-# `secrets/hermes-api.nix` injiziert — kein .env-Zaunpfahl mehr.
+# Hermes-Agent NixOS Service.
 #
-# Das Modell-Catalog kommt aus `modules/nixos/hermes-providers.nix`,
-# wird hier mittels lib.concatMapAttrs + lib.listToAttrs zu
-# `settings.model.models.<namespace>` geflattet. Schema-Convention:
-#   models.\"<provider-id>/<model-name>\" = { provider, base_url?, api_key_env }
+# Provider-Strategie (hybrid):
+#   ollama, zai, openmodel: custom_providers (discover_models: false) →
+#     Picker zeigt exakt die gelisteten Modelle.
+#   nous: native plugin + model_catalog Override →
+#     Built-in nous zeigt NUR die Modelle aus model-catalog.json.
+#     Keine endpoint-Deduplication in Section 4, weil wir keinen
+#     custom_provider für nous definieren.
 #
-# Auxiliary-Block referenziert die Modelle mit der exakten Schreibweise
-# aus dem Katalog.
+# API-Keys:
+#   NOUS_API_KEY       — nativer nous-Plugin (built-in, model_catalog
+#                        restricted).
+#   CUSTOM_ZAI_KEY     — openai-compat routing zu api.z.ai.
+#   CUSTOM_OPENMODEL_KEY — openai-compat routing zu api.openmodel.ai.
+#   KEIN ZAI_API_KEY / OPENMODEL_API_KEY / OPENAI_API_KEY —
+#     damit Section 1/2 keine built-in zai/openai Einträge zeigt.
 { config, lib, pkgs, inputs, ... }:
 
 let
-  catalog = import ./hermes-providers.nix;
-  # `inputs.secrets` ist ein `path:`-Flake-Input auf das private
-  # secrets-Submodul (siehe flake.nix). Der `path:`-Fetcher kopiert
-  # die im Submodul committeten Files in den Store — `hermes-api.nix`
-  # ist dort getrackt, daher fuer die Flake-Eval sichtbar. KEIN
-  # plaintext-Key wandert in die Host-Repo-Git-History.
+  # `inputs.secrets` ist ein `git+file:`-Flake-Input auf das private
+  # secrets-Submodul (siehe flake.nix).
   apiKeys = import (inputs.secrets + "/hermes-api.nix");
 
-  # Flatten per-provider Modellliste zu namespaced model.entries.
-  # Key shape: "<provider-id>/<model-name>"; collision-safe weil
-  # openmodel und nous beide "deepseek-v4-flash" exposen.
-  modelsAttrs = lib.concatMapAttrs
-    (providerId: cfg:
-      lib.listToAttrs (map (modelName:
-        lib.nameValuePair "${providerId}/${modelName}" (
-          { provider = cfg.provider; api_key_env = cfg.api_key_env; }
-          // lib.optionalAttrs (cfg ? base_url) { base_url = cfg.base_url; }
-        )
-      ) cfg.models)
-    )
-    catalog;
+  # ── Custom Env-Var-Namen (für custom_providers) ───────────────────────
+  # Werden statt der nativen Plugin-Vars ins Environment gelegt, damit
+  # Section 1/2 keine Credentials für zai/openai sieht.
+  customKeys = {
+    CUSTOM_ZAI_KEY      = apiKeys.ZAI_API_KEY;
+    CUSTOM_OPENMODEL_KEY = apiKeys.OPENMODEL_API_KEY;
+  };
+
+  # API_SERVER_KEY bleibt nativ (kein built-in Provider-Check dafuer).
+  serverKey = { API_SERVER_KEY = apiKeys.API_SERVER_KEY; };
+
+  # NOUS_API_KEY wird natv gesetzt — built-in nous + model_catalog
+  # Override ersetzen den custom_provider für nous.
+  nousKey = { NOUS_API_KEY = apiKeys.NOUS_API_KEY; };
+
+  # ── custom_providers (Section 4 im Picker) — NUR für openai-compat ───
+  # nous fehlt bewusst: das läuft über built-in + model_catalog.
+  myProviders = [
+    {
+      name = "ollama-local";
+      base_url = "http://localhost:11434/v1";
+      discover_models = false;
+      models = [ "vibethinker" ];
+    }
+    {
+      name = "zai-restricted";
+      base_url = "https://api.z.ai/v1";
+      key_env = "CUSTOM_ZAI_KEY";
+      discover_models = false;
+      models = [
+        "glm-5.2"
+        "glm-5.1"
+        "glm-5v-turbo"
+        "glm-4.5-flash"
+      ];
+    }
+    {
+      name = "openmodell";
+      base_url = "https://api.openmodel.ai/v1";
+      key_env = "CUSTOM_OPENMODEL_KEY";
+      discover_models = false;
+      models = [ "deepseek-v4-flash" ];
+    }
+  ];
+
+  # ── model.models (Routing-Tabelle) ────────────────────────────────────
+  # Flat: model-Name → Routing. Openai-compat für custom_providers,
+  # natives Plugin für nous.
+  modelRouting = {
+    # ollama (openai-compat)
+    vibethinker = {
+      provider = "openai";
+      base_url = "http://localhost:11434/v1";
+    };
+
+    # z.ai (openai-compat)
+    "glm-5.2" = {
+      provider = "openai";
+      base_url = "https://api.z.ai/v1";
+      api_key_env = "CUSTOM_ZAI_KEY";
+    };
+    "glm-5.1" = {
+      provider = "openai";
+      base_url = "https://api.z.ai/v1";
+      api_key_env = "CUSTOM_ZAI_KEY";
+    };
+    "glm-5v-turbo" = {
+      provider = "openai";
+      base_url = "https://api.z.ai/v1";
+      api_key_env = "CUSTOM_ZAI_KEY";
+    };
+    "glm-4.5-flash" = {
+      provider = "openai";
+      base_url = "https://api.z.ai/v1";
+      api_key_env = "CUSTOM_ZAI_KEY";
+    };
+
+    # Nous (natives Plugin — model_catalog restricted)
+    "openrouter/owl-alpha" = { provider = "nous"; };
+    "deepseek/deepseek-v4-flash" = { provider = "nous"; };
+    "qwen/qwen3.7-plus" = { provider = "nous"; };
+    "minimax/minimax-m3" = { provider = "nous"; };
+    "stepfun/step-3.7-flash:free" = { provider = "nous"; };
+    "google/gemma-4-31b-it" = { provider = "nous"; };
+    "tencent/hy3-preview" = { provider = "nous"; };
+
+    # openmodel.ai (openai-compat)
+    "deepseek-v4-flash" = {
+      provider = "openai";
+      base_url = "https://api.openmodel.ai/v1";
+      api_key_env = "CUSTOM_OPENMODEL_KEY";
+    };
+  };
+
 in
 {
   services.hermes-agent = {
@@ -44,43 +126,39 @@ in
 
     settings = {
       # ── Modell ────────────────────────────────────────────────────────
-      # `default` bleibt deepseek/deepseek-v4-flash (Nous/OpenRouter-Katalog).
-      # `provider  = "auto"` haelt das Desktop-Dropdown offen fuer alle
-      # Provider, der model.models-Block erweitert den Katalog nur —
-      # OHNE ihn zu ersetzen oder einzelne Provider zu unterdruecken.
-      # Per-model-Eintraege sind daher rein additiv.
       model = {
         default = "deepseek/deepseek-v4-flash";
         provider = "auto";
-        models = modelsAttrs;
+        models = modelRouting;
+      };
+
+      # ── Custom Provider (ollama, zai, openmodel) ──────────────────────
+      custom_providers = myProviders;
+
+      # ── model_catalog — nous-Restriktion ──────────────────────────────
+      # Nur der `nous`-Provider bekommt ein eigenes Catalog-JSON mit den
+      # gewünschten Modellen. openrouter bleibt beim Standard.
+      model_catalog = {
+        enabled = true;
+        ttl_hours = 24;
+        providers.nous.url = "https://raw.githubusercontent.com/Jannis789/nixos-configuration/master/model-catalog.json";
       };
 
       # ── Auxiliary Tasks ───────────────────────────────────────────────
-      # Provider/Modell-Referenzen nutzen die exakte Schreibweise aus
-      # modules/nixos/hermes-providers.nix (zai.<liste>, nous.<liste>).
+      # zai-Modelle: openai-compat (custom_providers Key)
+      # nous-Modelle: native plugin
       auxiliary = {
-        # Vision: braucht Multimodal — glm-5v-turbo.
-        vision      = { provider = "zai"; model = "glm-5v-turbo";   timeout = 120; };
-        # Web-Extraktion: gutes Textverstehen, langer Timeout — glm-5.2.
-        web_extract = { provider = "zai"; model = "glm-5.2";        timeout = 360; };
-        # Context-Kompression: schnell genug — glm-4.5-flash.
-        compression = { provider = "zai"; model = "glm-4.5-flash";  timeout = 120; };
-        # Skill-Hub: lightweight, viele Calls — glm-4.5-flash.
-        skills_hub  = { provider = "zai"; model = "glm-4.5-flash";  timeout = 30;  };
-        # Command-Approval: Sicherheit, braucht Qualitaet — glm-5.2.
-        approval    = { provider = "zai"; model = "glm-5.2";        timeout = 30;  };
-        # MCP-Server-Op: lightweight — glm-4.5-flash.
-        mcp         = { provider = "zai"; model = "glm-4.5-flash";  timeout = 30;  };
-        # Session-Titel: gemma-4-31b-it ist im nous-Katalog und billig.
-        title_generation = { provider = "nous"; model = "google/gemma-4-31b-it"; timeout = 30;  };
-        # Triage: braucht Reasoning — glm-5.1.
-        triage_specifier  = { provider = "zai";  model = "glm-5.1";       timeout = 120; };
-        # Kanban-Task-Zerlegung: Reasoning — glm-5.1.
-        kanban_decomposer = { provider = "zai";  model = "glm-5.1";       timeout = 180; };
-        # Skill-Lifecycle Curator: lang, billig — glm-4.5-flash.
-        curator           = { provider = "zai";  model = "glm-4.5-flash"; timeout = 600; };
-        # Profil-Beschreibungen: schnell, einfach — glm-4.5-flash.
-        profile_describer = { provider = "zai";  model = "glm-4.5-flash"; timeout = 60;  };
+        vision             = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5v-turbo";          timeout = 120; };
+        web_extract        = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.2";               timeout = 360; };
+        compression        = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 120; };
+        skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 30;  };
+        approval           = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.2";               timeout = 30;  };
+        mcp                = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 30;  };
+        title_generation   = { provider = "nous";                                                model = "google/gemma-4-31b-it"; timeout = 30;  };
+        triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.1";               timeout = 120; };
+        kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.1";               timeout = 180; };
+        curator            = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 600; };
+        profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 60;  };
       };
 
       # ── Compression defaults ──────────────────────────────────────────
@@ -92,13 +170,8 @@ in
     };
   };
 
-  # API-Keys ueber die Upstream-Option `services.hermes-agent.environment`
-  # (NICHT `systemd.services.X.environment`!). Upstream nix/nixosModules.nix
-  # seeds diese Werte bei Aktivierung in `$HERMES_HOME/.env`, und
-  # `hermes-agent` laedt sie zur Laufzeit via `load_hermes_dotenv()` — NICHT
-  # ueber `Environment=` systemd-direktive. Caveat: landet im /nix/store
-  # (mode 0444 auf single-user laptops offfentlich lesbar). Fuer sops-nix
-  # spaeter ueber `services.hermes-agent.environmentFiles` migrierbar;
-  # bis dahin akzeptieren wir das Risiko.
-  services.hermes-agent.environment = apiKeys;
+  # API-Keys: NOUS_API_KEY nativ (built-in nous), CUSTOM_* für
+  # custom_providers (zai, openmodel). Kein ZAI_API_KEY / OPENMODEL_API_KEY
+  # / OPENAI_API_KEY — damit built-in Provider-Checks nicht matchen.
+  services.hermes-agent.environment = nousKey // customKeys // serverKey;
 }

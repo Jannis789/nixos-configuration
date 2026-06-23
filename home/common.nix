@@ -9,8 +9,7 @@
 
 let
   userName = osConfig.system.userName;
-  # Hermes-API-Keys aus dem secrets-Flake-Input (`path:`-URL, kein
-  # Git-Tracker involviert — siehe flake.nix fuer die Begruendung).
+  # Hermes-API-Keys aus dem secrets-Flake-Input (siehe flake.nix).
   # Wird in modules/nixos/hermes-agent.nix ebenfalls importiert —
   # dort unter `services.hermes-agent.environment` (Upstream-Option,
   # die der NixOS-Aktivator in $HERMES_HOME/.env seedet; KEIN
@@ -26,13 +25,14 @@ in
   # hermes-desktop Electron-App (laeuft NICHT unter systemd, sondern
   # als User-Session-Prozess via gnome-session) dieselben Provider
   # sieht wie der NixOS-gateway.
+  # Nutzt CUSTOM_*-Namen (keine nativen Plugin-Vars), damit
+  # list_authenticated_providers() Section 1/2 nicht matched.
   # API_SERVER_KEY bleibt absichtlich draussen: das Token authentifiziert
   # nur den gateway auf 127.0.0.1:8642, nicht die Desktop-App.
   home.sessionVariables = {
-    ZAI_API_KEY       = hermesApi.ZAI_API_KEY;
-    NOUS_API_KEY      = hermesApi.NOUS_API_KEY;
-    OPENAI_API_KEY    = hermesApi.OPENAI_API_KEY;
-    OPENMODEL_API_KEY = hermesApi.OPENMODEL_API_KEY;
+    CUSTOM_ZAI_KEY       = hermesApi.ZAI_API_KEY;
+    CUSTOM_OPENMODEL_KEY = hermesApi.OPENMODEL_API_KEY;
+    NOUS_API_KEY         = hermesApi.NOUS_API_KEY;
   };
 
   imports = [
