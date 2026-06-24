@@ -99,7 +99,7 @@ let
     skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
     approval           = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.2";               timeout = 30;  };
     mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
-    title_generation   = { provider = "nous";                                              model = "google/gemma-4-31b-it"; timeout = 30;  };
+    title_generation   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it"; timeout = 30; };
     triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.1";               timeout = 120; };
     kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.1";               timeout = 180; };
     curator            = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 600; };
