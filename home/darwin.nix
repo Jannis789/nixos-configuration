@@ -8,11 +8,9 @@
 }:
 
 let
-  # ── Secrets ──────────────────────────────────────────────────────────────
-  # Gleiche API-Keys wie auf NixOS, aus dem privaten secrets-Submodul.
   apiKeys = import (inputs.secrets + "/hermes-api.nix");
 
-  # ── Custom Env-Var-Namen ─────────────────────────────────────────────────
+  # CUSTOM_* statt nativer Env-Var-Namen, damit built-in Provider-Checks (zai, openai) nicht matchen.
   # Siehe modules/nixos/hermes-agent.nix für die Provider-Strategie.
   customKeys = {
     CUSTOM_ZAI_KEY       = apiKeys.ZAI_API_KEY;
@@ -21,7 +19,6 @@ let
   serverKey = { API_SERVER_KEY = apiKeys.API_SERVER_KEY; };
   nousKey   = { NOUS_API_KEY = apiKeys.NOUS_API_KEY; };
 
-  # ── Provider-Konfiguration ───────────────────────────────────────────────
   myProviders = [
     {
       name = "ollama-local";
@@ -90,7 +87,6 @@ let
     };
   };
 
-  # ── Hermes config.yaml als Nix-Attrset → YAML ────────────────────────────
   yamlFormat = pkgs.formats.yaml { };
 
   hermesConfig = {
@@ -133,50 +129,21 @@ in
   home.homeDirectory = "/Users/jrustige";
   home.stateVersion = "25.05";
 
-  # ── Session-Variablen für API-Keys ──────────────────────────────────────
-  # Gleiche CUSTOM_*-Namen wie auf NixOS, damit built-in Provider-Checks
-  # Section 1/2 nicht matchen.
   home.sessionVariables = nousKey // customKeys // serverKey;
+  home.file."./.hermes/config.yaml".source = hermesConfigYAML;
 
-  # ── Hermes config.yaml ──────────────────────────────────────────────────
-  # Überschreibt die manuell installierte Config. Nach Deinstallation
-  # der manuellen Hermes-Version via `hermes uninstall` bleibt die Config
-  # erhalten.
-  home.file.".hermes/config.yaml".source = hermesConfigYAML;
-
-  # ── Packages ─────────────────────────────────────────────────────────────
   home.packages = with pkgs; [
-    # Nixvim aus dem separaten Flake
     inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
-
-    # Nützliche CLI-Tools
-    btop
-    fastfetch
-    git
-    wget
-    starship
-    atuin
-    zoxide
-    nixfmt
-    openssh
-    unzip
-    tree
-    fzf
-    sqlite
-    python3
-    nodejs
-    ripgrep
-    fd
+    btop fastfetch git wget starship atuin zoxide nixfmt
+    openssh unzip tree fzf sqlite python3 nodejs ripgrep fd
   ];
 
-  # ── Programme ────────────────────────────────────────────────────────────
   programs = {
     home-manager.enable = true;
 
     bash = {
       enable = true;
       bashrcExtra = ''
-        # macOS PATH-Anpassung
         export PATH="/opt/homebrew/bin:$PATH"
         export PATH="$HOME/.local/bin:$PATH"
       '';
@@ -185,20 +152,4 @@ in
     starship.enable = true;
     atuin.enable = true;
   };
-
-  # ── Desktop-Eintrag für Hermes Desktop ──────────────────────────────────
-  # Wird auf Darwin nicht unterstützt (xdg.desktopEntries ist Linux-only).
-  # Stattdessen: macOS-Nutzer starten hermes-desktop manuell oder via
-  # home-manager's `home.activation` oder LaunchAgent. Für später.
-  #
-  # xdg.desktopEntries.hermes-desktop = {
-  #   name = "Hermes Agent";
-  #   genericName = "AI Assistant";
-  #   comment = "Native Electron desktop shell for Hermes Agent";
-  #   exec = "${hermesPkgs.desktop}/bin/hermes-desktop %U";
-  #   icon = "${hermesPkgs.desktop}/share/hermes-desktop/dist/hermes.png";
-  #   categories = [ "Utility" ];
-  #   terminal = false;
-  #   type = "Application";
-  # };
 }
