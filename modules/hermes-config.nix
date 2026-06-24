@@ -107,7 +107,7 @@ let
   };
 
   # model_catalog — nous-Restriktion auf eigenes JSON
-  modelCatalog = {
+  model_catalog = {
     enabled = true;
     ttl_hours = 24;
     providers.nous.url = "https://raw.githubusercontent.com/Jannis789/nixos-configuration/master/model-catalog.json";
@@ -129,7 +129,7 @@ let
     };
     custom_providers = customProviders;
     providers = userProviders;
-    inherit modelCatalog auxiliary compression;
+    inherit model_catalog auxiliary compression;
   };
 in
 {
