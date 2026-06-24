@@ -41,7 +41,7 @@ let
     }
     {
       name = "Z.AI Selection";
-      base_url = "https://api.z.ai/api/paas/v4";
+      base_url = "https://api.z.ai/api/coding/paas/v4";
       key_env = "CUSTOM_ZAI_KEY";
       discover_models = false;
       models = [ "glm-5.2" "glm-5.1" "glm-5v-turbo" "glm-4.5-air" ];
@@ -69,10 +69,10 @@ let
     };
 
     # z.ai (openai-compat — /api/paas/v4)
-    "glm-5.2"       = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
-    "glm-5.1"       = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
-    "glm-5v-turbo"  = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
-    "glm-4.5-air"   = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
+    "glm-5.2"       = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
+    "glm-5.1"       = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
+    "glm-5v-turbo"  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
+    "glm-4.5-air"   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
 
     # Nous (natives Plugin — model_catalog restricted)
     "openrouter/owl-alpha"         = { provider = "nous"; };
@@ -93,17 +93,17 @@ let
 
   # auxiliary — welche Modelle für Hintergrundaufgaben
   auxiliary = {
-    vision             = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-5v-turbo";          timeout = 120; };
-    web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-5.2";               timeout = 360; };
-    compression        = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-4.5-air";           timeout = 120; };
-    skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
-    approval           = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-5.2";               timeout = 30;  };
-    mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
+    vision             = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5v-turbo";          timeout = 120; };
+    web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.2";               timeout = 360; };
+    compression        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 120; };
+    skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
+    approval           = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.2";               timeout = 30;  };
+    mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
     title_generation   = { provider = "nous";                                              model = "google/gemma-4-31b-it"; timeout = 30;  };
-    triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-5.1";               timeout = 120; };
-    kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-5.1";               timeout = 180; };
-    curator            = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-4.5-air";           timeout = 600; };
-    profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4"; model = "glm-4.5-air";           timeout = 60;  };
+    triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.1";               timeout = 120; };
+    kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.1";               timeout = 180; };
+    curator            = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 600; };
+    profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 60;  };
   };
 
   # model_catalog — nous-Restriktion auf eigenes JSON
