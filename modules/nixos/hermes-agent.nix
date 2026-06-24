@@ -50,7 +50,7 @@ let
     }
     {
       name = "zai-restricted";
-      base_url = "https://api.z.ai/v1";
+      base_url = "https://api.z.ai/api/paas/v4";
       key_env = "CUSTOM_ZAI_KEY";
       discover_models = false;
       models = [
@@ -87,25 +87,25 @@ let
       base_url = "http://localhost:11434/v1";
     };
 
-    # z.ai (openai-compat)
+    # z.ai (openai-compat — /api/paas/v4, NICHT /v1)
     "glm-5.2" = {
       provider = "openai";
-      base_url = "https://api.z.ai/v1";
+      base_url = "https://api.z.ai/api/paas/v4";
       api_key_env = "CUSTOM_ZAI_KEY";
     };
     "glm-5.1" = {
       provider = "openai";
-      base_url = "https://api.z.ai/v1";
+      base_url = "https://api.z.ai/api/paas/v4";
       api_key_env = "CUSTOM_ZAI_KEY";
     };
     "glm-5v-turbo" = {
       provider = "openai";
-      base_url = "https://api.z.ai/v1";
+      base_url = "https://api.z.ai/api/paas/v4";
       api_key_env = "CUSTOM_ZAI_KEY";
     };
     "glm-4.5-flash" = {
       provider = "openai";
-      base_url = "https://api.z.ai/v1";
+      base_url = "https://api.z.ai/api/paas/v4";
       api_key_env = "CUSTOM_ZAI_KEY";
     };
 
@@ -160,17 +160,17 @@ in
       # zai-Modelle: openai-compat (custom_providers Key)
       # nous-Modelle: native plugin
       auxiliary = {
-        vision             = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5v-turbo";          timeout = 120; };
-        web_extract        = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.2";               timeout = 360; };
-        compression        = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 120; };
-        skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 30;  };
-        approval           = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.2";               timeout = 30;  };
-        mcp                = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 30;  };
+        vision             = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-5v-turbo";          timeout = 120; };
+        web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-5.2";               timeout = 360; };
+        compression        = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-4.5-flash";         timeout = 120; };
+        skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-4.5-flash";         timeout = 30;  };
+        approval           = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-5.2";               timeout = 30;  };
+        mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-4.5-flash";         timeout = 30;  };
         title_generation   = { provider = "nous";                                                model = "google/gemma-4-31b-it"; timeout = 30;  };
-        triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.1";               timeout = 120; };
-        kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-5.1";               timeout = 180; };
-        curator            = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 600; };
-        profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/v1";             model = "glm-4.5-flash";         timeout = 60;  };
+        triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-5.1";               timeout = 120; };
+        kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-5.1";               timeout = 180; };
+        curator            = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-4.5-flash";         timeout = 600; };
+        profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/paas/v4";             model = "glm-4.5-flash";         timeout = 60;  };
       };
 
       # ── Compression defaults ──────────────────────────────────────────

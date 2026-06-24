@@ -39,10 +39,13 @@
   };
 
   # ── zai (Zhipu, Z.AI) ─────────────────────────────────────────────────
+  # OpenAI-kompatibler Endpunkt: https://api.z.ai/api/paas/v4/chat/completions
+  # (NICHT /v1 — der generische Pfad existiert nicht.)
   # Native hermes-agent "zai"-Plugin liest GLM_API_KEY automatisch.
   zai = {
-    provider = "zai";
-    api_key_env = "GLM_API_KEY";
+    provider = "openai";
+    base_url = "https://api.z.ai/api/paas/v4";
+    api_key_env = "CUSTOM_ZAI_KEY";
     models = [
       "glm-5.2"
       "glm-5.1"
