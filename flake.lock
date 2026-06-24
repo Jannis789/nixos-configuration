@@ -160,11 +160,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1782251733,
-        "narHash": "sha256-yyVnWb0APTpmzmvaGFx+TEnsK4X+8X8GMQCDziGDtLw=",
+        "lastModified": 1782285289,
+        "narHash": "sha256-29/sDgfawP+hTwZv+aOTKGNYUJklfpPQbKt3HKhZdak=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "807bdc17f62ba1bd2d9dbcb1be948cd110151bac",
+        "rev": "3c75e115712f2af2cabdfbbe3a7033ea486a697d",
         "type": "github"
       },
       "original": {
@@ -190,6 +190,26 @@
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nix-darwin": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1781761792,
+        "narHash": "sha256-rCPytmKNjctLloB6UgK5CRrHSwV4b0ygxtJLPPp8R14=",
+        "owner": "LnL7",
+        "repo": "nix-darwin",
+        "rev": "a1fa429e945becaf60468600daf649be4ba0350c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LnL7",
+        "repo": "nix-darwin",
         "type": "github"
       }
     },
@@ -475,6 +495,7 @@
         "cachyos-kernel": "cachyos-kernel",
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager",
+        "nix-darwin": "nix-darwin",
         "nix-flatpak": "nix-flatpak",
         "nixpkgs": "nixpkgs_3",
         "nixvim": "nixvim",
