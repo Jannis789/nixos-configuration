@@ -111,7 +111,7 @@ let
   # Auxiliary models via Cloudflare Workers AI free tier (CLOUDFLARE_API_KEY)
   # Bypass model.models routing — each entry must be self-contained
   auxiliary = {
-    vision             = { provider = "openai"; base_url = cfBaseUrl; api_key_env = "CLOUDFLARE_API_KEY"; model = "@cf/meta/llama-3.2-11b-vision-instruct"; timeout = 120; };
+    vision             = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it"; timeout = 120; };
     web_extract        = { provider = "openai"; base_url = cfBaseUrl; api_key_env = "CLOUDFLARE_API_KEY"; model = "@cf/nvidia/nemotron-3-120b-a12b";            timeout = 360; };
     compression        = { provider = "openai"; base_url = cfBaseUrl; api_key_env = "CLOUDFLARE_API_KEY"; model = "@cf/nvidia/nemotron-3-120b-a12b";            timeout = 120; };
     skills_hub         = { provider = "openai"; base_url = cfBaseUrl; api_key_env = "CLOUDFLARE_API_KEY"; model = "@cf/zai-org/glm-4.7-flash";                     timeout = 30;  };
