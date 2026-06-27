@@ -4,8 +4,9 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    # git+file: with submodules=1 avoids Nix ≥2.18 git-tracking issues with submodules
     secrets = {
-      url = "git+file:./secrets";
+      url = "git+file:./secrets?submodules=1";
       flake = false;
     };
 
@@ -20,9 +21,18 @@
 
     hermes-agent.url = "github:NousResearch/hermes-agent";
 
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
+
     cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
 
-    # ── nix-darwin (für diesen Mac) ─────────────────────────────────────
     nix-darwin = {
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -40,10 +50,10 @@
     let
       mkHost = import ./lib/mkHost.nix { inherit inputs nixpkgs home-manager; };
       mkDarwinHost = import ./lib/mkDarwinHost.nix {
+        inherit (inputs) nix-homebrew;
         inherit inputs nixpkgs home-manager nix-darwin;
       };
 
-      # ── NixOS Hosts ─────────────────────────────────────────────────────
       hosts = {
         jannis = {
           system = "x86_64-linux";
@@ -55,7 +65,6 @@
         };
       };
 
-      # ── Darwin Hosts ────────────────────────────────────────────────────
       darwinHosts = {
         darwin = {
           system = "aarch64-darwin";

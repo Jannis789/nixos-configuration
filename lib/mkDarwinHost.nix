@@ -3,6 +3,7 @@
   nixpkgs,
   home-manager,
   nix-darwin,
+  nix-homebrew,
 }:
 
 hostName: cfg:
@@ -27,6 +28,7 @@ in
     };
 
     modules = [
+      nix-homebrew.darwinModules.nix-homebrew
       ../profiles/darwin.nix
       ../hosts/${hostName}/default.nix
       ../hosts/${hostName}/overrides.nix

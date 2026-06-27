@@ -1,12 +1,13 @@
-{ config, pkgs, hermesPkgs, ... }:
+{ config, pkgs, hermesPkgs, inputs, ... }:
 
 {
   networking.hostName = "darwin";
 
+  # hermes-agent: override anthropic dependency group for openmodell transport.
+  # Optional hermesPkgs.desktop (not available on aarch64-darwin).
   environment.systemPackages = with pkgs; [
     (hermesPkgs.default.override { extraDependencyGroups = [ "anthropic" ]; })
-    hermesPkgs.desktop
-  ];
+  ] ++ pkgs.lib.optional (hermesPkgs ? desktop) hermesPkgs.desktop;
 
   system.primaryUser = config.system.userName;
   system.defaults = {
@@ -24,4 +25,17 @@
       PasswordAuthentication no
     '';
   };
+
+  nix-homebrew = {
+    enable = true;
+    user = config.system.userName;
+    autoMigrate = true;
+    taps = {
+      "homebrew/homebrew-core" = inputs.homebrew-core;
+      "homebrew/homebrew-cask" = inputs.homebrew-cask;
+    };
+    mutableTaps = false;
+  };
+  homebrew.taps = builtins.attrNames config.nix-homebrew.taps;
+  homebrew.brews = [ "ant" ];
 }

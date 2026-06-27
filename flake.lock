@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "brew-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781226006,
+        "narHash": "sha256-w4ZTuOnhYiDxjaynrMTASzp802QblBWmo3wpB8wVN4Y=",
+        "owner": "Homebrew",
+        "repo": "brew",
+        "rev": "109191be4988470b51a60a5ef1998520aa24c01b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Homebrew",
+        "ref": "6.0.1",
+        "repo": "brew",
+        "type": "github"
+      }
+    },
     "cachyos-kernel": {
       "inputs": {
         "cachyos-kernel": "cachyos-kernel_2",
@@ -193,6 +210,38 @@
         "type": "github"
       }
     },
+    "homebrew-cask": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782368001,
+        "narHash": "sha256-xNz9v8X02WJ69PdnudEuXCIX176h+h+zZAhuhpJeI0k=",
+        "owner": "homebrew",
+        "repo": "homebrew-cask",
+        "rev": "10ae6135ce27f023eca7d64d3def7efc3ddac424",
+        "type": "github"
+      },
+      "original": {
+        "owner": "homebrew",
+        "repo": "homebrew-cask",
+        "type": "github"
+      }
+    },
+    "homebrew-core": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782368126,
+        "narHash": "sha256-I0zppfKp0OgJJl7m7AzX1NL6Bb7JAhop11D2UHKNzdw=",
+        "owner": "homebrew",
+        "repo": "homebrew-core",
+        "rev": "966fb16478012b2a78820bbf6ffcd0aaddff61df",
+        "type": "github"
+      },
+      "original": {
+        "owner": "homebrew",
+        "repo": "homebrew-core",
+        "type": "github"
+      }
+    },
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
@@ -226,6 +275,24 @@
         "owner": "gmodena",
         "ref": "latest",
         "repo": "nix-flatpak",
+        "type": "github"
+      }
+    },
+    "nix-homebrew": {
+      "inputs": {
+        "brew-src": "brew-src"
+      },
+      "locked": {
+        "lastModified": 1781389246,
+        "narHash": "sha256-ORqLAo/hoJdsZC7UPAuEHev6S0+XIqKEC7vjo5prz1k=",
+        "owner": "zhaofengli",
+        "repo": "nix-homebrew",
+        "rev": "de7953a08ed4bb9245be043e468561c17b89130d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "zhaofengli",
+        "repo": "nix-homebrew",
         "type": "github"
       }
     },
@@ -495,8 +562,11 @@
         "cachyos-kernel": "cachyos-kernel",
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager",
+        "homebrew-cask": "homebrew-cask",
+        "homebrew-core": "homebrew-core",
         "nix-darwin": "nix-darwin",
         "nix-flatpak": "nix-flatpak",
+        "nix-homebrew": "nix-homebrew",
         "nixpkgs": "nixpkgs_3",
         "nixvim": "nixvim",
         "secrets": "secrets_2"
@@ -522,15 +592,17 @@
     "secrets_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1782253039,
-        "narHash": "sha256-nswdy/DFDZjtoV96lqmK65DXr2I8kdJ89usieCpr2Tc=",
+        "lastModified": 1782454288,
+        "narHash": "sha256-TJWVCMTEV3BwCBynGhYxEeiiVYJE6qK+i+SMNbydP/k=",
         "ref": "refs/heads/main",
-        "rev": "54937fc6bfb699838a1f692c4264dcb9bacddfba",
+        "rev": "8f5d2e687ceb3f14414b5c4eb1c2b125c7b5ea39",
         "revCount": 7,
+        "submodules": true,
         "type": "git",
         "url": "file:./secrets"
       },
       "original": {
+        "submodules": true,
         "type": "git",
         "url": "file:./secrets"
       }
