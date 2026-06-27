@@ -592,11 +592,11 @@
     "secrets_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1782253039,
-        "narHash": "sha256-nswdy/DFDZjtoV96lqmK65DXr2I8kdJ89usieCpr2Tc=",
+        "lastModified": 1782603210,
+        "narHash": "sha256-TRcpckMOYqCz2kPgpcF6NVM7xhY0zDFcPsEDwVTSqIE=",
         "ref": "refs/heads/main",
-        "rev": "54937fc6bfb699838a1f692c4264dcb9bacddfba",
-        "revCount": 7,
+        "rev": "0f9653576217dca41939d6178f7abd82b5324348",
+        "revCount": 8,
         "submodules": true,
         "type": "git",
         "url": "file:./secrets"
