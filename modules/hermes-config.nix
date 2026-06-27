@@ -74,20 +74,20 @@ let
     };
   };
 
-  # Auxiliary models bypass model.models routing — each entry must be self-contained
-  # (provider + base_url + api_key_env) or openai-compat falls back to OPENAI_API_KEY
+  # Auxiliary models via OpenRouter free tier (NOUS_API_KEY)
+  # Bypass model.models routing — each entry must be self-contained
   auxiliary = {
-    vision             = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5v-turbo"; timeout = 120; };
-    web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.2";      timeout = 360; };
-    compression        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 120; };
-    skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 30;  };
-    approval           = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.2";      timeout = 30;  };
-    mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 30;  };
-    title_generation   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it"; timeout = 30;  };
-    triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.1";      timeout = 120; };
-    kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.1";      timeout = 180; };
-    curator            = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 600; };
-    profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 60;  };
+    vision             = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it:free";               timeout = 120; };
+    web_extract        = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 360; };
+    compression        = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 120; };
+    skills_hub         = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 30;  };
+    approval           = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct:free";     timeout = 30;  };
+    mcp                = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 30;  };
+    title_generation   = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 30;  };
+    triage_specifier   = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct:free";     timeout = 120; };
+    kanban_decomposer  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct:free";     timeout = 180; };
+    curator            = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 600; };
+    profile_describer  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 60;  };
   };
 
   # model_catalog — restrict nous to custom JSON
