@@ -114,6 +114,9 @@ let
     custom_providers = customProviders;
     providers = userProviders;
     inherit model_catalog auxiliary compression;
+    plugins = {
+      nous-provider = { enabled = true; };
+    };
   };
 in
 {
