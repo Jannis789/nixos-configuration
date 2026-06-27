@@ -30,19 +30,15 @@ let
       models = [ "glm-5.2" "glm-5.1" "glm-5v-turbo" "glm-4.5-air" ];
     }
     {
-      name = "OpenRouter Free";
-      base_url = "https://openrouter.ai/api/v1";
+      name = "Nous Inference";
+      base_url = "https://inference-api.nousresearch.com/v1";
       key_env = "NOUS_API_KEY";
       discover_models = false;
       models = [
-        "openrouter/owl-alpha"
-        "cohere/north-mini-code:free"
-        "google/gemma-4-31b-it:free"
-        "qwen/qwen3-next-80b-a3b-instruct:free"
-        "deepseek/deepseek-v4-flash"
-        "qwen/qwen3.7-plus"
-        "minimax/minimax-m3"
-        "stepfun/step-3.7-flash:free"
+        "google/gemma-4-31b-it"
+        "nemotron-3-super-120b-a12b"
+        "qwen/qwen3-next-80b-a3b-instruct"
+        "cohere/north-mini-code"
       ];
     }
   ];
@@ -72,15 +68,11 @@ let
     "glm-5v-turbo"  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
     "glm-4.5-air"   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
 
-    # OpenRouter free tier
-    "openrouter/owl-alpha"         = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "deepseek/deepseek-v4-flash"   = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "qwen/qwen3.7-plus"            = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "minimax/minimax-m3"           = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "stepfun/step-3.7-flash:free"  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "google/gemma-4-31b-it"        = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "tencent/hy3-preview"          = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
-    "cohere/north-mini-code:free"  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    # Nous Inference API free tier
+    "google/gemma-4-31b-it"        = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "nemotron-3-super-120b-a12b"   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "qwen/qwen3-next-80b-a3b-instruct" = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "cohere/north-mini-code"       = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
 
     # openmodel.ai anthropic-messages — must reference provider name, not transport
     # (routing uses "openmodell", not "anthropic_messages")
@@ -91,20 +83,20 @@ let
     };
   };
 
-  # Auxiliary models via OpenRouter free tier (NOUS_API_KEY)
+  # Auxiliary models via Nous Inference API (NOUS_API_KEY)
   # Bypass model.models routing — each entry must be self-contained
   auxiliary = {
-    vision             = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it:free";               timeout = 120; };
-    web_extract        = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 360; };
-    compression        = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 120; };
-    skills_hub         = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 30;  };
-    approval           = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct:free";     timeout = 30;  };
-    mcp                = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 30;  };
-    title_generation   = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 30;  };
-    triage_specifier   = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct:free";     timeout = 120; };
-    kanban_decomposer  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct:free";     timeout = 180; };
-    curator            = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "openrouter/owl-alpha";                     timeout = 600; };
-    profile_describer  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 60;  };
+    vision             = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it";               timeout = 120; };
+    web_extract        = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "nemotron-3-super-120b-a12b";         timeout = 360; };
+    compression        = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "nemotron-3-super-120b-a12b";         timeout = 120; };
+    skills_hub         = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct"; timeout = 30;  };
+    approval           = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct"; timeout = 30;  };
+    mcp                = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code";              timeout = 30;  };
+    title_generation   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "nemotron-3-super-120b-a12b";         timeout = 30;  };
+    triage_specifier   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct"; timeout = 120; };
+    kanban_decomposer  = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "qwen/qwen3-next-80b-a3b-instruct"; timeout = 180; };
+    curator            = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "nemotron-3-super-120b-a12b";         timeout = 600; };
+    profile_describer  = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code";              timeout = 60;  };
   };
 
   # compression defaults
