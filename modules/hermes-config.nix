@@ -83,27 +83,35 @@ let
     "google/gemma-4-31b-it"        = { provider = "nous"; };
     "tencent/hy3-preview"          = { provider = "nous"; };
 
-    # openmodel.ai (anthropic-compat — /v1/messages)
+    # openmodel.ai (anthropic-messages compat — custom provider in `providers`).
+    # Routing muss den PROVIDER-NAMEN referenzieren ("openmodell"), nicht den
+    # Transport ("anthropic_messages"); sonst faellt hermes auf den built-in
+    # `anthropic` Plugin zurueck, dessen Default-Base-URL api.anthropic.com ist.
     "deepseek-v4-flash" = {
-      provider = "anthropic";
+      provider = "openmodell";
       base_url = "https://api.openmodel.ai/v1";
       api_key_env = "CUSTOM_OPENMODEL_KEY";
     };
   };
 
-  # auxiliary — welche Modelle für Hintergrundaufgaben
+  # auxiliary — welche Modelle für Hintergrundaufgaben.
+  # Auxiliary-Initialisierung BYPASSED die model.models Routing-Tabelle:
+  # jedes Feld hier muss vollstaendig (provider + base_url + api_key_env)
+  # sein. Ohne explizites api_key_env fallt der openai-compat Plugin auf
+  # OPENAI_API_KEY zurueck, was fuer Z.AI-Endpoints der falsche Key ist
+  # und in 401/403 fuehrt.
   auxiliary = {
-    vision             = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5v-turbo";          timeout = 120; };
-    web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.2";               timeout = 360; };
-    compression        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 120; };
-    skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
-    approval           = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.2";               timeout = 30;  };
-    mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 30;  };
-    title_generation   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it"; timeout = 30; };
-    triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.1";               timeout = 120; };
-    kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-5.1";               timeout = 180; };
-    curator            = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 600; };
-    profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; model = "glm-4.5-air";           timeout = 60;  };
+    vision             = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5v-turbo"; timeout = 120; };
+    web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.2";      timeout = 360; };
+    compression        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 120; };
+    skills_hub         = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 30;  };
+    approval           = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.2";      timeout = 30;  };
+    mcp                = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 30;  };
+    title_generation   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; model = "google/gemma-4-31b-it"; timeout = 30;  };
+    triage_specifier   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.1";      timeout = 120; };
+    kanban_decomposer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.1";      timeout = 180; };
+    curator            = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 600; };
+    profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 60;  };
   };
 
   # model_catalog — nous-Restriktion auf eigenes JSON
@@ -123,7 +131,7 @@ let
   # Vollständiger settings-Attrset für hermes-agent config.yaml
   hermesConfig = {
     model = {
-      default = "deepseek/deepseek-v4-flash";
+      default = "deepseek-v4-flash";
       provider = "auto";
       models = modelRouting;
     };
