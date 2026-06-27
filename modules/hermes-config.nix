@@ -29,6 +29,22 @@ let
       discover_models = false;
       models = [ "glm-5.2" "glm-5.1" "glm-5v-turbo" "glm-4.5-air" ];
     }
+    {
+      name = "OpenRouter Free";
+      base_url = "https://openrouter.ai/api/v1";
+      key_env = "NOUS_API_KEY";
+      discover_models = false;
+      models = [
+        "openrouter/owl-alpha"
+        "cohere/north-mini-code:free"
+        "google/gemma-4-31b-it:free"
+        "qwen/qwen3-next-80b-a3b-instruct:free"
+        "deepseek/deepseek-v4-flash"
+        "qwen/qwen3.7-plus"
+        "minimax/minimax-m3"
+        "stepfun/step-3.7-flash:free"
+      ];
+    }
   ];
 
   # anthropic-messages compat provider (openmodell)
@@ -56,14 +72,15 @@ let
     "glm-5v-turbo"  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
     "glm-4.5-air"   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
 
-    # Nous (model_catalog restricted)
-    "openrouter/owl-alpha"         = { provider = "nous"; };
-    "deepseek/deepseek-v4-flash"   = { provider = "nous"; };
-    "qwen/qwen3.7-plus"            = { provider = "nous"; };
-    "minimax/minimax-m3"           = { provider = "nous"; };
-    "stepfun/step-3.7-flash:free"  = { provider = "nous"; };
-    "google/gemma-4-31b-it"        = { provider = "nous"; };
-    "tencent/hy3-preview"          = { provider = "nous"; };
+    # OpenRouter free tier
+    "openrouter/owl-alpha"         = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "deepseek/deepseek-v4-flash"   = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "qwen/qwen3.7-plus"            = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "minimax/minimax-m3"           = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "stepfun/step-3.7-flash:free"  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "google/gemma-4-31b-it"        = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "tencent/hy3-preview"          = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
+    "cohere/north-mini-code:free"  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; };
 
     # openmodel.ai anthropic-messages — must reference provider name, not transport
     # (routing uses "openmodell", not "anthropic_messages")
@@ -90,13 +107,6 @@ let
     profile_describer  = { provider = "openai"; base_url = "https://openrouter.ai/api/v1"; api_key_env = "NOUS_API_KEY"; model = "cohere/north-mini-code:free";              timeout = 60;  };
   };
 
-  # model_catalog — restrict nous to custom JSON
-  model_catalog = {
-    enabled = true;
-    ttl_hours = 24;
-    providers.nous.url = "https://raw.githubusercontent.com/Jannis789/nixos-configuration/master/model-catalog.json";
-  };
-
   # compression defaults
   compression = {
     enabled = true;
@@ -113,10 +123,7 @@ let
     };
     custom_providers = customProviders;
     providers = userProviders;
-    inherit model_catalog auxiliary compression;
-    plugins = {
-      nous-provider = { enabled = true; };
-    };
+    inherit auxiliary compression;
   };
 in
 {
