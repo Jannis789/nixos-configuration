@@ -3,11 +3,8 @@
 {
   networking.hostName = "darwin";
 
-  # hermes-agent CLI: `anthropic` dependency group aktiviert die SDK-Deps
-  # fuer die anthropic_messages Transport-Schicht (gebraucht vom custom
-  # `openmodell` Provider, siehe modules/hermes-config.nix).
-  # `hermesPkgs.desktop` ist ein Linux-Electron-Wrapper mit .desktop-Files;
-  # auf aarch64-darwin kann der Flake-Output fehlen — nur einbinden wenn da.
+  # hermes-agent: override anthropic dependency group for openmodell transport.
+  # Optional hermesPkgs.desktop (not available on aarch64-darwin).
   environment.systemPackages = with pkgs; [
     (hermesPkgs.default.override { extraDependencyGroups = [ "anthropic" ]; })
   ] ++ pkgs.lib.optional (hermesPkgs ? desktop) hermesPkgs.desktop;
@@ -29,7 +26,6 @@
     '';
   };
 
-  # ── Homebrew (nix-managed) ────────────────────────────────────
   nix-homebrew = {
     enable = true;
     user = config.system.userName;

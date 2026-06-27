@@ -1,29 +1,12 @@
-# modules/hermes-config.nix
-#
-# Single Source of Truth für Hermes Provider-/Model-/Auxiliary-Konfig.
-# Wird von NixOS (*.hermes-agent.nix) und Darwin (home/darwin.nix) importiert —
-# Änderungen hier wirken auf alle Hosts.
-#
-# Provider-Strategie (hybrid):
-#   ollama, zai, openmodel: custom_providers (discover_models: false) →
-#     Picker zeigt exakt die gelisteten Modelle.
-#   nous: native plugin + model_catalog Override →
-#     Built-in nous zeigt NUR die Modelle aus model-catalog.json.
-#     Keine endpoint-Deduplication in Section 4, weil wir keinen
-#     custom_provider für nous definieren.
-#
-# API-Keys:
-#   NOUS_API_KEY       — nativer nous-Plugin (built-in, model_catalog restricted).
-#   CUSTOM_ZAI_KEY     — openai-compat routing zu api.z.ai/api/paas/v4.
-#   CUSTOM_OPENMODEL_KEY — anthropic-compat routing zu api.openmodel.ai/v1.
-#   KEIN ZAI_API_KEY / OPENMODEL_API_KEY / OPENAI_API_KEY —
-#     damit Section 1/2 keine built-in zai/openai Einträge zeigt.
+# Single source of truth for Hermes provider/model/auxiliary config.
+# Imported by NixOS (hermes-agent.nix) and Darwin (home/darwin.nix).
+# API keys via secrets submodule — NOUS_API_KEY, CUSTOM_ZAI_KEY, CUSTOM_OPENMODEL_KEY.
 { secrets }:
 
 let
   apiKeys = import (secrets + "/hermes-api.nix");
 
-  # CUSTOM_*-Namen statt nativer Env-Vars, damit built-in Provider-Checks nicht matchen.
+  # Custom env var names prevent built-in provider detection (no ZAI_API_KEY / OPENAI_API_KEY)
   envKeys = {
     NOUS_API_KEY          = apiKeys.NOUS_API_KEY;
     CUSTOM_ZAI_KEY        = apiKeys.ZAI_API_KEY;
@@ -31,7 +14,7 @@ let
     API_SERVER_KEY        = apiKeys.API_SERVER_KEY;
   };
 
-  # custom_providers (Section 4) — openai-compat Layer
+  # openai-compat custom providers
   customProviders = [
     {
       name = "ollama-local";
@@ -48,7 +31,7 @@ let
     }
   ];
 
-  # providers (Section 3) — openmodell (anthropic-messages compat)
+  # anthropic-messages compat provider (openmodell)
   userProviders = {
     openmodell = {
       name = "openmodell";
@@ -60,21 +43,20 @@ let
     };
   };
 
-  # model.models — Routing-Tabelle: Modellname → Provider + Credentials
+  # model.models routing: model name → provider + credentials
   modelRouting = {
-    # ollama (openai-compat)
     vibethinker = {
       provider = "openai";
       base_url = "http://localhost:11434/v1";
     };
 
-    # z.ai (openai-compat — /api/paas/v4)
+    # z.ai openai-compat
     "glm-5.2"       = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
     "glm-5.1"       = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
     "glm-5v-turbo"  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
     "glm-4.5-air"   = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; };
 
-    # Nous (natives Plugin — model_catalog restricted)
+    # Nous (model_catalog restricted)
     "openrouter/owl-alpha"         = { provider = "nous"; };
     "deepseek/deepseek-v4-flash"   = { provider = "nous"; };
     "qwen/qwen3.7-plus"            = { provider = "nous"; };
@@ -83,10 +65,8 @@ let
     "google/gemma-4-31b-it"        = { provider = "nous"; };
     "tencent/hy3-preview"          = { provider = "nous"; };
 
-    # openmodel.ai (anthropic-messages compat — custom provider in `providers`).
-    # Routing muss den PROVIDER-NAMEN referenzieren ("openmodell"), nicht den
-    # Transport ("anthropic_messages"); sonst faellt hermes auf den built-in
-    # `anthropic` Plugin zurueck, dessen Default-Base-URL api.anthropic.com ist.
+    # openmodel.ai anthropic-messages — must reference provider name, not transport
+    # (routing uses "openmodell", not "anthropic_messages")
     "deepseek-v4-flash" = {
       provider = "openmodell";
       base_url = "https://api.openmodel.ai/v1";
@@ -94,12 +74,8 @@ let
     };
   };
 
-  # auxiliary — welche Modelle für Hintergrundaufgaben.
-  # Auxiliary-Initialisierung BYPASSED die model.models Routing-Tabelle:
-  # jedes Feld hier muss vollstaendig (provider + base_url + api_key_env)
-  # sein. Ohne explizites api_key_env fallt der openai-compat Plugin auf
-  # OPENAI_API_KEY zurueck, was fuer Z.AI-Endpoints der falsche Key ist
-  # und in 401/403 fuehrt.
+  # Auxiliary models bypass model.models routing — each entry must be self-contained
+  # (provider + base_url + api_key_env) or openai-compat falls back to OPENAI_API_KEY
   auxiliary = {
     vision             = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5v-turbo"; timeout = 120; };
     web_extract        = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-5.2";      timeout = 360; };
@@ -114,7 +90,7 @@ let
     profile_describer  = { provider = "openai"; base_url = "https://api.z.ai/api/coding/paas/v4"; api_key_env = "CUSTOM_ZAI_KEY"; model = "glm-4.5-air";  timeout = 60;  };
   };
 
-  # model_catalog — nous-Restriktion auf eigenes JSON
+  # model_catalog — restrict nous to custom JSON
   model_catalog = {
     enabled = true;
     ttl_hours = 24;
@@ -128,7 +104,7 @@ let
     target_ratio = 0.20;
   };
 
-  # Vollständiger settings-Attrset für hermes-agent config.yaml
+  # Full settings attrset for hermes-agent config.yaml
   hermesConfig = {
     model = {
       default = "deepseek-v4-flash";

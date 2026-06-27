@@ -4,11 +4,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # Local secrets directory (git submodule).
-    # Uses `git+file:` with submodules=1 so Nix resolves the submodule correctly.
-    # Changed from `path:` because newer Nix (≥2.18) checks git tracking even
-    # with path: fetchers, and submodule index-pointer divergence causes
-    # "not tracked by Git" errors.
+    # git+file: with submodules=1 avoids Nix ≥2.18 git-tracking issues with submodules
     secrets = {
       url = "git+file:./secrets?submodules=1";
       flake = false;
@@ -25,7 +21,6 @@
 
     hermes-agent.url = "github:NousResearch/hermes-agent";
 
-    # ── Homebrew (macOS) ───────────────────────────────────────────
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
@@ -38,7 +33,6 @@
 
     cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
 
-    # ── nix-darwin (für diesen Mac) ─────────────────────────────────────
     nix-darwin = {
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -60,7 +54,6 @@
         inherit inputs nixpkgs home-manager nix-darwin;
       };
 
-      # ── NixOS Hosts ─────────────────────────────────────────────────────
       hosts = {
         jannis = {
           system = "x86_64-linux";
@@ -72,7 +65,6 @@
         };
       };
 
-      # ── Darwin Hosts ────────────────────────────────────────────────────
       darwinHosts = {
         darwin = {
           system = "aarch64-darwin";
