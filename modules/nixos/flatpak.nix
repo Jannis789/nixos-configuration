@@ -41,6 +41,10 @@ in
           origin = "flathub";
         }
         {
+          appId = "io.frama.editide.editide";
+          origin = "flathub";
+        }
+        {
           appId = "com.rustdesk.RustDesk";
           origin = "flathub";
         }
