@@ -45,6 +45,10 @@ in
           origin = "flathub";
         }
         {
+          appId = "io.github.qwersyk.Newelle";
+          origin = "flathub";
+        }
+        {
           appId = "com.rustdesk.RustDesk";
           origin = "flathub";
         }
