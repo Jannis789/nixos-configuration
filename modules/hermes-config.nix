@@ -11,6 +11,7 @@ let
     CUSTOM_OPENROUTER_KEY  = apiKeys.OPENROUTER_API_KEY;
     CUSTOM_CLOUDFLARE_KEY  = apiKeys.CLOUDFLARE_API_KEY;
     CUSTOM_OPENCODE_KEY    = apiKeys.OPENCODE_API_KEY;
+    CUSTOM_NVIDIA_KEY      = apiKeys.NVIDIA_API_KEY;
     API_SERVER_KEY         = apiKeys.API_SERVER_KEY;
     NOUS_API_KEY           = apiKeys.NOUS_API_KEY;
   };
@@ -82,6 +83,20 @@ let
         "@cf/meta/llama-3.2-1b-instruct"
       ];
     }
+    {
+      name = "NVIDIA";
+      base_url = "https://integrate.api.nvidia.com/v1";
+      key_env = "CUSTOM_NVIDIA_KEY";
+      discover_models = false;
+      models = [
+        "minimaxai/minimax-m3"
+        "z-ai/glm-5.2"
+        "nvidia/nemotron-3-ultra-550b-a55b"
+        "deepseek-ai/deepseek-v4-flash"
+        "deepseek-ai/deepseek-v4-pro"
+        "thinkingmachines/inkling"
+      ];
+    }
   ];
 
   userProviders = {
@@ -122,6 +137,14 @@ let
     "mimo-v2.5-free"          = { provider = "OpenCode Zen"; base_url = "https://opencode.ai/zen/v1"; api_key_env = "CUSTOM_OPENCODE_KEY"; };
     "nemotron-3-ultra-free"   = { provider = "OpenCode Zen"; base_url = "https://opencode.ai/zen/v1"; api_key_env = "CUSTOM_OPENCODE_KEY"; };
     "north-mini-code-free"    = { provider = "OpenCode Zen"; base_url = "https://opencode.ai/zen/v1"; api_key_env = "CUSTOM_OPENCODE_KEY"; };
+
+    # NVIDIA Build API (gratis tier)
+    "minimaxai/minimax-m3"              = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
+    "z-ai/glm-5.2"                      = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
+    "nvidia/nemotron-3-ultra-550b-a55b"  = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
+    "deepseek-ai/deepseek-v4-flash"     = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
+    "deepseek-ai/deepseek-v4-pro"       = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
+    "thinkingmachines/inkling"           = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
   };
 
   auxiliary = {
