@@ -8,7 +8,7 @@
 }:
 
 let
-  hermesCfg = import ../modules/hermes-config.nix { secrets = inputs.secrets; };
+  hermesCfg = import ../../modules/hermes-config.nix { secrets = inputs.secrets; };
 
   yamlFormat = pkgs.formats.yaml { };
   hermesConfigYAML = yamlFormat.generate "config.yaml" hermesCfg.hermesConfig;

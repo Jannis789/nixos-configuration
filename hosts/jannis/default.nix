@@ -45,7 +45,7 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [ ethtool sunshine hermes-desktop ];
+  environment.systemPackages = with pkgs; [ ethtool sunshine ];
 
   # SSH — Port 4422 (22 ist oft von FritzBox blockiert)
   services.openssh = {

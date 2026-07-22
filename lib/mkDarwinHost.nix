@@ -43,7 +43,7 @@ in
           inherit inputs;
           hermesPkgs = inputs.hermes-agent.packages.${system};
         };
-        home-manager.users.${userName} = import ../home/darwin.nix;
+        home-manager.users.${userName} = import ../home/darwin/default.nix;
       }
     ];
   };

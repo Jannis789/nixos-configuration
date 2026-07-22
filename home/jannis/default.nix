@@ -14,6 +14,14 @@ in
   home.homeDirectory = "/home/${userName}";
   home.stateVersion = osConfig.system.homeStateVersion;
 
+  # Hermes-API-Keys in die Desktop-Session exponieren, damit die
+  # hermes-agent Electron-App (laeurt NICHT unter systemd, sondern
+  # als User-Session-Prozess via gnome-session) dieselben Provider
+  # sieht wie der NixOS-gateway.
+  # Nutzt CUSTOM_*-Namen (keine nativen Plugin-Vars), damit
+  # list_authenticated_providers() Section 1/2 nicht matched.
+  # API_SERVER_KEY bleibt absichtlich draussen: das Token authentifiziert
+  # nur den gateway auf 127.0.0.1:8642, nicht die Desktop-App.
   home.sessionVariables = {
     CUSTOM_NOUS_KEY       = hermesApi.NOUS_API_KEY;
     CUSTOM_ZAI_KEY        = hermesApi.ZAI_API_KEY;
@@ -25,29 +33,29 @@ in
   };
 
   imports = [
-    ../modules/home-manager/theme
-    ../modules/home-manager/gnome-extensions.nix
-    ../modules/home-manager/gnome-shell.nix
-    ../modules/home-manager/starship.nix
-    ../modules/home-manager/atuin.nix
-    ../modules/home-manager/vscode.nix
+    ../../modules/home-manager/theme
+    ../../modules/home-manager/gnome-extensions.nix
+    ../../modules/home-manager/gnome-shell.nix
+    ../../modules/home-manager/starship.nix
+    ../../modules/home-manager/atuin.nix
+    ../../modules/home-manager/vscode.nix
   ];
 
   programs = {
     home-manager.enable = true;
     bash = {
       enable = true;
-      bashrcExtra = builtins.readFile ../homedir/${userName}/.bashrc;
+      bashrcExtra = builtins.readFile homedir/.bashrc;
     };
   };
 
   home.file = {
     ".config" = {
-      source = ../homedir/${userName}/.config;
+      source = homedir/.config;
       recursive = true;
     };
     ".local" = {
-      source = ../homedir/${userName}/.local;
+      source = homedir/.local;
       recursive = true;
     };
   };
@@ -85,7 +93,6 @@ in
         "code.desktop"
         "org.gnome.Nautilus.desktop"
         "steam.desktop"
-        "hermes-desktop.desktop"
       ];
     };
 
@@ -107,15 +114,4 @@ in
   home.packages = [
     inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
-
-  xdg.desktopEntries.hermes-desktop = {
-    name = "Hermes Agent";
-    genericName = "AI Assistant";
-    comment = "Native Electron desktop shell for Hermes Agent";
-    exec = "${pkgs.hermes-desktop}/bin/hermes-desktop %U";
-    icon = "${pkgs.hermes-desktop}/share/hermes-desktop/dist/hermes.png";
-    categories = [ "Utility" ];
-    terminal = false;
-    type = "Application";
-  };
 }
