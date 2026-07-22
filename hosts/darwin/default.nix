@@ -4,10 +4,9 @@
   networking.hostName = "darwin";
 
   # hermes-agent: override anthropic dependency group for openmodell transport.
-  # Optional hermesPkgs.desktop (not available on aarch64-darwin).
   environment.systemPackages = with pkgs; [
     (hermesPkgs.default.override { extraDependencyGroups = [ "anthropic" ]; })
-  ] ++ pkgs.lib.optional (hermesPkgs ? desktop) hermesPkgs.desktop;
+  ];
 
   system.primaryUser = config.system.userName;
   system.defaults = {

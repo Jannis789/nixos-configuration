@@ -13,12 +13,6 @@ in
   rewaita-custom = prev.callPackage ./etc/custom_pkgs/rewaita-custom.nix { };
   helium = prev.callPackage ./etc/custom_pkgs/helium.nix { };
 
-  # Hermes Desktop wird unverändert aus dem hermes-agent-Flake-Input
-  # weitergereicht (Version gelockt mit dem Backend-Service). Keine lokale
-  # Modifikation -- wenn upstream keine .desktop-Datei oder Icon ausliefert,
-  # kommt es ohne diese Extras.
-  hermes-desktop = inputs.hermes-agent.packages.${final.stdenv.hostPlatform.system}.desktop;
-
   python313Packages = prev.python313Packages.overrideScope (pyFinal: pyPrev: {
     jedi-language-server = patchedJediLanguageServer;
   });

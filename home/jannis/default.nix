@@ -22,7 +22,7 @@ in
   home.stateVersion = osConfig.system.homeStateVersion;
 
   # Hermes-API-Keys in die Desktop-Session exponieren, damit die
-  # hermes-desktop Electron-App (laeuft NICHT unter systemd, sondern
+  # hermes-agent Electron-App (laeurt NICHT unter systemd, sondern
   # als User-Session-Prozess via gnome-session) dieselben Provider
   # sieht wie der NixOS-gateway.
   # Nutzt CUSTOM_*-Namen (keine nativen Plugin-Vars), damit
@@ -36,29 +36,29 @@ in
   };
 
   imports = [
-    ../modules/home-manager/theme
-    ../modules/home-manager/gnome-extensions.nix
-    ../modules/home-manager/gnome-shell.nix
-    ../modules/home-manager/starship.nix
-    ../modules/home-manager/atuin.nix
-    ../modules/home-manager/vscode.nix
+    ../../modules/home-manager/theme
+    ../../modules/home-manager/gnome-extensions.nix
+    ../../modules/home-manager/gnome-shell.nix
+    ../../modules/home-manager/starship.nix
+    ../../modules/home-manager/atuin.nix
+    ../../modules/home-manager/vscode.nix
   ];
 
   programs = {
     home-manager.enable = true;
     bash = {
       enable = true;
-      bashrcExtra = builtins.readFile ../homedir/${userName}/.bashrc;
+      bashrcExtra = builtins.readFile homedir/.bashrc;
     };
   };
 
   home.file = {
     ".config" = {
-      source = ../homedir/${userName}/.config;
+      source = homedir/.config;
       recursive = true;
     };
     ".local" = {
-      source = ../homedir/${userName}/.local;
+      source = homedir/.local;
       recursive = true;
     };
     # ~/.hermes/config.yaml: BEWUSST NICHT hier hinterlegt. Ein
@@ -108,7 +108,6 @@ in
         "code.desktop"
         "org.gnome.Nautilus.desktop"
         "steam.desktop"
-        "hermes-desktop.desktop"
       ];
     };
 
@@ -130,36 +129,4 @@ in
   home.packages = [
     inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
-
-  # Hermes-Desktop User-Level XDG-Integration: das Upstream-Paket aus
-  # inputs.hermes-agent.packages.<system>.desktop liefert kein .desktop-File
-  # und keinen Icon-Theme-Treffer. Wir packen es hier NICHT in einen runCommand-
-  # Wrap, sondern legen nur einen User-Level .desktop-Eintrag in
-  # ~/.local/share/applications/ an und nutzen das Upstream-Icon direkt.
-  # Damit ist die Aenderung vollstaendig zrueckrollbar und greift nicht in
-  # die Upstream-Derivation ein.
-  #
-  # Routing: hermes-desktop spawnt beim Start sein eigenes Embedded-
-  # hermes-agent (Python-Runtime aus dem backing Flake). Modell/Provider
-  # kommt vollstandig aus dem NixOS-Modul services.hermes-agent.settings —
-  # siehe modules/nixos/hermes-agent.nix (deepseek-v4-flash,
-  # provider=auto). FRUHERE VERSUCHE, dies via HERMES_DESKTOP_REMOTE_URL
-  # oder per home-manager-write in ~/.hermes/config.yaml zu losen, haben
-  # zwei Regressionen erzeugt: (1) dropdown verlor zai, (2) default wurde
-  # auf `vibethinker` umgebogen -> 404 auf inference-api.nousresearch.com.
-  # Daher jetzt konsequent nur das NixOS-Modul als Single-Source-of-Truth.
-  # Der NixOS-gateway-Service (hermes-agent.service) bleibt auf
-  # 127.0.0.1:8642 hochverfuegbar (API_SERVER_KEY via
-  # services.hermes-agent.environment in modules/nixos/hermes-agent.nix)
-  # fuer CLI-Use, WebHooks und spatere Remote-Desktop-Routen.
-  xdg.desktopEntries.hermes-desktop = {
-    name = "Hermes Agent";
-    genericName = "AI Assistant";
-    comment = "Native Electron desktop shell for Hermes Agent";
-    exec = "${pkgs.hermes-desktop}/bin/hermes-desktop %U";
-    icon = "${pkgs.hermes-desktop}/share/hermes-desktop/dist/hermes.png";
-    categories = [ "Utility" ];
-    terminal = false;
-    type = "Application";
-  };
 }
