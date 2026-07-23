@@ -177,11 +177,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1784751679,
-        "narHash": "sha256-Hne+qIcnat/rvC3SQlv5v28ao0CSDzn78oF7CtpDZ68=",
+        "lastModified": 1784784683,
+        "narHash": "sha256-4l/a/hoWoYEsGlwyBbptSzxFd4xWm52xahURE5uXG3Y=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "1bdd478efac64ef95c04d38036f6966603ec602b",
+        "rev": "a8e6c0f8531d3ae4a496697d04ccfb7ff198672d",
         "type": "github"
       },
       "original": {
@@ -213,11 +213,11 @@
     "homebrew-cask": {
       "flake": false,
       "locked": {
-        "lastModified": 1784751008,
-        "narHash": "sha256-g4k+NGRA8l6/ovdiChHotnISUv16e5D125Q1w+flKLo=",
+        "lastModified": 1784784639,
+        "narHash": "sha256-9tIsN264P4pfzIbWqAvt3u3b1zrJr5ufw3TrcHGNsS0=",
         "owner": "homebrew",
         "repo": "homebrew-cask",
-        "rev": "51f556a388f297a441d296ee2a80e96467d8e008",
+        "rev": "0f3e3494b60dd9c8e9dd94c91987a0344cb4fbb0",
         "type": "github"
       },
       "original": {
@@ -229,11 +229,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1784751305,
-        "narHash": "sha256-qiRHQeRUJHmtXdbyQFyrkbtQk6jXw778MecK8AxzH1I=",
+        "lastModified": 1784779994,
+        "narHash": "sha256-0JAdT6aYtKNrrTJlXC65bKV+C9bbuDxjLPA8LkwqRV8=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "72952ce08b0ea047077b37d19a39f03ba817242b",
+        "rev": "30e8738797cac11d975924289896f44975847cd9",
         "type": "github"
       },
       "original": {
@@ -554,11 +554,11 @@
     "secrets_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1784751842,
-        "narHash": "sha256-4HjX9+VopwKZtwV6CnGbpRKPu15lFaN4LhaBd6ea0lY=",
+        "lastModified": 1784785050,
+        "narHash": "sha256-0Q8/9IaxXE32hqsouyqvJ5hqT9QB/7MFmKAJPeXYlEg=",
         "ref": "refs/heads/main",
-        "rev": "78263bac692e6e9445345d64bdb5b8adad8d65c7",
-        "revCount": 15,
+        "rev": "8f9ae0b3d8a31c0d28eed46cfebc9340f0260946",
+        "revCount": 18,
         "submodules": true,
         "type": "git",
         "url": "file:./secrets"

@@ -86,7 +86,9 @@ in
   home.stateVersion = "25.05";
 
   home.sessionVariables = hermesCfg.envKeys;
-  home.file.".hermes/config.yaml".source = hermesConfigYAML;
+  home.file."/.hermes/config.yaml".source = hermesConfigYAML;
+  home.file."/.hermes/.env".text =
+    (lib.concatStringsSep "\n" (lib.mapAttrsToList (name: value: "${name}=\"${value}\"") hermesCfg.envKeys)) + "\n";
 
   home.packages = with pkgs; [
     inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
