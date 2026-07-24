@@ -162,6 +162,7 @@ let
     "tencent/hy3:free"             = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
     "kwaipilot/kat-coder-air-v2.5" = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
     "kwaipilot/kat-coder-pro-v2.5" = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "minimax/minimax-m3"            = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
   };
 
   auxiliary = {
