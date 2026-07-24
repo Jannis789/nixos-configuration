@@ -6,13 +6,13 @@
     "nous": {
       "metadata": {},
       "models": [
-        {"id": "openrouter/owl-alpha"},
-        {"id": "deepseek/deepseek-v4-flash"},
-        {"id": "qwen/qwen3.7-plus"},
-        {"id": "minimax/minimax-m3"},
+        {"id": "poolside/laguna-s-2.1:free"},
+        {"id": "poolside/laguna-xs-2.1:free"},
         {"id": "stepfun/step-3.7-flash:free"},
-        {"id": "google/gemma-4-31b-it"},
-        {"id": "tencent/hy3-preview"}
+        {"id": "tencent/hy3:free"},
+        {"id": "kwaipilot/kat-coder-air-v2.5"},
+        {"id": "kwaipilot/kat-coder-pro-v2.5"},
+        {"id": "minimax/minimax-m3"}
       ]
     }
   }

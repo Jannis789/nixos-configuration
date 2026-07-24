@@ -20,12 +20,6 @@ let
 
   customProviders = [
     {
-      name = "ollama-local";
-      base_url = "http://localhost:11434/v1";
-      discover_models = false;
-      models = [ "vibethinker" ];
-    }
-    {
       name = "Z.AI Selection";
       base_url = "https://api.z.ai/api/coding/paas/v4";
       key_env = "CUSTOM_ZAI_KEY";
@@ -40,7 +34,8 @@ let
       models = [
         "openrouter/owl-alpha"
         "google/gemma-4-31b-it:free"
-        "cohere/north-mini-code:free"
+        "openrouter/free"
+        "poolside/laguna-s-2.1:free"
       ];
     }
     {
@@ -49,12 +44,12 @@ let
       key_env = "CUSTOM_OPENCODE_KEY";
       discover_models = false;
       models = [
-        "deepseek-v4-flash-free"
-        "qwen3.6-plus-free"
-        "big-pickle-free"
         "mimo-v2.5-free"
-        "nemotron-3-ultra-free"
+        "laguna-s-2.1-free"
+        "ling-3.0-flash-free"
         "north-mini-code-free"
+        "nemotron-3-ultra-free"
+        "deepseek-v4-flash-free"
       ];
     }
     {
