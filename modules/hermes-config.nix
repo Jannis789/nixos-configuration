@@ -79,6 +79,21 @@ let
       ];
     }
     {
+      name = "Nous Inference";
+      base_url = "https://inference-api.nousresearch.com/v1";
+      key_env = "NOUS_API_KEY";
+      discover_models = false;
+      models = [
+        "poolside/laguna-s-2.1:free"
+        "poolside/laguna-xs-2.1:free"
+        "stepfun/step-3.7-flash:free"
+        "tencent/hy3:free"
+        "kwaipilot/kat-coder-air-v2.5"
+        "kwaipilot/kat-coder-pro-v2.5"
+        "minimax/minimax-m3"
+      ];
+    }
+    {
       name = "NVIDIA";
       base_url = "https://integrate.api.nvidia.com/v1";
       key_env = "CUSTOM_NVIDIA_KEY";
@@ -140,6 +155,13 @@ let
     "deepseek-ai/deepseek-v4-flash"     = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
     "deepseek-ai/deepseek-v4-pro"       = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
     "thinkingmachines/inkling"           = { provider = "NVIDIA"; base_url = "https://integrate.api.nvidia.com/v1"; api_key_env = "CUSTOM_NVIDIA_KEY"; };
+
+    "poolside/laguna-s-2.1:free"   = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "poolside/laguna-xs-2.1:free"  = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "stepfun/step-3.7-flash:free"  = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "tencent/hy3:free"             = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "kwaipilot/kat-coder-air-v2.5" = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
+    "kwaipilot/kat-coder-pro-v2.5" = { provider = "openai"; base_url = "https://inference-api.nousresearch.com/v1"; api_key_env = "NOUS_API_KEY"; };
   };
 
   auxiliary = {
