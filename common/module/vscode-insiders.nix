@@ -7,7 +7,7 @@ let
     "ms-python.python"
     "ms-python.debugpy"
     "ms-python.vscode-pylance"
-    "ms-python.python-envs"
+    "ms-python.vscode-python-envs"
     "jnoortheen.nix-ide"
     "bbenoist.nix"
     "catppuccin.catppuccin-vsc"
@@ -30,12 +30,18 @@ let
     "ms-vscode.cpptools-extension-pack"
     "ms-vscode.cmake-tools"
     "vadimcn.vscode-lldb"
-    "ms-dotnettools.dotnet-runtime"
+    "ms-dotnettools.vscode-dotnet-runtime"
   ];
 
-  # IDs → Pakete; nicht existierende weglassen
-  extPkg = name: lib.attrByPath (lib.splitString "." name) null pkgs.vscode-extensions;
-  resolvedExtensions = lib.filter (p: p != null) (map extPkg extensions);
+  # IDs → Pakete; pkgs.vscode-extensions ist verschachtelt (Punkte = Pfad).
+  # hasAttrByPath prüft korrekt, Fehlen schlägt beim Build fehl — kein
+  # stilles Weglassen mehr.
+  extPkg = name:
+    if lib.hasAttrByPath (lib.splitString "." name) pkgs.vscode-extensions then
+      lib.attrByPath (lib.splitString "." name) null pkgs.vscode-extensions
+    else
+      throw "vscode extension '${name}' existiert nicht in pkgs.vscode-extensions — bitte aus der Liste entfernen oder Paket ergänzen";
+  resolvedExtensions = map extPkg extensions;
 
   settings = {
     "workbench.sideBar.location" = "right";

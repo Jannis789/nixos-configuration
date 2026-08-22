@@ -16,6 +16,13 @@
         ./hosts/jannis/configuration.nix
         home-manager.nixosModules.home-manager
         {
+          # Overlay: custom Pakete (helium)
+          nixpkgs.overlays = [
+            (final: prev: {
+              helium = final.callPackage ./common/module/custom/helium.nix { };
+            })
+          ];
+
           home-manager = {
             useGlobalPkgs = true;
             useUserPackages = true;
