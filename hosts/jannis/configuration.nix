@@ -33,6 +33,7 @@
     git
     curl
     vim
+    helium
   ];
 
   # sshd — standard, nur LAN (jannis kann selbst schalten)

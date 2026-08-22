@@ -33,9 +33,6 @@ let
     "ms-dotnettools.vscode-dotnet-runtime"
   ];
 
-  # IDs → Pakete; pkgs.vscode-extensions ist verschachtelt (Punkte = Pfad).
-  # hasAttrByPath prüft korrekt, Fehlen schlägt beim Build fehl — kein
-  # stilles Weglassen mehr.
   extPkg = name:
     if lib.hasAttrByPath (lib.splitString "." name) pkgs.vscode-extensions then
       lib.attrByPath (lib.splitString "." name) null pkgs.vscode-extensions
