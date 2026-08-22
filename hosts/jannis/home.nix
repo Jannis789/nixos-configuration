@@ -5,6 +5,7 @@
   home.stateVersion = "26.05";
 
   imports = [
+    ../../common/module/home/font.nix
     ../../common/module/home/pi.nix
     ../../common/module/vscode-insiders.nix
   ];

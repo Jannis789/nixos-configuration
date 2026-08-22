@@ -43,7 +43,7 @@ let
   settings = {
     "workbench.sideBar.location" = "right";
     "workbench.colorTheme" = "Catppuccin Mocha";
-    "workbench.iconTheme" = "mosmmy-icons-vscode";
+    "workbench.iconTheme" = "catppuccin-mocha";
     "terminal.integrated.gpuAcceleration" = "off";
     "terminal.integrated.fontFamily" = "FiraCode Nerd Font";
     "terminal.integrated.defaultProfile.osx" = "zsh";
@@ -79,7 +79,12 @@ in
 
     # HM installiert Extensions nach ~/.vscode/extensions, aber code-insiders
     # liest ~/.vscode-insiders/extensions. Symlink löst das.
-    home.activation.vscodeInsidersExtensions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    home.activation.vscodeInsiders = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      # HM schreibt settings.json nach ~/.config/Code/User — Insiders liest ~/.config/Code - Insiders/User.
+      # Nur settings.json verlinken (globalStorage/workspaceStorage bleiben Insiders-eigen).
+      mkdir -p "${config.home.homeDirectory}/.config/Code - Insiders/User"
+      ln -sfn "${config.home.homeDirectory}/.config/Code/User/settings.json" \
+        "${config.home.homeDirectory}/.config/Code - Insiders/User/settings.json"
       rm -rf "${config.home.homeDirectory}/.vscode-insiders/extensions"
       ln -sfn "${config.home.homeDirectory}/.vscode/extensions" \
         "${config.home.homeDirectory}/.vscode-insiders/extensions"
