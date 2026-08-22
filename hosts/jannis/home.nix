@@ -16,5 +16,5 @@
   # Secrets direkt beim Build importieren (Submodule). Werte landen in der
   # HM-Generation — pi sieht sie als env vars. Bewusst kein activationScript
   # /run/secrets-Dance mehr.
-  home.sessionVariables = import ../../secrets/api-keys.nix;
+  home.sessionVariables = import ../../secrets.nix;
 }
