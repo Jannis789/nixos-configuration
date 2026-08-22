@@ -56,7 +56,7 @@
     for f in api-keys web-control-token darwin-zsh; do
       if [ -f "/home/jannis/workspace/nixos-configuration-v2/secrets/$f.nix" ]; then
         ${pkgs.nix}/bin/nix eval --impure --json --expr "import /home/jannis/workspace/nixos-configuration-v2/secrets/$f.nix" \
-          | ${pkgs.jq}/bin/jq -r 'to_entries[] | "(.key)=(.value)"' \
+          | ${pkgs.jq}/bin/jq -r 'to_entries[] | "\(.key)=\(.value)"' \
           > /run/secrets/$f
       fi
     done
