@@ -13,23 +13,8 @@
   programs.bash.enable = true;
   programs.git.enable = true;
 
-  # Secrets als User-Env (systemd environment.d): pi + GUI-Prozesse sehen
-  # die API-Keys aus /run/secrets (deployt vom activationScript). Kein
-  # Store-Leak, Keys landen nur im /run/secrets (root-only).
-  systemd.user.sessionVariables = { };
-  home.file.".config/environment.d/secrets.conf".text = ''
-    # API-Keys aus /run/secrets (activationScript, lazy + Submodule)
-    . /run/secrets/api-keys 2>/dev/null || true
-    unset API_SERVER_KEY 2>/dev/null || true
-  '';
-
-  # Bash: Keys auch in interaktiven Shells (pi CLI aus Terminal)
-  programs.bash.bashrcExtra = ''
-    if [ -f /run/secrets/api-keys ]; then
-      set -a
-      . /run/secrets/api-keys
-      set +a
-      unset API_SERVER_KEY 2>/dev/null || true
-    fi
-  '';
+  # Secrets direkt beim Build importieren (Submodule). Werte landen in der
+  # HM-Generation — pi sieht sie als env vars. Bewusst kein activationScript
+  # /run/secrets-Dance mehr.
+  home.sessionVariables = import ../../secrets/api-keys.nix;
 }
