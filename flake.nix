@@ -1,8 +1,9 @@
 {
-  description = "NixOS configuration v2 — ein Host, minimal";
+  description = "NixOS configuration v2 — Hosts über mkHost";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -14,81 +15,94 @@
     };
 
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
       flake = false;
     };
+
     homebrew-cask = {
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
+
+    cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
   };
 
-  outputs = { self, nixpkgs, home-manager, nix-darwin, nix-homebrew, ... }@inputs: {
-    # ===== Linux Host: jannis =====
-    nixosConfigurations.jannis = nixpkgs.lib.nixosSystem {
+  outputs = { nixpkgs, home-manager, nix-darwin, nix-homebrew, ... }@inputs:
+  let
+    lib = nixpkgs.lib;
+    secrets = import ./secrets.nix;
+
+    # Benannte Overlays (common/overlays.nix).
+    overlays = import ./common/overlays.nix { };
+
+    # Ein Host = System-Config + Home-Manager + Overlays.
+    # kind: "nixos" (NixOS) oder "darwin" (nix-darwin) — wählt lib + HM-Modul.
+    # hostOverlays = Overlays nur für diesen Host (z.B. helium).
+    # extraModules  = Zusatz-Module (z.B. Kernel-Override für cachyos-latest).
+    mkHost = { kind, system, configuration, username, home, hostOverlays ? [ ], extraModules ? [ ] }:
+      let
+        isNixos = kind == "nixos";
+        hmModule = if isNixos then home-manager.nixosModules.home-manager else home-manager.darwinModules.home-manager;
+      in
+      (if isNixos then nixpkgs.lib.nixosSystem else nix-darwin.lib.darwinSystem) {
+        inherit system;
+
+        # darwin-Config braucht inputs (homebrew-taps); für NixOS harmlos.
+        specialArgs = { inherit inputs; };
+
+        modules = [
+          configuration
+          hmModule
+        ] ++ extraModules ++ lib.optionals (!isNixos) [ nix-homebrew.darwinModules.nix-homebrew ] ++ [
+          {
+            nixpkgs.config.allowUnfree = true;
+            nixpkgs.overlays = [ overlays."vscode-insiders" ] ++ hostOverlays;
+
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+
+              extraSpecialArgs = { inherit secrets; };
+
+              users.${username} = import home;
+            };
+          }
+        ];
+      };
+  in
+  {
+    nixosConfigurations.jannis = mkHost {
+      kind = "nixos";
       system = "x86_64-linux";
-      modules = [
-        ./hosts/jannis/configuration.nix
-        home-manager.nixosModules.home-manager
+      configuration = ./hosts/jannis/configuration.nix;
+      username = "jannis";
+      home = ./hosts/jannis/home.nix;
+      hostOverlays = [ overlays.helium ];
+    };
+
+    # Gleiche Maschine wie jannis, aber mit CachyOS-Kernel (zum Testen).
+    nixosConfigurations.cachyos-latest = mkHost {
+      kind = "nixos";
+      system = "x86_64-linux";
+      configuration = ./hosts/jannis/configuration.nix;
+      username = "jannis";
+      home = ./hosts/jannis/home.nix;
+      hostOverlays = [ overlays.helium ];
+      extraModules = [
         {
-          # Overlay: custom Pakete (helium, vscode-insiders)
-          nixpkgs.overlays = [
-            (final: prev: {
-              helium = final.callPackage ./common/module/custom/helium.nix { };
-
-              # Insiders Build laut Doku (wiki.nixos.org/Visual_Studio_Code#Insiders_Build)
-              vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
-                src = builtins.fetchTarball {
-                  url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
-                  sha256 = "1vakxryvpi7v8065r93pxr9lyx1gpw0389bjpsidw99snjr9r842";
-                };
-                version = "latest";
-                buildInputs = oldAttrs.buildInputs ++ [ prev.krb5 prev.libsoup_3 prev.webkitgtk_4_1 ];
-              });
-            })
-          ];
-
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            users.jannis = import ./hosts/jannis/home.nix;
-          };
+          boot.kernelPackages = inputs.cachyos-kernel.legacyPackages.x86_64-linux.linuxPackages-cachyos-latest;
         }
       ];
     };
 
-    # ===== macOS Host: darwin (nix-darwin) =====
-    darwinConfigurations.darwin = nix-darwin.lib.darwinSystem {
+    darwinConfigurations.darwin = mkHost {
+      kind = "darwin";
       system = "aarch64-darwin";
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./hosts/darwin/configuration.nix
-        nix-homebrew.darwinModules.nix-homebrew
-        home-manager.darwinModules.home-manager
-        {
-          nixpkgs.config.allowUnfree = true;
-          nixpkgs.overlays = [
-            (final: prev: {
-              # Insiders auf macOS — anderer Download-URL als Linux
-              vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
-                src = prev.fetchurl {
-                  url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
-                  sha256 = "sha256-VfzjdQoRFBOcDuJaK+TbjVPdGFghiDtUb7qiW7ltZnU=";
-                };
-                sourceRoot = ".";
-                version = "latest";
-              });
-            })
-          ];
-
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            users.jrustige = import ./hosts/darwin/home.nix;
-          };
-        }
-      ];
+      configuration = ./hosts/darwin/configuration.nix;
+      username = "jrustige";
+      home = ./hosts/darwin/home.nix;
     };
   };
 }

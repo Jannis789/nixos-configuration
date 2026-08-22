@@ -4,5 +4,6 @@
   # Neues dazu: Datei in gnome/ anlegen + hier importieren.
   imports = [
     ./dock.nix
+    ./extensions.nix
   ];
 }

@@ -2,9 +2,15 @@
 {
   imports = [ ./hardware-configuration.nix ];
 
-  # Bootloader
-  boot.loader.systemd-boot.enable = true;
+  # Bootloader: GRUB (EFI) — das System bootet über GRUB, nicht systemd-boot.
+  # systemd-boot-Einträge wurden von v2-Builds geschrieben, aber nie gebootet.
+  boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = true;
+    device = "nodev";
+  };
 
   # Hostname + Netzwerk
   networking.hostName = "jannis";
@@ -36,6 +42,12 @@
     helium
   ];
 
+  # Steam + neuester Proton-GE (extraCompatPackages liefert die GE-Versionen)
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [ pkgs.proton-ge-bin ];
+  };
+
   # sshd — standard, nur LAN (jannis kann selbst schalten)
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
@@ -49,5 +61,5 @@
   # Unfree (vscode etc.)
   nixpkgs.config.allowUnfree = true;
 
-  system.stateVersion = "26.05";
+  system.stateVersion = "26.11";
 }
