@@ -6,6 +6,7 @@
 
   imports = [
     ../../common/module/home/font.nix
+    ../../common/module/home/gnome
     ../../common/module/home/pi.nix
     ../../common/module/home/starship.nix
     ../../common/module/vscode-insiders.nix
