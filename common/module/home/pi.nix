@@ -7,11 +7,25 @@
       theme = "dark";
       defaultProvider = "nous";
       defaultModel = "~deepseek/deepseek-v4-flash-latest";
+
+      packages = [
+        "npm:@pi-unipi/memory"
+        "npm:@dietrichgebert/ponytail"
+        "npm:context-mode"
+        "npm:pi-lens"
+        "npm:pi-vscode-context"
+        "npm:pi-mcp-adapter"
+        "npm:pi-web-access"
+        "npm:pi-subagents"
+        "npm:bigpowers"
+        "npm:pi-fabric"
+        "npm:@firstpick/pi-extension-nixos-wiki-local"
+        "npm:betterwright"
+        "npm:@xynogen/pix-sudo"
+      ];
     };
   };
 
-  # models.json direkt mit korrektem Schema schreiben (das HM-Modul schreibt
-  # es flach → pi-Fehler "must have required properties providers").
   home.file.".pi/agent/models.json".text = builtins.toJSON {
     providers.nous = {
       baseUrl = "https://inference-api.nousresearch.com/v1";
