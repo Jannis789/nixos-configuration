@@ -76,5 +76,13 @@ in
       profiles.default.extensions = resolvedExtensions;
       profiles.default.userSettings = settings;
     };
+
+    # HM installiert Extensions nach ~/.vscode/extensions, aber code-insiders
+    # liest ~/.vscode-insiders/extensions. Symlink löst das.
+    home.activation.vscodeInsidersExtensions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      rm -rf "${config.home.homeDirectory}/.vscode-insiders/extensions"
+      ln -sfn "${config.home.homeDirectory}/.vscode/extensions" \
+        "${config.home.homeDirectory}/.vscode-insiders/extensions"
+    '';
   };
 }
