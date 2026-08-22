@@ -45,5 +45,8 @@
     substituters = [ "https://cache.nixos.org" ];
   };
 
+  # Unfree (vscode etc.)
+  nixpkgs.config.allowUnfree = true;
+
   system.stateVersion = "26.05";
 }
