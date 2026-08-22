@@ -16,10 +16,20 @@
         ./hosts/jannis/configuration.nix
         home-manager.nixosModules.home-manager
         {
-          # Overlay: custom Pakete (helium)
+          # Overlay: custom Pakete (helium, vscode-insiders)
           nixpkgs.overlays = [
             (final: prev: {
               helium = final.callPackage ./common/module/custom/helium.nix { };
+
+              # Insiders Build laut Doku (wiki.nixos.org/Visual_Studio_Code#Insiders_Build)
+              vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+                src = builtins.fetchTarball {
+                  url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+                  sha256 = "1vakxryvpi7v8065r93pxr9lyx1gpw0389bjpsidw99snjr9r842";
+                };
+                version = "latest";
+                buildInputs = oldAttrs.buildInputs ++ [ prev.krb5 prev.libsoup_3 prev.webkitgtk_4_1 ];
+              });
             })
           ];
 

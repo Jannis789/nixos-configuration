@@ -63,7 +63,8 @@ in
     enable = lib.mkEnableOption "VS Code (Insiders-Wrapper)";
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.vscode;
+      # Overlay vscode-insiders (latest, eigene .desktop "Code - Insiders")
+      default = pkgs.vscode-insiders;
       description = "VS Code binary. Per-Host wählbar (z.B. Insiders-Overlay).";
     };
   };
