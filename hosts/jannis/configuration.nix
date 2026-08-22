@@ -1,0 +1,51 @@
+{ config, pkgs, lib, ... }:
+{
+  imports = [ ./hardware-configuration.nix ];
+
+  # Bootloader
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # Hostname + Netzwerk
+  networking.hostName = "jannis";
+  networking.networkmanager.enable = true;
+
+  # Locale / Zeit (deutsch)
+  time.timeZone = "Europe/Berlin";
+  i18n.defaultLocale = "de_DE.UTF-8";
+  console.keyMap = "de";
+
+  # Benutzer: jannis (wheel + networkmanager)
+  users.users.jannis = {
+    isNormalUser = true;
+    initialPassword = "changeme";
+    extraGroups = [ "wheel" "networkmanager" ];
+  };
+  # sudo ohne Passwort (Jannis' Workflow: rebuilds im Terminal)
+  security.sudo.wheelNeedsPassword = false;
+
+  # GNOME Desktop — Standard, ohne Theme-Mods (gdm bleibt default)
+  services.xserver.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
+  services.xserver.videoDrivers = [ "modesetting" ];
+
+  # Basispakete
+  environment.systemPackages = with pkgs; [
+    git
+    curl
+    vim
+  ];
+
+  # sshd — standard, nur LAN (jannis kann selbst schalten)
+  services.openssh.enable = true;
+  services.openssh.settings.PasswordAuthentication = false;
+
+  # Nix: flakes + substituters
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    substituters = [ "https://cache.nixos.org" ];
+  };
+
+  system.stateVersion = "26.05";
+}
