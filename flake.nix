@@ -7,9 +7,25 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    homebrew-core = {
+      url = "github:homebrew/homebrew-core";
+      flake = false;
+    };
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }: {
+  outputs = { self, nixpkgs, home-manager, nix-darwin, nix-homebrew, ... }@inputs: {
+    # ===== Linux Host: jannis =====
     nixosConfigurations.jannis = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
@@ -37,6 +53,39 @@
             useGlobalPkgs = true;
             useUserPackages = true;
             users.jannis = import ./hosts/jannis/home.nix;
+          };
+        }
+      ];
+    };
+
+    # ===== macOS Host: darwin (nix-darwin) =====
+    darwinConfigurations.darwin = nix-darwin.lib.darwinSystem {
+      system = "aarch64-darwin";
+      specialArgs = { inherit inputs; };
+      modules = [
+        ./hosts/darwin/configuration.nix
+        nix-homebrew.darwinModules.nix-homebrew
+        home-manager.darwinModules.home-manager
+        {
+          nixpkgs.config.allowUnfree = true;
+          nixpkgs.overlays = [
+            (final: prev: {
+              # Insiders auf macOS — anderer Download-URL als Linux
+              vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: rec {
+                src = prev.fetchurl {
+                  url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
+                  sha256 = "sha256-VfzjdQoRFBOcDuJaK+TbjVPdGFghiDtUb7qiW7ltZnU=";
+                };
+                sourceRoot = ".";
+                version = "latest";
+              });
+            })
+          ];
+
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            users.jrustige = import ./hosts/darwin/home.nix;
           };
         }
       ];
