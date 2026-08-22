@@ -15,6 +15,11 @@
   programs.vscode-insiders.enable = true;
   programs.git.enable = true;
 
+  # Terminal + Pakete
+  home.packages = with pkgs; [
+    ghostty
+  ];
+
   # Secrets: eine Datei secrets.nix, direkt beim Build importiert.
   home.sessionVariables = import ../../secrets.nix;
 }
