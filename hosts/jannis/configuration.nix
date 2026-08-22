@@ -24,11 +24,9 @@
   # sudo ohne Passwort (Jannis' Workflow: rebuilds im Terminal)
   security.sudo.wheelNeedsPassword = false;
 
-  # GNOME Desktop — Standard, ohne Theme-Mods (gdm bleibt default)
-  services.xserver.enable = true;
+  # GNOME Desktop — Wayland only (GNOME 50 hat kein X11 mehr)
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
-  services.xserver.videoDrivers = [ "modesetting" ];
 
   # Basispakete
   environment.systemPackages = with pkgs; [
@@ -46,6 +44,24 @@
     experimental-features = [ "nix-command" "flakes" ];
     substituters = [ "https://cache.nixos.org" ];
   };
+
+  # Secrets (lazy + Submodule): /run/secrets zur Laufzeit aus dem privaten
+  # secrets-Submodule deployen (nix eval + jq, dotenv-Format). Kein
+  # Store-Leak: Werte werden nie in die Config interpoliert, und kein
+  # pathExists beim Eval (Submodule-Pfad ist in der Flake-Sandbox nicht
+  # sichtbar → Script würde sonst still weggelassen).
+  system.activationScripts.secrets = ''
+    mkdir -p /run/secrets
+    chmod 0700 /run/secrets
+    for f in api-keys web-control-token darwin-zsh; do
+      if [ -f "/home/jannis/workspace/nixos-configuration-v2/secrets/$f.nix" ]; then
+        ${pkgs.nix}/bin/nix eval --impure --json --expr "import /home/jannis/workspace/nixos-configuration-v2/secrets/$f.nix" \
+          | ${pkgs.jq}/bin/jq -r 'to_entries[] | "(.key)=(.value)"' \
+          > /run/secrets/$f
+      fi
+    done
+    chmod 0400 /run/secrets/* 2>/dev/null || true
+  '';
 
   system.stateVersion = "26.05";
 }
