@@ -8,14 +8,18 @@
       defaultProvider = "nous";
       defaultModel = "~deepseek/deepseek-v4-flash-latest";
     };
-    models = {
-      provider = "nous";
+  };
+
+  # models.json direkt mit korrektem Schema schreiben (das HM-Modul schreibt
+  # es flach → pi-Fehler "must have required properties providers").
+  home.file.".pi/agent/models.json".text = builtins.toJSON {
+    providers.nous = {
       baseUrl = "https://inference-api.nousresearch.com/v1";
       api = "openai-completions";
-      apiKey = "$NOUS_API_KEY"; # aus secrets.nix → home.sessionVariables
+      apiKey = "$NOUS_API_KEY"; # aus home.sessionVariables (secrets.nix)
       models = [
-        "~deepseek/deepseek-v4-flash-latest"
-        "minimax-m3"
+        { id = "~deepseek/deepseek-v4-flash-latest"; }
+        { id = "minimax-m3"; }
       ];
     };
   };
