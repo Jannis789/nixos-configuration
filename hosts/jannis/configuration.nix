@@ -52,7 +52,6 @@
     gnomeExtensions.color-picker
     gnomeExtensions.astra-monitor
     gnomeExtensions.dash-to-dock
-    gnomeExtensions.tiling-shell
 
     # OCR-Backend für native-screenshot-ui-ocr-extended (deu + eng)
     (tesseract5.override { enableLanguages = [ "deu" "eng" ]; })
