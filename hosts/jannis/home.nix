@@ -9,6 +9,7 @@
     ../../common/module/home/font.nix
     ../../common/module/home/gnome
     ../../common/module/home/pi.nix
+    ../../common/module/home/ssh.nix
     ../../common/module/home/starship.nix
     ../../common/module/vscode-insiders.nix
   ];
@@ -26,9 +27,15 @@
   programs.vscode-insiders.enable = true;
   programs.git.enable = true;
 
+  # SSH: Config + Keys deklarativ (common/module/home/ssh.nix)
+
   # Terminal + Pakete
   home.packages = with pkgs; [
     ghostty
+
+    # Rewaita: Adwaita einfärben — schreibt ~/.config/gtk-{3,4}.0/gtk.css und
+    # Shell-Theme nach ~/.local/share/themes (anwenden über user-theme-Extension)
+    rewaita
   ];
 
   # Secrets: eine Datei secrets.nix, direkt beim Build importiert.

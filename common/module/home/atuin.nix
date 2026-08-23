@@ -5,26 +5,18 @@
     enableBashIntegration = true;
     enableZshIntegration = true;
 
-    # ↑ deaktivieren — History-Suche nur noch über Strg+R.
-    # ponytail: --disable-up-arrow per flag, wie vom Modul vorgesehen.
     flags = [ "--disable-up-arrow" ];
 
-    # Kein Sync-Server — lokal, ohne Verbindungsversuche.
     settings = {
       auto_sync = false;
 
-      # Theme aktivieren — [theme] name = Stem der Datei in themes/
-      # (themes.* schreibt nur die Datei, wählt aber nichts aus)
       theme = {
         name = "catppuccin-mocha-mauve";
       };
     };
 
-    # atuin schreibt seine Default-config.toml nach jedem Befehl neu —
-    # ohne force blockiert HM die Aktivierung (clobber-Schutz).
     forceOverwriteSettings = true;
 
-    # Catppuccin Mocha (Mauve-Akzent) — Farben aus deiner Vorgabe.
     themes = {
       "catppuccin-mocha-mauve" = {
         theme.name = "Catppuccin Mocha Mauve";

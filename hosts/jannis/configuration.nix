@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -25,7 +30,10 @@
   users.users.jannis = {
     isNormalUser = true;
     initialPassword = "changeme";
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+    ];
   };
   # sudo ohne Passwort (Jannis' Workflow: rebuilds im Terminal)
   security.sudo.wheelNeedsPassword = false;
@@ -41,6 +49,9 @@
     vim
     helium
 
+    # GNOME Web — WebExtensions sind seit v46 fest einkompiliert, kein Build-Flag nötig
+    epiphany
+
     # GNOME Shell Extensions — System-Store, damit GDM/GNOME sie in XDG_DATA_DIRS findet
     # (home.packages landet im HM-Profil, das GNOME nicht sieht)
     gnomeExtensions.blur-my-shell
@@ -48,13 +59,22 @@
     gnomeExtensions.clipboard-indicator
     gnomeExtensions.customize-clock-on-lock-screen
     gnomeExtensions.native-screenshot-ui-ocr-extended
+    gnomeExtensions.hanabi
     gnomeExtensions.user-themes
     gnomeExtensions.color-picker
     gnomeExtensions.astra-monitor
     gnomeExtensions.dash-to-dock
 
     # OCR-Backend für native-screenshot-ui-ocr-extended (deu + eng)
-    (tesseract5.override { enableLanguages = [ "deu" "eng" ]; })
+    (tesseract5.override {
+      enableLanguages = [
+        "deu"
+        "eng"
+      ];
+    })
+
+    # gjs — Laufzeit für den Hanabi-Renderer (spawnt "gjs" als Subprozess)
+    gjs
   ];
 
   # Steam + neuester Proton-GE (extraCompatPackages liefert die GE-Versionen)
@@ -69,7 +89,10 @@
 
   # Nix: flakes + substituters
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     substituters = [ "https://cache.nixos.org" ];
   };
 

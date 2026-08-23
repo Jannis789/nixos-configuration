@@ -34,6 +34,7 @@
       models = [
         { id = "~deepseek/deepseek-v4-flash-latest"; }
         { id = "minimax-m3"; }
+        { id = "stealth/ox-alpha"; }
       ];
     };
   };

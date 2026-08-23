@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   # GNOME Extensions: Installation im System-Store (configuration.nix), damit die
   # GDM/GNOME-Session sie über XDG_DATA_DIRS findet (HM-Profil ist unsichtbar).
@@ -7,9 +12,12 @@
   dconf.settings."org/gnome/shell" = {
     # Leere disabled-Liste: GNOME hatte hier alte manuelle Deaktivierungen,
     # die über enabled-extensions gewinnen und alles ausgeschaltet lassen.
-    disabled-extensions = [ ];
+    disabled-extensions = [
+      "hanabi-extension@jeffshee.github.io"
+    ];
 
     enabled-extensions = [
+      # Rewaita: macht dessen generiertes GNOME-Shell-Theme anwendbar
       "user-theme@gnome-shell-extensions.gcampax.github.com"
       "color-picker@tuberry"
       "blur-my-shell@aunetx"
@@ -21,6 +29,10 @@
       "ocr-to-clipboard@oreocapybara"
     ];
   };
+
+  # Rewaitas Shell-Theme: die App legt es immer unter ~/.local/share/themes/rewaita
+  # ab (fester Pfad, utils.py) — der Key gehört daher fest in die Config.
+  dconf.settings."org/gnome/shell/extensions/user-theme".name = "rewaita";
 
   # dash-to-dock: Metro-Indikator, fester Hintergrund (20% Deckkraft)
   dconf.settings."org/gnome/shell/extensions/dash-to-dock" = {
@@ -43,7 +55,7 @@
   # clipboard-indicator: Super+V öffnet direkt den Clipboard-Mode (Menü + Suche)
   dconf.settings."org/gnome/shell/extensions/clipboard-indicator" = {
     enable-keybindings = true;
-    toggle-menu = [ "<Alt>c" ];
+    toggle-menu = [ "<Super>v" ];
     open-at-cursor = true;
     show-search-bar = true;
   };

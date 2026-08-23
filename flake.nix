@@ -58,7 +58,7 @@
         ] ++ extraModules ++ lib.optionals (!isNixos) [ nix-homebrew.darwinModules.nix-homebrew ] ++ [
           {
             nixpkgs.config.allowUnfree = true;
-            nixpkgs.overlays = [ overlays."vscode-insiders" ] ++ hostOverlays;
+            nixpkgs.overlays = [ overlays."vscode-insiders" overlays.hanabi ] ++ hostOverlays;
 
             home-manager = {
               useGlobalPkgs = true;
@@ -79,7 +79,7 @@
       configuration = ./hosts/jannis/configuration.nix;
       username = "jannis";
       home = ./hosts/jannis/home.nix;
-      hostOverlays = [ overlays.helium ];
+      hostOverlays = [ overlays.helium overlays.rewaita overlays.epiphany-webext ];
     };
 
     # Gleiche Maschine wie jannis, aber mit CachyOS-Kernel (zum Testen).
@@ -89,7 +89,7 @@
       configuration = ./hosts/jannis/configuration.nix;
       username = "jannis";
       home = ./hosts/jannis/home.nix;
-      hostOverlays = [ overlays.helium ];
+      hostOverlays = [ overlays.helium overlays.rewaita overlays.epiphany-webext ];
       extraModules = [
         {
           boot.kernelPackages = inputs.cachyos-kernel.legacyPackages.x86_64-linux.linuxPackages-cachyos-latest;
