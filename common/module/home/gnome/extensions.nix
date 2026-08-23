@@ -27,6 +27,11 @@
     running-indicator-style = "METRO";
     background-opacity = 0.2;
     transparency-mode = "FIXED";
+    dock-position = "LEFT";
+    custom-theme-shrink = true;
+    extend-height = true;
+    dock-fixed = true;
+    show-apps-at-top = false;
   };
 
   # blur-my-shell Panel: Weicher Blur (sigma 20), kein statischer Blur
