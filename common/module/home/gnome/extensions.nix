@@ -22,6 +22,12 @@
     ];
   };
 
+  # blur-my-shell Panel: Weicher Blur (sigma 20), kein statischer Blur
+  dconf.settings."org/gnome/shell/extensions/blur-my-shell/panel" = {
+    sigma = 20;
+    static-blur = false;
+  };
+
   # clipboard-indicator: Super+V öffnet direkt den Clipboard-Mode (Menü + Suche)
   dconf.settings."org/gnome/shell/extensions/clipboard-indicator" = {
     enable-keybindings = true;
