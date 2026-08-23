@@ -31,7 +31,7 @@
   # clipboard-indicator: Super+V öffnet direkt den Clipboard-Mode (Menü + Suche)
   dconf.settings."org/gnome/shell/extensions/clipboard-indicator" = {
     enable-keybindings = true;
-    toggle-menu = [ "<Super>v" ];
+    toggle-menu = [ "<Alt>c" ];
     open-at-cursor = true;
     show-search-bar = true;
   };
