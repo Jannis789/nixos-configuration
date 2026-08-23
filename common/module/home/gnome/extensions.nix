@@ -22,6 +22,13 @@
     ];
   };
 
+  # dash-to-dock: Metro-Indikator, fester Hintergrund (20% Deckkraft)
+  dconf.settings."org/gnome/shell/extensions/dash-to-dock" = {
+    running-indicator-style = "METRO";
+    background-opacity = 0.2;
+    transparency-mode = "FIXED";
+  };
+
   # blur-my-shell Panel: Weicher Blur (sigma 20), kein statischer Blur
   dconf.settings."org/gnome/shell/extensions/blur-my-shell/panel" = {
     sigma = 20;
