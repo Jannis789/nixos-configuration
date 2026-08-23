@@ -30,9 +30,5 @@
     };
   };
 
-  # Extensions (aus 09_gnome_dconf.md / 10_gnome_extensions.md)
-  home.packages = with pkgs; [
-    gnomeExtensions.dash-to-dock
-    gnomeExtensions.blur-my-shell
-  ];
+
 }

@@ -1,18 +1,14 @@
 { config, lib, pkgs, ... }:
 {
-  # GNOME Extensions: installieren + aktivieren
-  # (aus rewrite/10_gnome_extensions.md — 7 Extensions)
-  home.packages = with pkgs.gnomeExtensions; [
-    user-themes
-    color-picker
-    blur-my-shell
-    caffeine
-    astra-monitor
-    dash-to-dock
-    tiling-shell
-  ];
+  # GNOME Extensions: Installation im System-Store (configuration.nix), damit die
+  # GDM/GNOME-Session sie über XDG_DATA_DIRS findet (HM-Profil ist unsichtbar).
+  # Diese Datei verwaltet nur Aktivierung + Settings.
 
   dconf.settings."org/gnome/shell" = {
+    # Leere disabled-Liste: GNOME hatte hier alte manuelle Deaktivierungen,
+    # die über enabled-extensions gewinnen und alles ausgeschaltet lassen.
+    disabled-extensions = [ ];
+
     enabled-extensions = [
       "user-theme@gnome-shell-extensions.gcampax.github.com"
       "color-picker@tuberry"
@@ -20,7 +16,17 @@
       "caffeine@patapon.info"
       "monitor@astraext.github.io"
       "dash-to-dock@micxgx.gmail.com"
-      "tilingshell@ferrarodomenico.com"
+      "CustomizeClockOnLockScreen@pratap.fastmail.fm"
+      "clipboard-indicator@tudmotu.com"
+      "ocr-to-clipboard@oreocapybara"
     ];
+  };
+
+  # clipboard-indicator: Super+V öffnet direkt den Clipboard-Mode (Menü + Suche)
+  dconf.settings."org/gnome/shell/extensions/clipboard-indicator" = {
+    enable-keybindings = true;
+    toggle-menu = [ "<Super>v" ];
+    open-at-cursor = true;
+    show-search-bar = true;
   };
 }

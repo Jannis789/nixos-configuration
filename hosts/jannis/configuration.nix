@@ -40,6 +40,22 @@
     curl
     vim
     helium
+
+    # GNOME Shell Extensions — System-Store, damit GDM/GNOME sie in XDG_DATA_DIRS findet
+    # (home.packages landet im HM-Profil, das GNOME nicht sieht)
+    gnomeExtensions.blur-my-shell
+    gnomeExtensions.caffeine
+    gnomeExtensions.clipboard-indicator
+    gnomeExtensions.customize-clock-on-lock-screen
+    gnomeExtensions.native-screenshot-ui-ocr-extended
+    gnomeExtensions.user-themes
+    gnomeExtensions.color-picker
+    gnomeExtensions.astra-monitor
+    gnomeExtensions.dash-to-dock
+    gnomeExtensions.tiling-shell
+
+    # OCR-Backend für native-screenshot-ui-ocr-extended (deu + eng)
+    (tesseract5.override { enableLanguages = [ "deu" "eng" ]; })
   ];
 
   # Steam + neuester Proton-GE (extraCompatPackages liefert die GE-Versionen)
