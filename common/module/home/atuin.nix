@@ -12,6 +12,12 @@
     # Kein Sync-Server — lokal, ohne Verbindungsversuche.
     settings = {
       auto_sync = false;
+
+      # Theme aktivieren — [theme] name = Stem der Datei in themes/
+      # (themes.* schreibt nur die Datei, wählt aber nichts aus)
+      theme = {
+        name = "catppuccin-mocha-mauve";
+      };
     };
 
     # atuin schreibt seine Default-config.toml nach jedem Befehl neu —
