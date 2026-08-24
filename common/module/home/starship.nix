@@ -93,7 +93,6 @@
           Alpine = "";
           Amazon = "";
           Android = "";
-          AOSC = "";
           Arch = "󰣇";
           Artix = "󰣇";
           EndeavourOS = "";
