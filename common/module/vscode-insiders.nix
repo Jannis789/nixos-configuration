@@ -8,6 +8,16 @@
 let
   cfg = config.programs.vscode-insiders;
 
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
+  codeDir = if isDarwin then
+    "${config.home.homeDirectory}/Library/Application Support/Code"
+  else
+    "${config.home.homeDirectory}/.config/Code";
+  insidersDir = if isDarwin then
+    "${config.home.homeDirectory}/Library/Application Support/Code - Insiders"
+  else
+    "${config.home.homeDirectory}/.config/Code - Insiders";
+
   extensions = [
     "ms-python.python"
     "ms-python.debugpy"
@@ -83,9 +93,8 @@ in
     };
 
     home.activation.vscodeInsiders = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      mkdir -p "${config.home.homeDirectory}/.config/Code - Insiders/User"
-      ln -sfn "${config.home.homeDirectory}/.config/Code/User/settings.json" \
-        "${config.home.homeDirectory}/.config/Code - Insiders/User/settings.json"
+      mkdir -p "${insidersDir}/User"
+      ln -sfn "${codeDir}/User/settings.json" "${insidersDir}/User/settings.json"
       rm -rf "${config.home.homeDirectory}/.vscode-insiders/extensions"
       ln -sfn "${config.home.homeDirectory}/.vscode/extensions" \
         "${config.home.homeDirectory}/.vscode-insiders/extensions"
