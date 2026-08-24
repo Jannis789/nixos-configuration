@@ -72,7 +72,11 @@
           ++ [
             {
               nixpkgs.config.allowUnfree = true;
-              nixpkgs.overlays = [ overlays."vscode-insiders" overlays.hanabi ] ++ hostOverlays;
+              nixpkgs.overlays = [
+                overlays."vscode-insiders"
+                overlays.hanabi
+              ]
+              ++ hostOverlays;
 
               home-manager = {
                 useGlobalPkgs = true;
