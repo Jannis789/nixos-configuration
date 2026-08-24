@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  secrets,
   ...
 }:
 {
@@ -25,6 +26,7 @@
   users.users.jannis = {
     isNormalUser = true;
     initialPassword = "changeme";
+    openssh.authorizedKeys.keys = [ (builtins.readFile ./keys/lannitz.pub) ]; # wonko (macOS)
     extraGroups = [
       "wheel"
       "networkmanager"
@@ -71,6 +73,51 @@
 
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
+
+  # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :9000
+  # Cockpit 366 nutzt DynamicUser — statische Gruppe, damit ACME-chown immer geht
+  users.groups."cockpit-wsinstance-socket" = { };
+
+  services.cockpit = {
+    enable = true;
+    port = 443;
+    openFirewall = true;
+    # Origin ohne Port — Browser sendet bei 443 keine Portnummer
+    allowed-origins = [ "https://jannis.nix-dev.link" "https://localhost" ];
+  };
+  # Let's Encrypt per DNS-01 (Cloudflare) — echte Domain statt Self-Signed
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "jrustige@prodress.de";
+    certs."jannis.nix-dev.link" = {
+      group = "cockpit-wsinstance-socket";
+      dnsProvider = "cloudflare";
+      # ponytail: Runtime-Datei statt sops — Token kommt aus secrets.nix
+      environmentFile = "/run/acme-cloudflare-creds";
+    };
+  };
+  system.activationScripts.acmeCloudflareCreds = ''
+    echo "CF_DNS_API_TOKEN=${secrets.CF_DNS_API_TOKEN}" > /run/acme-cloudflare-creds
+    chmod 600 /run/acme-cloudflare-creds
+    echo -n "${secrets.CF_DNS_API_TOKEN}" > /run/ddclient-token
+    chmod 600 /run/ddclient-token
+  '';
+
+  # DDNS: hält jannis.nix-dev.link auf der Public-IP (Fritzbox-Portfreigabe 443 → diese Kiste)
+  services.ddclient = {
+    enable = true;
+    use = "web, web=checkip.amazonaws.com";
+    protocol = "cloudflare";
+    username = "token";
+    passwordFile = "/run/ddclient-token";
+    zone = "nix-dev.link";
+    domains = [ "jannis.nix-dev.link" ];
+    interval = "5min";
+  };
+  environment.etc."cockpit/ws-certs.d/10-jannis-nix-dev-link.cert".source =
+    config.security.acme.certs."jannis.nix-dev.link".directory + "/fullchain.pem";
+  environment.etc."cockpit/ws-certs.d/10-jannis-nix-dev-link.key".source =
+    config.security.acme.certs."jannis.nix-dev.link".directory + "/key.pem";
 
   nix.settings = {
     experimental-features = [

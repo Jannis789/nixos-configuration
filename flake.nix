@@ -61,7 +61,7 @@
         (if isNixos then nixpkgs.lib.nixosSystem else nix-darwin.lib.darwinSystem) {
           inherit system;
 
-          specialArgs = { inherit inputs; };
+          specialArgs = { inherit inputs secrets; };
 
           modules = [
             configuration
@@ -101,6 +101,7 @@
           overlays.helium
           overlays.rewaita
           overlays.epiphany-webext
+          overlays.cockpit-nerdfont
         ];
       };
 

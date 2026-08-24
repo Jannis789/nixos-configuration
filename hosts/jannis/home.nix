@@ -18,6 +18,7 @@
 
   programs.bash.initExtra = ''
     . "$HOME/.local/state/home-manager/gcroots/current-home/home-path/etc/profile.d/hm-session-vars.sh"
+    fastfetch
   '';
   programs.vscode-insiders.enable = true;
   programs.git.enable = true;
@@ -25,6 +26,7 @@
   home.packages = with pkgs; [
     ghostty
     rewaita
+    fastfetch
   ];
 
   home.sessionVariables = secrets;

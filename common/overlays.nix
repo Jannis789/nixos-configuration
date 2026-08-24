@@ -75,6 +75,25 @@ let
       };
     });
   };
+
+  # Cockpit-Terminal: FiraCode Nerd Font als Webfont — Icons überall, ohne Client-Installation
+  cockpit-nerdfont = final: prev: {
+    cockpit = prev.cockpit.overrideAttrs (old: {
+      postInstall = (old.postInstall or "") + ''
+        FONT_DIR=$out/share/cockpit/static
+        cp ${final.nerd-fonts.fira-code}/share/fonts/truetype/NerdFonts/FiraCode/FiraCodeNerdFont-Regular.ttf $FONT_DIR/
+        cp ${final.nerd-fonts.fira-code}/share/fonts/truetype/NerdFonts/FiraCode/FiraCodeNerdFont-Bold.ttf $FONT_DIR/
+
+        # fontFamily-Stack im Terminal-JS patchen
+        TJS=$out/share/cockpit/systemd/terminal.js.gz
+        zcat $TJS | sed 's/fontFamily:"Menlo, Monaco, Consolas, monospace"/fontFamily:"FiraCode Nerd Font, Menlo, Monaco, Consolas, monospace"/' | gzip -9 > $TJS.tmp && mv $TJS.tmp $TJS
+
+        # @font-face ins Terminal-CSS
+        TCS=$out/share/cockpit/systemd/terminal.css.gz
+        zcat $TCS | cat - <(echo '@font-face{font-family:"FiraCode Nerd Font";src:url("../static/FiraCodeNerdFont-Regular.ttf") format("truetype");font-weight:400}@font-face{font-family:"FiraCode Nerd Font";src:url("../static/FiraCodeNerdFont-Bold.ttf") format("truetype");font-weight:700}') | gzip -9 > $TCS.tmp && mv $TCS.tmp $TCS
+      '';
+    });
+  };
 in
 {
   inherit
@@ -83,5 +102,6 @@ in
     hanabi
     rewaita
     epiphany-webext
+    cockpit-nerdfont
     ;
 }
