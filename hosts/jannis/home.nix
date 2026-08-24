@@ -11,7 +11,7 @@
     ../../common/module/home/pi.nix
     ../../common/module/home/ssh.nix
     ../../common/module/home/starship.nix
-    ../../common/module/home/vscodium.nix
+    ../../common/module/vscode-insiders.nix
   ];
 
   programs.bash.enable = true;
@@ -19,7 +19,7 @@
   programs.bash.initExtra = ''
     . "$HOME/.local/state/home-manager/gcroots/current-home/home-path/etc/profile.d/hm-session-vars.sh"
   '';
-  programs.vscodium.enable = true;
+  programs.vscode-insiders.enable = true;
   programs.git.enable = true;
 
   home.packages = with pkgs; [
