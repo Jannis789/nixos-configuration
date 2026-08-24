@@ -9,14 +9,16 @@ let
   cfg = config.programs.vscode-insiders;
 
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
-  codeDir = if isDarwin then
-    "${config.home.homeDirectory}/Library/Application Support/Code"
-  else
-    "${config.home.homeDirectory}/.config/Code";
-  insidersDir = if isDarwin then
-    "${config.home.homeDirectory}/Library/Application Support/Code - Insiders"
-  else
-    "${config.home.homeDirectory}/.config/Code - Insiders";
+  codeDir =
+    if isDarwin then
+      "${config.home.homeDirectory}/Library/Application Support/Code"
+    else
+      "${config.home.homeDirectory}/.config/Code";
+  insidersDir =
+    if isDarwin then
+      "${config.home.homeDirectory}/Library/Application Support/Code - Insiders"
+    else
+      "${config.home.homeDirectory}/.config/Code - Insiders";
 
   extensions = [
     "ms-python.python"
@@ -56,6 +58,21 @@ let
       throw "vscode extension '${name}' existiert nicht in pkgs.vscode-extensions — bitte aus der Liste entfernen oder Paket ergänzen";
   resolvedExtensions = map extPkg extensions;
 
+  marketplaceExtensions = map pkgs.vscode-utils.extensionFromVscodeMarketplace [
+    {
+      name = "git-tree-compare";
+      publisher = "letmaik";
+      version = "1.20.0";
+      hash = "sha256-RoTj1ORmYnapsXHx3x4kafa7rWeRKPlKofD/pa8GbCQ=";
+    }
+    {
+      name = "vscode-boot-dev-pack";
+      publisher = "vmware";
+      version = "0.2.2";
+      hash = "sha256-4Sh/4zGPBGU8XwnLEt8lf9o9i3Ggjz9xsXLHcH4LKEw=";
+    }
+  ];
+
   settings = {
     "workbench.sideBar.location" = "right";
     "workbench.colorTheme" = "Catppuccin Mocha";
@@ -88,7 +105,7 @@ in
     programs.vscode = {
       enable = true;
       package = cfg.package;
-      profiles.default.extensions = resolvedExtensions;
+      profiles.default.extensions = resolvedExtensions ++ marketplaceExtensions;
       profiles.default.userSettings = settings;
     };
 

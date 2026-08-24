@@ -63,6 +63,7 @@
   home.shellAliases = {
     pmake = "${config.home.homeDirectory}/workspace/prodress/prodressnet/pdbuild";
     pmakeclean = "${config.home.homeDirectory}/workspace/prodress/prodressnet/pdbuild -t clean";
+    makelibs = "${config.home.homeDirectory}/workspace/prodress/prodressnet/makelibs";
 
     inst22c = "ssh asp22c.prodress-updates.de -l prodress hub/bin/updater.sh -arg p -arg";
     inst24a = "ssh asp24a.prodress.vpn -l prodress hub/bin/updater.sh -arg p -arg";
