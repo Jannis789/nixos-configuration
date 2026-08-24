@@ -22,17 +22,30 @@
 
   programs.ssh = {
     enable = true;
-    matchBlocks = {
+    enableDefaultConfig = false;
+    settings = {
+      "*" = {
+        ForwardAgent = false;
+        AddKeysToAgent = "no";
+        Compression = false;
+        ServerAliveInterval = 0;
+        ServerAliveCountMax = 3;
+        HashKnownHosts = false;
+        UserKnownHostsFile = "~/.ssh/known_hosts";
+        ControlMaster = "no";
+        ControlPath = "~/.ssh/master-%r@%n:%p";
+        ControlPersist = "no";
+      };
       "github.com" = {
-        hostname = "github.com";
-        user = "git";
-        identityFile = "~/.ssh/lannitz";
-        identitiesOnly = true;
+        HostName = "github.com";
+        User = "git";
+        IdentityFile = "~/.ssh/lannitz";
+        IdentitiesOnly = true;
       };
       "git.prodressnet.de" = {
-        user = "git";
-        identityFile = "~/.ssh/arbeit";
-        identitiesOnly = true;
+        User = "git";
+        IdentityFile = "~/.ssh/arbeit";
+        IdentitiesOnly = true;
       };
     };
   };

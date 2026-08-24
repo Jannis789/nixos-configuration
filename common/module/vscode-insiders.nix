@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.programs.vscode-insiders;
@@ -33,7 +38,8 @@ let
     "ms-dotnettools.vscode-dotnet-runtime"
   ];
 
-  extPkg = name:
+  extPkg =
+    name:
     if lib.hasAttrByPath (lib.splitString "." name) pkgs.vscode-extensions then
       lib.attrByPath (lib.splitString "." name) null pkgs.vscode-extensions
     else

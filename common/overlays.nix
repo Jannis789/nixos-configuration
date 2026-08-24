@@ -1,29 +1,34 @@
 { }:
 let
   vscode-insiders = final: prev: {
-    vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs:
-      if final.stdenv.hostPlatform.isLinux then {
-        src = builtins.fetchTarball {
-          url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
-          sha256 = "1vakxryvpi7v8065r93pxr9lyx1gpw0389bjpsidw99snjr9r842";
-        };
+    vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (
+      oldAttrs:
+      if final.stdenv.hostPlatform.isLinux then
+        {
+          src = builtins.fetchTarball {
+            url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+            sha256 = "04d2hb4fi1r3xfkkcyqys44zfl6xhkpzbf7nlf1lv7vafh5xwp1s";
+          };
 
-        version = "latest";
+          version = "latest";
 
-        buildInputs = oldAttrs.buildInputs ++ [
-          prev.krb5
-          prev.libsoup_3
-          prev.webkitgtk_4_1
-        ];
-      } else {
-        src = prev.fetchurl {
-          url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
-          sha256 = "sha256-VfzjdQoRFBOcDuJaK+TbjVPdGFghiDtUb7qiW7ltZnU=";
-        };
+          buildInputs = oldAttrs.buildInputs ++ [
+            prev.krb5
+            prev.libsoup_3
+            prev.webkitgtk_4_1
+          ];
+        }
+      else
+        {
+          src = prev.fetchurl {
+            url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
+            sha256 = "sha256-nAoKFwwvJQnC40ATbNPS48FLITCsjPMTLaDbYLxgGNw=";
+          };
 
-        sourceRoot = ".";
-        version = "latest";
-      });
+          sourceRoot = ".";
+          version = "latest";
+        }
+    );
   };
 
   helium = final: prev: {
@@ -35,14 +40,18 @@ let
       hanabi = final.callPackage ./module/custom/hanabi.nix { };
     };
   };
-  rewaita = final: prev:
+  rewaita =
+    final: prev:
     let
-      py = prev.python3Packages.overrideScope (pyFinal: pyPrev: {
-        fortune = pyPrev.fortune.overrideAttrs {
-          dontCheckPythonMetadata = true;
-        };
-      });
-    in {
+      py = prev.python3Packages.overrideScope (
+        pyFinal: pyPrev: {
+          fortune = pyPrev.fortune.overrideAttrs {
+            dontCheckPythonMetadata = true;
+          };
+        }
+      );
+    in
+    {
       rewaita = (prev.rewaita.override { python3Packages = py; }).overrideAttrs (old: {
         version = "1.1.6";
         src = prev.fetchFromGitHub {
@@ -67,5 +76,11 @@ let
   };
 in
 {
-  inherit vscode-insiders helium hanabi rewaita epiphany-webext;
+  inherit
+    vscode-insiders
+    helium
+    hanabi
+    rewaita
+    epiphany-webext
+    ;
 }

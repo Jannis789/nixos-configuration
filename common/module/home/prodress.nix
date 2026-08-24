@@ -15,34 +15,47 @@
 
   programs.ssh = {
     enable = true;
-    matchBlocks = {
+    enableDefaultConfig = false;
+    settings = {
+      "*" = {
+        ForwardAgent = false;
+        AddKeysToAgent = "no";
+        Compression = false;
+        ServerAliveInterval = 0;
+        ServerAliveCountMax = 3;
+        HashKnownHosts = false;
+        UserKnownHostsFile = "~/.ssh/known_hosts";
+        ControlMaster = "no";
+        ControlPath = "~/.ssh/master-%r@%n:%p";
+        ControlPersist = "no";
+      };
       "test" = {
-        hostname = "frogstar.prodress.vpn";
-        user = "prodress";
+        HostName = "frogstar.prodress.vpn";
+        User = "prodress";
       };
       "shop20a" = {
-        hostname = "shop20a.prodress-updates.de";
-        user = "proshop";
+        HostName = "shop20a.prodress-updates.de";
+        User = "proshop";
       };
       "22c" = {
-        hostname = "asp22c.prodress-updates.de";
-        user = "prodress";
+        HostName = "asp22c.prodress-updates.de";
+        User = "prodress";
       };
       "24a" = {
-        hostname = "asp24a.prodress.vpn";
-        user = "prodress";
+        HostName = "asp24a.prodress.vpn";
+        User = "prodress";
       };
       "24b" = {
-        hostname = "asp24b.prodress.vpn";
-        user = "prodress";
+        HostName = "asp24b.prodress.vpn";
+        User = "prodress";
       };
       "25a" = {
-        hostname = "asp25a.prodress.vpn";
-        user = "prodress";
+        HostName = "asp25a.prodress.vpn";
+        User = "prodress";
       };
       "26a" = {
-        hostname = "asp26a.prodress.vpn";
-        user = "prodress";
+        HostName = "asp26a.prodress.vpn";
+        User = "prodress";
       };
     };
   };
