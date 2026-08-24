@@ -1,17 +1,11 @@
 { config, lib, ... }:
 {
-  # prodress (4GL) — Hub-Verzeichnis, Executables und Java-Client.
-  # Vars: EXECDIR/EXECDIR_BASE werden von pdbuild/check.sh gebraucht,
-  # PRODRESSCLIENTDIR von der pd-Client-Logik.
   home.sessionVariables = {
     EXECDIR = "${config.home.homeDirectory}/hub/bin";
     EXECDIR_BASE = "${config.home.homeDirectory}/hub";
     PRODRESSCLIENTDIR = "${config.home.homeDirectory}/hub/javaclient";
   };
 
-  # Log-Symlinks: ~/workspace/sswsh.log + dbrte-log -> ~/hub (AGENTS.md).
-  # Out-of-store: die Logs ändern sich laufend, also echte Symlinks statt
-  # Store-Kopien.
   home.file = {
     "workspace/sswsh.log".source =
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/hub/sswsh.log";
@@ -19,10 +13,6 @@
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/hub/dbrte-log";
   };
 
-  # SSH-Server-Aliase: ersetzt die alte ssh()-Funktion aus dem .zshrc.
-  # "ssh 24a" -> prodress@asp24a.prodress.vpn (declarative matchBlocks).
-  # sshpass-Hosts (shop20a-root, eisend-kids, scherer) brauchen Passwörter
-  # aus secrets.nix — bewusst weggelassen.
   programs.ssh = {
     enable = true;
     matchBlocks = {
@@ -57,13 +47,6 @@
     };
   };
 
-  # pmake = pdbuild aus dem prodressnet-Baum (ersetzt den alten .zshrc-Alias).
-  # prodress: "cd /pfad/zu/4gl/folder && pmake <modul>" — pdbuild findet das
-  # Modulverzeichnis selbst. Nicht-interaktive Shells: bash -ic "pmake <modul>".
-  #
-  # instXX/deinstXX: updater.sh auf den ASP-Servern (aus .zshrc.backup-vor-
-  # home-manager). inst = deploy (-arg p), deinst = remove (-arg r). Das
-  # Skript liegt auf dem Server — die Aliase sind reine SSH-Aufrufe.
   home.shellAliases = {
     pmake = "${config.home.homeDirectory}/workspace/prodress/prodressnet/pdbuild";
     pmakeclean = "${config.home.homeDirectory}/workspace/prodress/prodressnet/pdbuild -t clean";

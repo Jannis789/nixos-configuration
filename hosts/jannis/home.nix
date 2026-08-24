@@ -16,28 +16,16 @@
 
   programs.bash.enable = true;
 
-  # Shell-History: atuin (Config in common/module/home/atuin.nix)
-  # sessionVariables (NOUS_API_KEY aus secrets.nix) landen nur in hm-session-vars.sh,
-  # das nur von Login-Shells gesourct wird. Auch in interaktive Shells bringen:
-  # initExtra = ~/.bashrc (interaktive Shells); hm-session-vars wird sonst nur
-  # von Login-Shells (.profile) gesourct.
   programs.bash.initExtra = ''
     . "$HOME/.local/state/home-manager/gcroots/current-home/home-path/etc/profile.d/hm-session-vars.sh"
   '';
   programs.vscode-insiders.enable = true;
   programs.git.enable = true;
 
-  # SSH: Config + Keys deklarativ (common/module/home/ssh.nix)
-
-  # Terminal + Pakete
   home.packages = with pkgs; [
     ghostty
-
-    # Rewaita: Adwaita einfärben — schreibt ~/.config/gtk-{3,4}.0/gtk.css und
-    # Shell-Theme nach ~/.local/share/themes (anwenden über user-theme-Extension)
     rewaita
   ];
 
-  # Secrets: eine Datei secrets.nix, direkt beim Build importiert.
   home.sessionVariables = secrets;
 }

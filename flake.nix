@@ -34,13 +34,8 @@
     lib = nixpkgs.lib;
     secrets = import ./secrets.nix;
 
-    # Benannte Overlays (common/overlays.nix).
     overlays = import ./common/overlays.nix { };
 
-    # Ein Host = System-Config + Home-Manager + Overlays.
-    # kind: "nixos" (NixOS) oder "darwin" (nix-darwin) — wählt lib + HM-Modul.
-    # hostOverlays = Overlays nur für diesen Host (z.B. helium).
-    # extraModules  = Zusatz-Module (z.B. Kernel-Override für cachyos-latest).
     mkHost = { kind, system, configuration, username, home, hostOverlays ? [ ], extraModules ? [ ] }:
       let
         isNixos = kind == "nixos";
@@ -49,7 +44,6 @@
       (if isNixos then nixpkgs.lib.nixosSystem else nix-darwin.lib.darwinSystem) {
         inherit system;
 
-        # darwin-Config braucht inputs (homebrew-taps); für NixOS harmlos.
         specialArgs = { inherit inputs; };
 
         modules = [
@@ -82,7 +76,6 @@
       hostOverlays = [ overlays.helium overlays.rewaita overlays.epiphany-webext ];
     };
 
-    # Gleiche Maschine wie jannis, aber mit CachyOS-Kernel (zum Testen).
     nixosConfigurations.cachyos-latest = mkHost {
       kind = "nixos";
       system = "x86_64-linux";

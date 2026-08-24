@@ -30,7 +30,7 @@
     providers.nous = {
       baseUrl = "https://inference-api.nousresearch.com/v1";
       api = "openai-completions";
-      apiKey = "$NOUS_API_KEY"; # aus home.sessionVariables (secrets.nix)
+      apiKey = "$NOUS_API_KEY";
       models = [
         { id = "~deepseek/deepseek-v4-flash-latest"; }
         { id = "minimax-m3"; }

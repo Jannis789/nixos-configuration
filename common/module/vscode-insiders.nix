@@ -63,7 +63,6 @@ in
     enable = lib.mkEnableOption "VS Code (Insiders-Wrapper)";
     package = lib.mkOption {
       type = lib.types.package;
-      # Overlay vscode-insiders (latest, eigene .desktop "Code - Insiders")
       default = pkgs.vscode-insiders;
       description = "VS Code binary. Per-Host wählbar (z.B. Insiders-Overlay).";
     };
@@ -77,11 +76,7 @@ in
       profiles.default.userSettings = settings;
     };
 
-    # HM installiert Extensions nach ~/.vscode/extensions, aber code-insiders
-    # liest ~/.vscode-insiders/extensions. Symlink löst das.
     home.activation.vscodeInsiders = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      # HM schreibt settings.json nach ~/.config/Code/User — Insiders liest ~/.config/Code - Insiders/User.
-      # Nur settings.json verlinken (globalStorage/workspaceStorage bleiben Insiders-eigen).
       mkdir -p "${config.home.homeDirectory}/.config/Code - Insiders/User"
       ln -sfn "${config.home.homeDirectory}/.config/Code/User/settings.json" \
         "${config.home.homeDirectory}/.config/Code - Insiders/User/settings.json"

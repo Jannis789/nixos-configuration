@@ -3,7 +3,6 @@
   programs.starship = {
     enable = true;
     settings = {
-      # format als eine Zeile (TOML-Backslash-Continuations aufgeloest)
       format = ''
         [░▒▓](#a3aed2)$os[](bg:#769ff0 fg:#a3aed2)$directory[](fg:#769ff0 bg:#394260)$git_branch$git_status[](fg:#394260 bg:#212736)$nodejs$bun$rust$golang$php[](fg:#212736 bg:#1d2230)$time[ ](fg:#1d2230)
         $character
@@ -75,7 +74,7 @@
         format = "[ $symbol ]($style)";
         disabled = false;
         symbols = {
-          NixOS = "󱄅"; # Host laeuft auf NixOS — sonst kein Symbol
+          NixOS = "󱄅";
           Windows = "󰍲";
           Ubuntu = "󰕈";
           SUSE = "";
