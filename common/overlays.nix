@@ -1,37 +1,5 @@
 { }:
 let
-  vscode-insiders = final: prev: {
-    vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (
-      oldAttrs:
-      if final.stdenv.hostPlatform.isLinux then
-        {
-          src = builtins.fetchTarball {
-            url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
-            sha256 = "04d2hb4fi1r3xfkkcyqys44zfl6xhkpzbf7nlf1lv7vafh5xwp1s";
-          };
-
-          version = "latest";
-
-          buildInputs = oldAttrs.buildInputs ++ [
-            prev.krb5
-            prev.libsoup_3
-            prev.webkitgtk_4_1
-          ];
-        }
-      else
-        {
-          src = prev.fetchurl {
-            name = "vscode-insiders-darwin-arm64.zip";
-            url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
-            sha256 = "sha256-nAoKFwwvJQnC40ATbNPS48FLITCsjPMTLaDbYLxgGNw=";
-          };
-
-          sourceRoot = "";
-          version = "latest";
-        }
-    );
-  };
-
   helium = final: prev: {
     helium = final.callPackage ./module/custom/helium.nix { };
   };
@@ -77,11 +45,5 @@ let
   };
 in
 {
-  inherit
-    vscode-insiders
-    helium
-    hanabi
-    rewaita
-    epiphany-webext
-    ;
+  inherit helium hanabi rewaita epiphany-webext;
 }
