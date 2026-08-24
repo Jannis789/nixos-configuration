@@ -75,9 +75,6 @@
   services.openssh.settings.PasswordAuthentication = false;
 
   # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :9000
-  # Cockpit 366 nutzt DynamicUser — statische Gruppe, damit ACME-chown immer geht
-  users.groups."cockpit-wsinstance-socket" = { };
-
   services.cockpit = {
     enable = true;
     port = 443;
@@ -90,7 +87,9 @@
     acceptTerms = true;
     defaults.email = "jrustige@prodress.de";
     certs."jannis.nix-dev.link" = {
-      group = "cockpit-wsinstance-socket";
+      # ponytail: Cockpit 366 DynamicUser-Gruppe ist nicht statisch — lesbar via other-Bits statt chown
+      group = "nogroup";
+      postRun = "chmod 755 /var/lib/acme/jannis.nix-dev.link; chmod 644 /var/lib/acme/jannis.nix-dev.link/*";
       dnsProvider = "cloudflare";
       # ponytail: Runtime-Datei statt sops — Token kommt aus secrets.nix
       environmentFile = "/run/acme-cloudflare-creds";
@@ -113,6 +112,13 @@
     zone = "nix-dev.link";
     domains = [ "jannis.nix-dev.link" ];
     interval = "5min";
+    extraConfig = ''
+      # ponytail: Boot-Rennen — startet zu früh ohne Netzwerk, retry bis online
+    '';
+  };
+  systemd.services.ddclient = {
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
   };
   environment.etc."cockpit/ws-certs.d/10-jannis-nix-dev-link.cert".source =
     config.security.acme.certs."jannis.nix-dev.link".directory + "/fullchain.pem";
