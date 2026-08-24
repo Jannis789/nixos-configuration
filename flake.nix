@@ -72,7 +72,11 @@
           ++ [
             {
               nixpkgs.config.allowUnfree = true;
-              nixpkgs.overlays = [ overlays.hanabi ] ++ hostOverlays;
+              nixpkgs.overlays = [
+                overlays.vscodium
+                overlays.hanabi
+              ]
+              ++ hostOverlays;
 
               home-manager = {
                 useGlobalPkgs = true;
