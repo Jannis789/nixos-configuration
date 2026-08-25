@@ -74,6 +74,11 @@
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
 
+  # Server (Cockpit :443) — nie suspendieren. dconf allein reicht nicht: im Login-Screen
+  # (kein User eingeloggt) suspendiert der gdm-greeter per gsd-power nach 15 min Idle.
+  # Suspend wird zum No-Op: ExecStart leeren (""), dann true.
+  systemd.services.systemd-suspend.serviceConfig.ExecStart = [ "" "${pkgs.coreutils}/bin/true" ];
+
   # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :9000
   services.cockpit = {
     enable = true;
