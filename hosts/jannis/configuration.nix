@@ -26,7 +26,7 @@
   users.users.jannis = {
     isNormalUser = true;
     initialPassword = "changeme";
-    openssh.authorizedKeys.keys = [ (builtins.readFile ./keys/lannitz.pub) ]; # wonko (macOS)
+    openssh.authorizedKeys.keys = [ secrets.SSH_KEYS.lannitz.public ]; # wonko (macOS)
     extraGroups = [
       "wheel"
       "networkmanager"

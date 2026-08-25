@@ -1,23 +1,26 @@
-{ lib, ... }:
+{ lib, secrets, ... }:
 {
-  home.file = {
-    ".ssh/lannitz" = {
-      source = ../../../hosts/jannis/keys/lannitz;
-    };
-    ".ssh/lannitz.pub" = {
-      source = ../../../hosts/jannis/keys/lannitz.pub;
-    };
-    ".ssh/arbeit" = {
-      source = ../../../hosts/jannis/keys/arbeit;
-    };
-    ".ssh/arbeit.pub" = {
-      source = ../../../hosts/jannis/keys/arbeit.pub;
-    };
-  };
-
-  home.activation.sshKeyPermissions = lib.mkAfter ''
-    chmod 600 "$HOME/.ssh/lannitz" "$HOME/.ssh/arbeit"
-    chmod 644 "$HOME/.ssh/lannitz.pub" "$HOME/.ssh/arbeit.pub"
+  # ponytail: home.file kann hier kein mode mehr — Dateien wären read-only
+  # Store-Symlinks (chmod scheitert). Keys direkt im Aktivierungsskript schreiben.
+  home.activation.sshKeys = lib.mkAfter ''
+    rm -f "$HOME/.ssh/lannitz" "$HOME/.ssh/lannitz.pub" "$HOME/.ssh/arbeit" "$HOME/.ssh/arbeit.pub"
+    umask 077
+    cat > "$HOME/.ssh/lannitz" <<'EOF'
+${secrets.SSH_KEYS.lannitz.private}
+EOF
+    chmod 600 "$HOME/.ssh/lannitz"
+    cat > "$HOME/.ssh/lannitz.pub" <<'EOF'
+${secrets.SSH_KEYS.lannitz.public}
+EOF
+    chmod 644 "$HOME/.ssh/lannitz.pub"
+    cat > "$HOME/.ssh/arbeit" <<'EOF'
+${secrets.SSH_KEYS.arbeit.private}
+EOF
+    chmod 600 "$HOME/.ssh/arbeit"
+    cat > "$HOME/.ssh/arbeit.pub" <<'EOF'
+${secrets.SSH_KEYS.arbeit.public}
+EOF
+    chmod 644 "$HOME/.ssh/arbeit.pub"
   '';
 
   programs.ssh = {

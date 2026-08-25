@@ -1,4 +1,4 @@
-{ secrets, pkgs, ... }:
+{ lib, secrets, pkgs, ... }:
 {
   home.username = "jannis";
   home.homeDirectory = "/home/jannis";
@@ -29,5 +29,6 @@
     fastfetch
   ];
 
-  home.sessionVariables = secrets;
+  # nur Strings exportieren — SSH_KEYS ist ein Attrset (Keys liegen in home.file)
+  home.sessionVariables = lib.filterAttrs (_: v: builtins.isString v) secrets;
 }
