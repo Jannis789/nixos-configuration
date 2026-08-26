@@ -1,122 +1,138 @@
 ---
 name: betterwright-driver
-description: Browser-Aufgaben mit EINEM einzigen Tool-Call erledigen — via der nativ verdrahteten Pi-Extension (extensions.browser) oder betterwright exec mit Live View + Chat. Immer lesen, wenn eine Browser-Aufgabe ansteht (Login, Formulare, Buchungen, Käufe, Webseiten lesen) oder der User "Browser", "Live View", "Chat", "Handoff" oder "betterwright" erwähnt.
+description: Browser-Aufgaben VORZUGSWEISE via betterwright view (Live View, User schaut zu/lenkt) + betterwright run (direkte Playwright-Snippets, KEIN Sub-Agent). exec (eingebauter Agent-Loop) NUR auf expliziten Wunsch. Immer lesen, wenn eine Browser-Aufgabe ansteht (Login, Formulare, Buchungen, Käufe, Webseiten lesen) oder der User "Browser", "Live View", "Chat", "Handoff" oder "betterwright" erwähnt. Enthält festen Code (genau die Befehle, die auf dieser Maschine verifiziert laufen) und feste Instruktion.
 ---
 
 # BetterWright — Browser in einem Tool-Call
 
-**Ziel: Eine Browser-Aufgabe = EIN Tool-Call.** Nicht Schritt für Schritt
-durchklicken. In pi ist die betterwright-Extension über das pi-Manifest
-verdrahtet (Package `npm:betterwright`, deklarativ in pi.nix) — die Tools
-`browser`, `browser_login`, `browser_evidence`, `browser_download`
-sind als `extensions.browser` etc. registriert.
+**Standard: betterwright view + run — kein Sub-Agent, kein exec.**
+Der User schaut im Live View zu und lenkt; die KI steuert den Browser
+direkt über `betterwright run -c "<snippet>"` (ein Tool-Call pro
+Snippet, Ergebnis = JSON). `exec` startet einen eigenen Agent-Loop
+(Sub-Agent) und nur auf ausdrücklichen Wunsch des Users verwenden.
 
-## Primärer Weg (in pi): extensions.browser
+## Fester Code (auf dieser Maschine verifiziert)
 
-**EIN Tool-Call** — der komplette Playwright-Code als `code`-Parameter,
-eine `note` als Statuszeile. Der Call öffnet/lädt/liest und gibt das
-Ergebnis zurück; der Browser ist persistent zwischen Calls.
-
-```ts
-await tools.call({ ref: 'extensions.browser', args: {
-  code: `await page.goto('https://example.com');
-        const title = await page.title();
-        const h1 = await page.locator('h1').first().innerText();
-        return { title, h1 };`,
-  note: 'Opening example.com and reading title and h1'
-}});
-// → { ok: true, result: { title: "Example Domain", h1: "Example Domain" }, pages: [...], artifacts: [...] }
-```
-
-Verfügbare Globals im `code`: `page` (aktive Seite), `pages`, `context`,
-`state`, `openPage`, `closePage`, `snapshot`, `screenshot`,
-`artifactPath`, `dialogs`, `credentials`, `captcha`, `human`,
-`overlays`, `controls`, `media`.
-
-- Snapshots: `snapshot({interactive:true})` → `[ref=eN]`-Locators →
-  `page.locator('aria-ref=eN')`. `snapshot({diff:true})` verifiziert
-  eine Aktion, `screenshot({annotate:true})` zeichnet Ref-Boxen.
-- Login: `browser_login` (Secrets bleiben im Worker, nie im Prompt).
-  Vor Login/Signup/Checkout: `$NODE $BW skills show credential-manager`.
-- CAPTCHA: `captcha.solve()` zuerst (lokal); bei `processing` Vision-
-  Artifact nutzen, dann erneut. Höchstens 3 Stages, sonst Human-Handoff.
-- Beweis: `browser_evidence` initialisieren/proven/auditieren; Proof-
-  Screenshots vor `screenshot({kind:'proof'})` prüfen.
-
-## Live View / Zuschauen (exec-Konsole)
-
-Will der User live zuschauen oder während der Arbeit im Chat lenken, läuft
-die interaktive Konsole mit `--live-view`. **Wichtig: Konsole und
-Pi-Extension können sich NICHT gleichzeitig die persistente Profile
-teilen** — wer läuft, hat den Browser; der andere bekommt eine temporäre
-Profile ohne Logins. Also entweder Konsole (Zuschauen) ODER Extension
-(Arbeiten), nie beides parallel.
+`betterwright` liegt über den home-manager-Wrapper im PATH
+(common/module/home/pi.nix). **`run` und `view` brauchen KEINEN
+API-Key** — nur `exec` (Sub-Agent) braucht einen, dann ausschließlich
+via `--api-key-env` (kommt aus `secrets.nix`), nie als CLI-Wert.
 
 ```bash
-NODE=/nix/store/5q3w8mmkmmj73xy81yx214l9r86ss9s0-nodejs-24.18.0-source/bin/node
-BW=/home/jannis/.pi/agent/npm/node_modules/.bin/betterwright
-export NOUS_API_KEY='<Key aus secrets.nix>'   # ist als Session-Var schon gesetzt
-$NODE $BW --base-url https://inference-api.nousresearch.com/v1 \
-  --api-key-env NOUS_API_KEY --model anthropic/claude-opus-5-fast \
-  --live-view --host 127.0.0.1 --port 43179
-# → ▶ Watch live: http://127.0.0.1:43179/?t=<token>
-# User-Tunnel: ssh -L 43179:127.0.0.1:43179 jannis@192.168.178.20
+# Browser-Aufgabe: Live View starten + Seite per run-Snippet steuern
+nohup betterwright view --host 127.0.0.1 > /tmp/bw-view.log 2>&1 &
+# → URL aus /tmp/bw-view.log ("Live view: http://…") DEM USER VERBATIM GEBEN
+
+betterwright run -c "await page.goto('https://example.com'); return page.title()"
+# → ein JSON-Objekt: {ok:true, result:…, session:"default"}
 ```
 
-Der Chat im Live-View **steuert den laufenden Agenten** (nächster Turn),
-er startet keinen Task. Neue Tasks über die Konsole (FIFO) oder als
-Folge-`exec`.
+**Verifizierte Fakten (getestet 2026-08-26):**
+- `betterwright run` führt ein async-Playwright-Snippet im persistenten
+  Browser aus (`default`-Session, gleiche Tabs wie der Viewer) und
+  liefert ein JSON-Objekt mit `result`. Globals im Snippet: `page`,
+  `snapshot`, `screenshot`, `credentials`, `human`, `controls`,
+  `webagents`, `webmcp`.
+- `betterwright view` attacht an die laufende Session — der User sieht
+  exakt die Tabs, die `run` steuert. Die gedruckte URL ist ein
+  Capability-Token (wie ein Passwort behandeln).
+- Session "default" persistiert: Folge-`run`s fahren mit dem offenen
+  Browser fort.
+- exec-Fakten (nur relevant, wenn der User explizit exec will):
+  Modell-Backend Nous-Inference, IDs mit `~`-Präfix
+  (`~deepseek/deepseek-v4-flash-latest`; Liste: `betterwright models
+  --base-url https://inference-api.nousresearch.com/v1` mit gesetztem
+  `NOUS_API_KEY`). Ohne Tilde → 404.
 
-## Verifizierte Fakten (getestet 2026-08-26)
+## Live View (Standard — immer zuerst starten!)
 
-- Modell-Backend: Nous-Inference-Endpoint proxyt OpenRouter-IDs.
-  `anthropic/claude-opus-5-fast` läuft (exec/console). Bare IDs wie
-  `deepseek-v4-flash-latest` → 404. Erreichbare IDs:
-  `$NODE $BW models --base-url https://inference-api.nousresearch.com/v1`.
-- Backends: Pi-Extension nutzt Chromium-Fork 150; `exec`/Console nutzen
-  CloakBrowser 146. Profile sind NICHT austauschbar → Backend-Wechsel
-  erzeugt "upgraded by a newer Chromium"-Fehler. Fix: Daemons stoppen
-  (`$NODE $BW close --all`), Profil beiseite legen
-  (`mv ~/.betterwright/browser/profile{,.stale}`), neu starten.
-  Vault überlebt. Hier bereits erledigt (`profile.stale-150*`).
-- Profile-Lock: Läuft ein anderer BetterWright-Prozess, nutzt der neue
-  eine temporäre Profile (Warnung "Another BetterWright process owns …").
-  Lock nach Crash verfällt nach ~1 min von selbst.
-- Session "default" persistiert bei exec/console (Folge-Tasks erben
-  Browser + Konversation).
+`betterwright view --host 127.0.0.1` startet den Viewer auf Loopback und
+druckt die URL. **Dem User die URL VERBATIM geben** — das ist der Link
+zum Zuschauen und zum direkten Eingreifen (Takeover-Controls: er kann
+selbst klicken/tippen). **Achtung: Der Chat im Viewer ist OHNE `exec`
+nicht funktional** — Nachrichten landen im Puffer, aber nur der
+Agent-Loop (`exec`) liest und beantwortet sie. Lenkung des Users läuft
+deshalb über den pi-Session-Chat (hier), nicht über den View-Chat. Nie
+behaupten, ein Viewer liefe, ohne die URL.
 
-## Troubleshooting
-
-- `betterwright doctor`: $NODE $BW doctor — Backend + Probleme.
-- Sessions/Daemon: $NODE $BW sessions; stoppen: $NODE $BW close --all.
-- Transiente 5xx/Timeout: 30–60 s mit Backoff retryen, erst dann "down".
-- `reason` im exec-Ergebnis lesen: timeout / no_progress / interrupted …
-
-## Sofort-Start: Seite öffnen + URI ausgeben (Standardweg)
-
-Aufgabe "öffne <URL>" / "betterwright uri?" — der AKTIVE Agent macht das
-selbst mit EINEM `extensions.browser`-Call. Kein `exec`, kein zweites
-Modell, keine Token-Kosten für einen fremden Agenten:
-
-```ts
-await tools.call({ ref: 'extensions.browser', args: {
-  code: `await page.goto('https://jannis.nix-dev.link', { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(1500);  // client-rendered Apps kurz warten lassen
-        return { url: page.url(), title: await page.title() };`,
-  note: 'Opening jannis.nix-dev.link'
-}});
-// → result: { url: "https://jannis.nix-dev.link/", title: "jannis" }  ← das ist die URI
+```bash
+nohup betterwright view --host 127.0.0.1 > /tmp/bw-view.log 2>&1 &
+sleep 3 && grep -o 'http://127.0.0.1:[0-9]*/?t=[A-Za-z0-9_-]*' /tmp/bw-view.log
+# → http://127.0.0.1:PORT/?t=<token> — dem User geben!
 ```
 
-Regeln:
-- **URI = `page.url()`** aus dem Ergebnis — direkt an den User geben.
-- Kein `close --all`, kein `pkill`, kein Profil-Move, kein Live-View-Start
-  fürs bloße Öffnen/Lesen. Destruktive Schritte nur bei echtem Bedarf
-  (Backend-Wechsel, siehe "Verifizierte Fakten").
-- Warnung "Another BetterWright process owns …" = temporäre Profile: für
-  Öffnen/Lesen egal, für Logins erst den Konflikt lösen (Lock verfällt
-  nach ~1 min von selbst).
-- **Live-View-Konsole NUR bei explizitem Zuschauer-Wunsch**: sie startet
-  ein eigenes Modell (claude-opus-5-fast) → Token-Kosten. Konsole und
-  Extension teilen die Profile NICHT; wer läuft, hat den Browser. Kommando
-  und Tunnel: siehe Abschnitt "Live View / Zuschauen" oben.
+Der User erreicht die URL über seinen SSH-/WireGuard-Tunnel:
+`ssh -L PORT:127.0.0.1:PORT jannis` und dann lokal öffnen. Fürs VPS von
+unterwegs alternativ `--expose tailscale`. Der Viewer läuft im
+Hintergrund weiter, bis `betterwright close --all` oder die Session idle
+wird (~15 min).
+
+**Wichtig:** `view` attacht an die `default`-Session — der User sieht in
+Echtzeit, was `betterwright run` macht. Kein `--live-view`-Flag bei
+`run` nötig.
+
+## Verbindliche Regeln für die KI (fester Ablauf)
+
+1. **Immer `betterwright view` zuerst.** Browser-Aufgabe → View-Daemon
+   starten (siehe oben), URL dem User geben. Dann den Browser mit
+   `betterwright run -c "<snippet>"` steuern — ein Tool-Call pro Schritt,
+   Ergebnis-JSON lesen, `result` an den User geben. KEIN `exec`, KEIN
+   Sub-Agent, außer der User verlangt es ausdrücklich.
+2. **Lenkung über den pi-Session-Chat, nicht den View-Chat.** Der
+   View-Chat ist ohne `exec` funktionslos (siehe oben). User-Nachrichten
+   hier als nächsten `run`-Schritt umsetzen (Session merkt sich den
+   Kontext).
+3. **Ein Aktion+Beobachtung pro `run`-Call.** Aktion (klicken, tippen,
+   navigieren) und Beobachtung (Text, URL, Screenshot) in einem Snippet
+   kombinieren. Bei unsicherem Zustand zuerst lesen (`innerText`,
+   `snapshot`), dann handeln. `human.*`, `credentials.*`, `captcha.*`
+   stehen als Globals im Snippet zur Verfügung.
+4. **ask/handoff nur bei `exec` relevant.** Fragt der Agent-Loop per
+   `ask` den User (folgenreiche Aktionen), gibt's die Antwort über den
+   Chat/Viewer. `handoff` = MFA/CAPTCHA/User-Schritt; nach Done weiter.
+5. **Secrets.** Key nur via `--api-key-env`/`export`, nie im Kommando.
+   `vault show --reveal`/`vault copy`/`vault rm` sind verboten.
+   `vault list` (Metadaten) erlaubt.
+6. **Skill-Packs.** Vor Login/Signup/Checkout das
+   `credential-manager`-Pack lesen (`betterwright skills show
+   credential-manager`), vor GitHub-Arbeit `github`.
+7. **Transiente Fehler retrybar.** 5xx/Timeout: mit Backoff 30–60 s erneut
+   versuchen, bevor eine Seite als down gilt. `reason` im Ergebnis lesen:
+   `timeout`, `no_progress`, `interrupted` usw. erklären das Ende.
+
+## Browser auf NixOS (wichtig!)
+
+Der mitgelieferte BetterChromium-Fork ist ein generisches Linux-Binary und
+läuft auf NixOS NICHT (Stub-LD: "NixOS cannot run dynamically linked
+executables"). Fix hier bereits angewendet: `betterchromium` ist ein
+Symlink auf das nixpkgs-Chromium:
+
+```bash
+ls -la ~/.betterwright/chromium/linux-x64/betterchromium
+# → … -> /nix/store/…-chromium-150.0.7871.181/bin/chromium
+```
+
+Nach einem `betterwright update`/`setup` (lädt den Fork neu) den Symlink
+erneut setzen:
+
+```bash
+B=~/.betterwright/chromium/linux-x64/betterchromium
+mv "$B" "$B.nixos-dead" 2>/dev/null
+ln -s /nix/store/5prcsr1v91xai06jmpxxh3wh4c79h0s6-chromium-150.0.7871.181/bin/chromium "$B"
+```
+
+`BETTERWRIGHT_CHROMIUM_PATH` und `--browser` werden von run/exec
+ignoriert — nur der Symlink-Ersatz funktioniert.
+
+## Troubleshooting (auf dieser Maschine erlebt)
+
+- **"profile … upgraded by a newer Chromium"**: Backend-Wechsel-Mismatch
+  (Chromium-Fork 150.x vs. CloakBrowser 146.x). Fix: Daemons stoppen
+  (`betterwright close --all`), Profil beiseite legen
+  (`mv ~/.betterwright/browser/profile{,.stale}`), neu starten. Vault
+  überlebt. — Hier bereits erledigt (`profile.stale-150` existiert).
+- **Modell-404 "not found … OpenRouter catalog"**: ID falsch/prefixed falsch
+  → `betterwright models --base-url …` für gültige IDs.
+- **`betterwright doctor`** zeigt Backend + Probleme.
+- Session idle ~15 min → Seiten schließen; `betterwright close --all` beendet
+  alles. `betterwright sessions` zeigt den Daemon-Zustand.

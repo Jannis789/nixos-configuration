@@ -31,6 +31,21 @@
     };
   };
 
+  # betterwright direkt aufrufbar: Wrapper ins Profil (~/.nix-profile/bin,
+  # liegt im Agent-PATH). Die KI ruft einfach "betterwright …" — kein
+  # Node/Store-Pfad-Hardcode im Skill nötig.
+  home.packages = [
+    (pkgs.writeShellScriptBin "betterwright" ''
+      exec ${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.pi/agent/npm/node_modules/betterwright/dist/bin/betterwright.js "$@"
+    '')
+  ];
+
+  # BetterWright-Skill deklarativ im Repo — überlebt Neuaufsetzen.
+  # NICHT direkt nach ~/.pi/agent/skills schreiben: home-manager linkt den
+  # Store-Pfad, ein echtes Verzeichnis dort würde den Link blockieren.
+  home.file.".pi/agent/skills/betterwright-driver/SKILL.md".source =
+    ./pi/betterwright-driver/SKILL.md;
+
   home.file.".pi/agent/models.json".text = builtins.toJSON {
     providers.nous = {
       baseUrl = "https://inference-api.nousresearch.com/v1";
@@ -44,9 +59,4 @@
     };
   };
 
-  # BetterWright-Skill deklarativ im Repo — überlebt Neuaufsetzen.
-  # NICHT direkt nach ~/.pi/agent/skills schreiben: home-manager linkt den
-  # Store-Pfad, ein echtes Verzeichnis dort würde den Link blockieren.
-  home.file.".pi/agent/skills/betterwright-driver/SKILL.md".source =
-    ./pi/betterwright-driver/SKILL.md;
 }
