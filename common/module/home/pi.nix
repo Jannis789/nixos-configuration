@@ -43,4 +43,10 @@
       ];
     };
   };
+
+  # BetterWright-Skill deklarativ im Repo — überlebt Neuaufsetzen.
+  # NICHT direkt nach ~/.pi/agent/skills schreiben: home-manager linkt den
+  # Store-Pfad, ein echtes Verzeichnis dort würde den Link blockieren.
+  home.file.".pi/agent/skills/betterwright-driver/SKILL.md".source =
+    ./pi/betterwright-driver/SKILL.md;
 }
