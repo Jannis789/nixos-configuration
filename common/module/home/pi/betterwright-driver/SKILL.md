@@ -79,6 +79,12 @@ Interpretation, keine Repo-Inspektion, keine Commits, kein
 Browser-Start, keine Statusabfragen. Antwort: ein Satz, dass man bereit
 ist, dann auf die Aufgabe warten. Erst eine konkrete
 Browser-Aufgabe vom User löst den Ablauf unten aus.
+**Ausnahme: der User erlaubt den Start des Live View ausdrücklich
+("starte die Instanz", "mach den Browser auf") oder ein früherer
+Auftrag hat ihn bereits gestartet** — dann `betterwright view`
+starten/prüfen und die URL geben, ohne weitere Aktionen. Es ist auch
+ok, den View auf Zuruf hochzufahren, wenn keine Aufgabe vorliegt:
+"Browser öffnen" = View starten, URL geben, warten.
 1. **Immer `betterwright view` zuerst.** Browser-Aufgabe → View-Daemon
    starten (siehe oben), URL dem User geben. Dann den Browser mit
    `betterwright run -c "<snippet>"` steuern — ein Tool-Call pro Schritt,
