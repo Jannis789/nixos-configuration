@@ -1,50 +1,34 @@
 ---
 name: betterwright-driver
-description: Browser-Aufgaben via betterwright view + run (Live View, User schaut zu/lenkt, KEIN Sub-Agent). exec nur auf expliziten Wunsch. Immer lesen bei Browser-Aufgaben (Login, Formulare, Buchungen, Käufe, Seiten lesen) oder wenn der User "Browser", "Live View", "Chat", "Handoff" oder "betterwright" erwähnt.
+description: Browser tasks via betterwright view + run (Live View, user watches/steers, NO sub-agent). exec only on explicit request. Always read for browser tasks (login, forms, bookings, purchases, reading pages) or when the user mentions "Browser", "Live View", "Chat", "Handoff" or "betterwright". Note: the user is German — reply in German.
 ---
 
 # BetterWright — Browser
 
-## Beim Skill-Load: Browser starten (one-shot, idempotent)
+## On skill load: start the browser (one-shot, idempotent)
 
-`run`/`view` brauchen keinen API-Key. Beim Laden des Skills sofort:
+`run`/`view` need no API key. On skill load, immediately:
 
 ```bash
 nohup betterwright view --host 127.0.0.1 > /tmp/bw-view.log 2>&1 &
 sleep 3 && grep -o 'http://127.0.0.1:[0-9]*/?t=[A-Za-z0-9_-]*' /tmp/bw-view.log
 ```
 
-- Läuft schon (`betterwright sessions` → `default`)? URL aus dem Log geben, nichts Neues starten.
-- URL dem User VERBATIM geben (Capability-Token, wie Passwort behandeln).
-- **Das ist KEINE Aufgabe.** Danach stoppen und auf die konkrete Aufgabe warten — kein Interpretieren, kein Repo-Check, keine Commits.
+- Already running (`betterwright sessions` → `default`)? Give the URL from the log, start nothing new.
+- Give the user the URL verbatim (capability token — treat like a password).
+- **This is NOT a task.** Then stop and wait for the actual task — no interpreting, no repo inspection, no commits.
 
-## Steuern: betterwright run (ein Tool-Call pro Schritt)
+## Steer: betterwright run (one tool call per step)
 
 ```bash
 betterwright run -c "await page.goto('https://example.com'); return page.title()"
 # → {ok:true, result:"Example Domain", session:"default"}
 ```
 
-- Globals im Snippet: `page`, `snapshot`, `screenshot`, `credentials`, `human`, `controls`, `webagents`, `webmcp`.
-- Session `default` persistiert — gleiche Tabs wie der Viewer, Folge-Runs machen weiter.
-- Aktion + Beobachtung pro Snippet kombinieren; bei unsicherem Zustand erst lesen (`snapshot`/`innerText`), dann handeln.
-- KEIN `exec`/Sub-Agent außer explizit gewünscht. exec braucht API-Key: `--api-key-env` aus secrets.nix, nie im Kommando.
-- Secrets nie im Kommando. `vault show --reveal`/`copy`/`rm` verboten, `vault list` ok.
-- Vor Login/Signup/Checkout: `betterwright skills show credential-manager`; vor GitHub: `github`.
-- 5xx/Timeout: 30–60 s Backoff, erst dann "down".
-
-## NixOS: Chromium-Symlink (Fork läuft nicht auf NixOS)
-
-```bash
-B=~/.betterwright/chromium/linux-x64/betterchromium
-mv "$B" "$B.nixos-dead" 2>/dev/null
-ln -s /nix/store/5prcsr1v91xai06jmpxxh3wh4c79h0s6-chromium-150.0.7871.181/bin/chromium "$B"
-```
-
-Nach jedem `betterwright update`/`setup` erneut ausführen.
-
-## Troubleshooting (erlebt)
-
-- Profil-Mismatch ("upgraded by a newer Chromium"): `betterwright close --all`, `mv ~/.betterwright/browser/profile{,.stale}`, neu starten.
-- Modell-404: ID braucht Tilde-Präfix; gültige IDs via `betterwright models --base-url …`.
-- `betterwright doctor` = Backend-Status. Session idle ~15 min; `betterwright close --all` beendet alles.
+- Snippet globals: `page`, `snapshot`, `screenshot`, `credentials`, `human`, `controls`, `webagents`, `webmcp`.
+- Session `default` persists — same tabs as the viewer, follow-up runs continue.
+- Combine action + observation per snippet; when state is unsure, read first (`snapshot`/`innerText`), then act.
+- NO `exec`/sub-agent unless explicitly requested. exec needs an API key: `--api-key-env` from secrets.nix, never inline.
+- Never put secrets in the command. `vault show --reveal`/`copy`/`rm` forbidden, `vault list` ok.
+- Before login/signup/checkout: `betterwright skills show credential-manager`; before GitHub work: `github`.
+- 5xx/timeout: retry with 30–60 s backoff before calling a page "down".

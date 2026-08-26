@@ -34,8 +34,14 @@
   # betterwright direkt aufrufbar: Wrapper ins Profil (~/.nix-profile/bin,
   # liegt im Agent-PATH). Die KI ruft einfach "betterwright …" — kein
   # Node/Store-Pfad-Hardcode im Skill nötig.
+  # NixOS-Fix an der Wurzel: Der mitgelieferte BetterChromium-Fork ist ein
+  # generisches Linux-Binary und läuft auf NixOS NICHT ("NixOS cannot run
+  # dynamically linked executables"). BETTERWRIGHT_CHROMIUM_PATH zeigt auf das
+  # nixpkgs-Chromium — supported env var, kein Symlink-Gefrickel, kein
+  # Store-Pfad-Hardcode. chromium ist eh schon als pi-CLI-Dependency da.
   home.packages = [
     (pkgs.writeShellScriptBin "betterwright" ''
+      export BETTERWRIGHT_CHROMIUM_PATH=${pkgs.chromium}/bin/chromium
       exec ${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.pi/agent/npm/node_modules/betterwright/dist/bin/betterwright.js "$@"
     '')
   ];
