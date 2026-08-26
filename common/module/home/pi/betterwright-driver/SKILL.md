@@ -73,6 +73,12 @@ Echtzeit, was `betterwright run` macht. Kein `--live-view`-Flag bei
 
 ## Verbindliche Regeln für die KI (fester Ablauf)
 
+0. **Skill-Import = nur Lesen, keine Aktion.** Wurde dieser Skill
+geladen, heißt das NICHT, dass eine Aufgabe vorliegt. Keine
+Interpretation, keine Repo-Inspektion, keine Commits, kein
+Browser-Start, keine Statusabfragen. Antwort: ein Satz, dass man bereit
+ist, dann auf die Aufgabe warten. Erst eine konkrete
+Browser-Aufgabe vom User löst den Ablauf unten aus.
 1. **Immer `betterwright view` zuerst.** Browser-Aufgabe → View-Daemon
    starten (siehe oben), URL dem User geben. Dann den Browser mit
    `betterwright run -c "<snippet>"` steuern — ein Tool-Call pro Schritt,
