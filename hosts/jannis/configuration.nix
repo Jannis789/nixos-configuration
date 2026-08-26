@@ -19,6 +19,9 @@
   networking.hostName = "jannis";
   networking.networkmanager.enable = true;
 
+  # Tailscale für Remote-Zugriff von überall
+  services.tailscale.enable = true;
+
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "de_DE.UTF-8";
   console.keyMap = "de";
@@ -76,8 +79,11 @@
 
   # Server (Cockpit :443) — nie suspendieren. dconf allein reicht nicht: im Login-Screen
   # (kein User eingeloggt) suspendiert der gdm-greeter per gsd-power nach 15 min Idle.
-  # Suspend wird zum No-Op: ExecStart leeren (""), dann true.
-  systemd.services.systemd-suspend.serviceConfig.ExecStart = [ "" "${pkgs.coreutils}/bin/true" ];
+  # Der frühere No-Op-Hack (systemd-suspend → true) lies logind den Suspend "erfolgreich"
+  # durchlaufen: GDM stürzte danach ab → Auto-Login + gnome-session-ReBoot (2026-08-26 06:29).
+  # Stattdessen suspend/sleep.target entfernen → Suspend-Anfrage schlägt fehl, kein sleep-Dance.
+  systemd.targets.suspend.enable = false;
+  systemd.targets.sleep.enable = false;
 
   # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :9000
   services.cockpit = {
@@ -94,7 +100,14 @@
     certs."jannis.nix-dev.link" = {
       # ponytail: Cockpit 366 DynamicUser-Gruppe ist nicht statisch — lesbar via other-Bits statt chown
       group = "nogroup";
-      postRun = "chmod 755 /var/lib/acme/jannis.nix-dev.link; chmod 644 /var/lib/acme/jannis.nix-dev.link/*";
+      # ponytail: postRun läuft VOR dem Modul-Fixup (0640) — Kopie landet in ws-certs.d,
+      # der Fixup fasst nur /var/lib/acme an. Symlinks (environment.etc) scheiterten:
+      # Cockpit wischte unlesbare Symlinks und generierte Self-Signed.
+      postRun = ''
+        install -d -m 0700 /etc/cockpit/ws-certs.d
+        install -m 0644 /var/lib/acme/jannis.nix-dev.link/fullchain.pem /etc/cockpit/ws-certs.d/10-jannis-nix-dev-link.cert
+        install -m 0600 /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-jannis-nix-dev-link.key
+      '';
       dnsProvider = "cloudflare";
       # ponytail: Runtime-Datei statt sops — Token kommt aus secrets.nix
       environmentFile = "/run/acme-cloudflare-creds";
@@ -125,11 +138,6 @@
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
   };
-  environment.etc."cockpit/ws-certs.d/10-jannis-nix-dev-link.cert".source =
-    config.security.acme.certs."jannis.nix-dev.link".directory + "/fullchain.pem";
-  environment.etc."cockpit/ws-certs.d/10-jannis-nix-dev-link.key".source =
-    config.security.acme.certs."jannis.nix-dev.link".directory + "/key.pem";
-
   nix.settings = {
     experimental-features = [
       "nix-command"
