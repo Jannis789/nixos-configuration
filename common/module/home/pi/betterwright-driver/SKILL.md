@@ -1,6 +1,6 @@
 ---
 name: betterwright-driver
-description: Browser tasks via betterwright view + run (Live View, user watches/steers, NO sub-agent). exec only on explicit request. Always read for browser tasks (login, forms, bookings, purchases, reading pages) or when the user mentions "Browser", "Live View", "Chat", "Handoff" or "betterwright". Note: the user is German — reply in German.
+description: Browser tasks via betterwright view + run (Live View, user watches/steers, NO sub-agent). exec only on explicit request. Always read for browser tasks (login, forms, bookings, purchases, reading pages) or when the user mentions "Browser", "Live View", "Chat", "Handoff" or "betterwright". The user is German — reply in German.
 ---
 
 # BetterWright — Browser
@@ -26,6 +26,7 @@ betterwright run -c "await page.goto('https://example.com'); return page.title()
 ```
 
 - Snippet globals: `page`, `snapshot`, `screenshot`, `credentials`, `human`, `controls`, `webagents`, `webmcp`.
+- Quoting: shell expands `$` inside double quotes. If the snippet contains `$`, backticks, or nested quotes, write it to a temp file and run `betterwright run - < file` — or use single quotes around `-c`.
 - Session `default` persists — same tabs as the viewer, follow-up runs continue.
 - Combine action + observation per snippet; when state is unsure, read first (`snapshot`/`innerText`), then act.
 - NO `exec`/sub-agent unless explicitly requested. exec needs an API key: `--api-key-env` from secrets.nix, never inline.
