@@ -1,4 +1,4 @@
-{ lib, secrets, pkgs, ... }:
+{ secrets, pkgs, ... }:
 {
   home.username = "jannis";
   home.homeDirectory = "/home/jannis";
@@ -29,6 +29,10 @@
     fastfetch
   ];
 
-  # nur Strings exportieren — SSH_KEYS ist ein Attrset (Keys liegen in home.file)
-  home.sessionVariables = lib.filterAttrs (_: v: builtins.isString v) secrets;
+  # nur Modell-Keys in die Session — CF_DNS_API_TOKEN braucht nur das Root-Activation-Skript
+  # (SSH_KEYS ist ein Attrset, Keys liegen in home.file)
+  home.sessionVariables = {
+    NOUS_API_KEY = secrets.NOUS_API_KEY;
+    ZAI_API_KEY = secrets.ZAI_API_KEY;
+  };
 }

@@ -134,7 +134,7 @@ stdenv.mkDerivation {
 
   meta = {
     description = "Chromium-based web browser";
-    homepage = "https://github.com/nicehash/helium";
+    homepage = "https://github.com/imputnet/helium-linux";
     license = lib.licenses.gpl3;
     platforms = [ "x86_64-linux" ];
     mainProgram = "helium";

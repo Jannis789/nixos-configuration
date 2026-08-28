@@ -93,29 +93,21 @@
     # Origin ohne Port — Browser sendet bei 443 keine Portnummer
     allowed-origins = [ "https://jannis.nix-dev.link" "https://localhost" ];
   };
-  # Let's Encrypt per DNS-01 (Cloudflare) — echte Domain statt Self-Signed
-  security.acme = {
-    acceptTerms = true;
-    defaults.email = "jrustige@prodress.de";
-    certs."jannis.nix-dev.link" = {
-      # ponytail: Cockpit 366 DynamicUser-Gruppe ist nicht statisch — lesbar via other-Bits statt chown
-      group = "nogroup";
-      # ponytail: postRun läuft VOR dem Modul-Fixup (0640) — Kopie landet in ws-certs.d,
-      # der Fixup fasst nur /var/lib/acme an. Symlinks (environment.etc) scheiterten:
-      # Cockpit wischte unlesbare Symlinks und generierte Self-Signed.
-      postRun = ''
-        install -d -m 0700 /etc/cockpit/ws-certs.d
-        install -m 0644 /var/lib/acme/jannis.nix-dev.link/fullchain.pem /etc/cockpit/ws-certs.d/10-jannis-nix-dev-link.cert
-        install -m 0600 /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-jannis-nix-dev-link.key
-      '';
-      dnsProvider = "cloudflare";
-      # ponytail: Runtime-Datei statt sops — Token kommt aus secrets.nix
-      environmentFile = "/run/acme-cloudflare-creds";
+  # Cloudflare Origin CA (bis 2041) — signiert für *.nix-dev.link / nix-dev.link.
+  # ACHTUNG: Origin-CA ist NICHT im Browser-Trust-Store. Direkter Zugriff (ohne Cloudflare-Proxy)
+  # zeigt weiterhin die Zertifikatswarnung; dann ist öffentlich vertrautes Let's Encrypt (security.acme)
+  # die richtige Wahl. Origin-CA ist korrekt, wenn die Domain hinter Cloudflare proxyed.
+  environment.etc = {
+    "cockpit/ws-certs.d/10-cloudflare-origin.cert" = {
+      text = secrets.COCKPIT_ORIGIN_CERT;
+      mode = "0644";
+    };
+    "cockpit/ws-certs.d/10-cloudflare-origin.key" = {
+      text = secrets.COCKPIT_ORIGIN_KEY;
+      mode = "0600";
     };
   };
-  system.activationScripts.acmeCloudflareCreds = ''
-    echo "CF_DNS_API_TOKEN=${secrets.CF_DNS_API_TOKEN}" > /run/acme-cloudflare-creds
-    chmod 600 /run/acme-cloudflare-creds
+  system.activationScripts.ddclientToken = ''
     echo -n "${secrets.CF_DNS_API_TOKEN}" > /run/ddclient-token
     chmod 600 /run/ddclient-token
   '';
@@ -130,10 +122,8 @@
     zone = "nix-dev.link";
     domains = [ "jannis.nix-dev.link" ];
     interval = "5min";
-    extraConfig = ''
-      # ponytail: Boot-Rennen — startet zu früh ohne Netzwerk, retry bis online
-    '';
   };
+  # ponytail: Boot-Rennen — ddclient startet zu früh ohne Netzwerk; auf network-online warten
   systemd.services.ddclient = {
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
@@ -145,8 +135,6 @@
     ];
     substituters = [ "https://cache.nixos.org" ];
   };
-
-  nixpkgs.config.allowUnfree = true;
 
   system.stateVersion = "26.11";
 }

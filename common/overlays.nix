@@ -86,11 +86,16 @@ let
 
         # fontFamily-Stack im Terminal-JS patchen
         TJS=$out/share/cockpit/systemd/terminal.js.gz
-        zcat $TJS | sed 's/fontFamily:"Menlo, Monaco, Consolas, monospace"/fontFamily:"FiraCode Nerd Font, Menlo, Monaco, Consolas, monospace"/' | gzip -9 > $TJS.tmp && mv $TJS.tmp $TJS
+        zcat $TJS |
+          sed -e 's/fontFamily:"Menlo, Monaco, Consolas, monospace"/fontFamily:"FiraCode Nerd Font, Menlo, Monaco, Consolas, monospace"/' \
+          -e 's|this.wrapper_element=document.createElement("div")|document.fonts.ready.then(()=>{this.terminal.clearTextureAtlas();this.terminal.refresh(0,this.terminal.rows-1)});this.wrapper_element=document.createElement("div")|' |
+          gzip -9 > $TJS.tmp && mv $TJS.tmp $TJS
 
         # @font-face ins Terminal-CSS
+        # Hinweis: /cockpit/static/ ist der echte Serving-Pfad des cockpit-share-Pakets.
+        # Ein relativer Pfad ../static/ wuerde auf /cockpit-system/static/ zeigen (nur Login-Fallback).
         TCS=$out/share/cockpit/systemd/terminal.css.gz
-        zcat $TCS | cat - <(echo '@font-face{font-family:"FiraCode Nerd Font";src:url("../static/FiraCodeNerdFont-Regular.ttf") format("truetype");font-weight:400}@font-face{font-family:"FiraCode Nerd Font";src:url("../static/FiraCodeNerdFont-Bold.ttf") format("truetype");font-weight:700}') | gzip -9 > $TCS.tmp && mv $TCS.tmp $TCS
+        zcat $TCS | cat - <(echo '@font-face{font-family:"FiraCode Nerd Font";src:url("/cockpit/static/FiraCodeNerdFont-Regular.ttf") format("truetype");font-weight:400;font-display:block}@font-face{font-family:"FiraCode Nerd Font";src:url("/cockpit/static/FiraCodeNerdFont-Bold.ttf") format("truetype");font-weight:700;font-display:block}') | gzip -9 > $TCS.tmp && mv $TCS.tmp $TCS
       '';
     });
   };
