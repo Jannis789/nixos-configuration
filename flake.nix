@@ -105,25 +105,6 @@
         ];
       };
 
-      nixosConfigurations.cachyos-latest = mkHost {
-        kind = "nixos";
-        system = "x86_64-linux";
-        configuration = ./hosts/jannis/configuration.nix;
-        username = "jannis";
-        home = ./hosts/jannis/home.nix;
-        hostOverlays = [
-          overlays.helium
-          overlays.rewaita
-          overlays.epiphany-webext
-        ];
-        extraModules = [
-          {
-            boot.kernelPackages =
-              inputs.cachyos-kernel.legacyPackages.x86_64-linux.linuxPackages-cachyos-latest;
-          }
-        ];
-      };
-
       darwinConfigurations.darwin = mkHost {
         kind = "darwin";
         system = "aarch64-darwin";

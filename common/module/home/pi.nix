@@ -34,16 +34,21 @@
   # betterwright direkt aufrufbar: Wrapper ins Profil (~/.nix-profile/bin,
   # liegt im Agent-PATH). Die KI ruft einfach "betterwright …" — kein
   # Node/Store-Pfad-Hardcode im Skill nötig.
-  # NixOS-Fix an der Wurzel: Der mitgelieferte BetterChromium-Fork ist ein
+  # NixOS-Fix an der Wurzel (NUR Linux): Der mitgelieferte BetterChromium-Fork ist ein
   # generisches Linux-Binary und läuft auf NixOS NICHT ("NixOS cannot run
   # dynamically linked executables"). BETTERWRIGHT_CHROMIUM_PATH zeigt auf das
   # nixpkgs-Chromium — supported env var, kein Symlink-Gefrickel, kein
   # Store-Pfad-Hardcode. chromium ist eh schon als pi-CLI-Dependency da.
+  # ponytail: pkgs.chromium ist Linux-only — auf Darwin (aarch64) darf der
+  # Ausdruck gar nicht erst evaluiert werden, sonst bricht der ganze Host.
   home.packages = [
-    (pkgs.writeShellScriptBin "betterwright" ''
-      export BETTERWRIGHT_CHROMIUM_PATH=${pkgs.chromium}/bin/chromium
-      exec ${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.pi/agent/npm/node_modules/betterwright/dist/bin/betterwright.js "$@"
-    '')
+    (pkgs.writeShellScriptBin "betterwright" (
+      lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+        export BETTERWRIGHT_CHROMIUM_PATH=${pkgs.chromium}/bin/chromium
+      '' + ''
+        exec ${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.pi/agent/npm/node_modules/betterwright/dist/bin/betterwright.js "$@"
+      ''
+    ))
   ];
 
   # BetterWright-Skill deklarativ im Repo — überlebt Neuaufsetzen.
@@ -52,17 +57,9 @@
   home.file.".pi/agent/skills/betterwright-driver/SKILL.md".source =
     ./pi/betterwright-driver/SKILL.md;
 
-  home.file.".pi/agent/models.json".text = builtins.toJSON {
-    providers.nous = {
-      baseUrl = "https://inference-api.nousresearch.com/v1";
-      api = "openai-completions";
-      apiKey = "$NOUS_API_KEY";
-      models = [
-        { id = "~deepseek/deepseek-v4-flash-latest"; }
-        { id = "minimax-m3"; }
-        { id = "stealth/ox-alpha"; }
-      ];
-    };
-  };
-
+  # Nous-Portal-Extension: auto-discovery der Live-Modelle via inference-api /v1/models.
+  # Quelle liegt nicht in einem home-manager-Modul, sondern als plain JS unter
+  # common/3rd-party/ — pi lädt alles unter ~/.pi/agent/extensions/ automatisch.
+  home.file.".pi/agent/extensions/nous-portal/index.js".source =
+    ../../3rd-party/PiNousPortalExtension.js;
 }

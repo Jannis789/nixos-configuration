@@ -17,6 +17,10 @@
   programs.bash.enable = true;
 
   programs.bash.initExtra = ''
+    # Guard ist ein vererbtes Once-Flag: Ohne unset sourct hm-session-vars.sh bei
+    # jedem spaeteren Source sofort return und neu hinzugekommene Keys (z.B.
+    # OPENCODE_API_KEY) werden nie geladen. unset macht es deterministisch.
+    unset __HM_SESS_VARS_SOURCED
     . "$HOME/.local/state/home-manager/gcroots/current-home/home-path/etc/profile.d/hm-session-vars.sh"
     fastfetch
   '';
@@ -34,5 +38,6 @@
   home.sessionVariables = {
     NOUS_API_KEY = secrets.NOUS_API_KEY;
     ZAI_API_KEY = secrets.ZAI_API_KEY;
+    OPENCODE_API_KEY = secrets.OPENCODE_API_KEY;
   };
 }

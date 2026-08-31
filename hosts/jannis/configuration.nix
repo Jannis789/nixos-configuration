@@ -3,10 +3,15 @@
   pkgs,
   lib,
   secrets,
+  inputs,
   ...
 }:
 {
   imports = [ ./hardware-configuration.nix ];
+
+  # CachyOS-Kernel (x86_64-linux, aus dem cachyos-kernel-Input)
+  boot.kernelPackages =
+    inputs.cachyos-kernel.legacyPackages.x86_64-linux.linuxPackages-cachyos-latest;
 
   boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -18,6 +23,23 @@
 
   networking.hostName = "jannis";
   networking.networkmanager.enable = true;
+
+  # Wake-on-LAN für enp6s0 (aus der Legacy-Config übernommen)
+  networking.interfaces.enp6s0.wakeOnLan.enable = true;
+
+  # Service setzt WoL beim Boot und nochmal beim Shutdown (ExecStop),
+  # weil manche Treiber die Einstellung beim Herunterfahren verlieren.
+  systemd.services.wake-on-lan = {
+    description = "Enable WoL on enp6s0";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.ethtool}/bin/ethtool -s enp6s0 wol g";
+      ExecStop = "${pkgs.ethtool}/bin/ethtool -s enp6s0 wol g";
+    };
+  };
 
   # Tailscale für Remote-Zugriff von überall
   services.tailscale.enable = true;
@@ -44,6 +66,7 @@
     git
     curl
     vim
+    ethtool
     helium
 
     epiphany
@@ -115,7 +138,8 @@
   # DDNS: hält jannis.nix-dev.link auf der Public-IP (Fritzbox-Portfreigabe 443 → diese Kiste)
   services.ddclient = {
     enable = true;
-    use = "web, web=checkip.amazonaws.com";
+    usev4 = "webv4, webv4=checkip.amazonaws.com";
+    usev6 = "";
     protocol = "cloudflare";
     username = "token";
     passwordFile = "/run/ddclient-token";
