@@ -45,6 +45,12 @@ EOF
         IdentityFile = "~/.ssh/lannitz";
         IdentitiesOnly = true;
       };
+      "jannis.nix-dev.link" = {
+        HostName = "jannis.nix-dev.link";
+        User = "jannis";
+        IdentityFile = "~/.ssh/lannitz";
+        IdentitiesOnly = true;
+      };
       "git.prodressnet.de" = {
         User = "git";
         IdentityFile = "~/.ssh/arbeit";

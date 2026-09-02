@@ -44,6 +44,15 @@
   # Tailscale für Remote-Zugriff von überall
   services.tailscale.enable = true;
 
+  # Remote-Zugriff über jannis.nix-dev.link (DNS-only, Fritzbox-Portfreigabe):
+  # 22  = SSH, 3389 = GNOME Remote Desktop (RDP)
+  networking.firewall.allowedTCPPorts = [ 22 3389 ];
+
+  # GNOME Remote Desktop (RDP :3389) — läuft als User-Service der eingeloggten
+  # Session. Muss einmalig in GNOME Settings > Sharing > Remote Desktop
+  # aktiviert + Passwort gesetzt werden.
+  services.gnome.gnome-remote-desktop.enable = true;
+
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "de_DE.UTF-8";
   console.keyMap = "de";
