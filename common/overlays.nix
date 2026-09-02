@@ -23,7 +23,7 @@ let
           src = prev.fetchurl {
             name = "vscode-insiders-darwin-arm64.zip";
             url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
-            sha256 = "sha256-nAoKFwwvJQnC40ATbNPS48FLITCsjPMTLaDbYLxgGNw=";
+            sha256 = "sha256-klWjuXXXGAEX6ztZ/QuJRib73aXZv4FtK6oQu9ASLYU=";
           };
 
           sourceRoot = "";
