@@ -125,20 +125,29 @@
     # Origin ohne Port — Browser sendet bei 443 keine Portnummer
     allowed-origins = [ "https://jannis.nix-dev.link" "https://localhost" ];
   };
-  # Cloudflare Origin CA (bis 2041) — signiert für *.nix-dev.link / nix-dev.link.
-  # ACHTUNG: Origin-CA ist NICHT im Browser-Trust-Store. Direkter Zugriff (ohne Cloudflare-Proxy)
-  # zeigt weiterhin die Zertifikatswarnung; dann ist öffentlich vertrautes Let's Encrypt (security.acme)
-  # die richtige Wahl. Origin-CA ist korrekt, wenn die Domain hinter Cloudflare proxyed.
-  environment.etc = {
-    "cockpit/ws-certs.d/10-cloudflare-origin.cert" = {
-      text = secrets.COCKPIT_ORIGIN_CERT;
-      mode = "0644";
-    };
-    "cockpit/ws-certs.d/10-cloudflare-origin.key" = {
-      text = secrets.COCKPIT_ORIGIN_KEY;
-      mode = "0600";
+  # Let's Encrypt via security.acme (auto-erneuernd per Timer). DNS-01-Challenge über
+  # Cloudflare-DNS-API → kein offener Port 80, bleibt DNS-only für SSH/RDP.
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "jannis@nix-dev.link"; # LE-Account; für Ablauf-Hinweise
+    certs."jannis.nix-dev.link" = {
+      domain = "jannis.nix-dev.link";
+      dnsProvider = "cloudflare";
+      environmentFile = "/run/acme/cloudflare-credentials";
+      postRun = "systemctl try-restart cockpit --no-block";
     };
   };
+  # ponytail: /run/acme wird vom acme-Modul (acme-setup) erzeugt; hier erst anlegen + nachlaufen lassen.
+  system.activationScripts.acmeToken = lib.mkAfter ''
+    install -d -m 0700 -o acme -g acme /run/acme
+    install -m 0600 /dev/null /run/acme/cloudflare-credentials
+    cat > /run/acme/cloudflare-credentials <<EOF
+CF_DNS_API_TOKEN=${secrets.CF_DNS_API_TOKEN}
+EOF
+    rm -f /etc/cockpit/ws-certs.d/*.cert /etc/cockpit/ws-certs.d/*.key
+    ln -sf /var/lib/acme/jannis.nix-dev.link/cert.pem /etc/cockpit/ws-certs.d/10-acme.cert
+    ln -sf /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-acme.key
+  '';
   system.activationScripts.ddclientToken = ''
     echo -n "${secrets.CF_DNS_API_TOKEN}" > /run/ddclient-token
     chmod 600 /run/ddclient-token
