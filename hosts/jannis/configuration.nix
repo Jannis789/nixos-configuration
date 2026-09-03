@@ -138,16 +138,33 @@
     };
   };
   # ponytail: /run/acme wird vom acme-Modul (acme-setup) erzeugt; hier erst anlegen + nachlaufen lassen.
+  # Credentials für die ACME-DNS-Challenge (tmpfs → bei jedem Boot neu).
   system.activationScripts.acmeToken = lib.mkAfter ''
     install -d -m 0700 -o acme -g acme /run/acme
-    install -m 0600 /dev/null /run/acme/cloudflare-credentials
-    cat > /run/acme/cloudflare-credentials <<EOF
-CF_DNS_API_TOKEN=${secrets.CF_DNS_API_TOKEN}
-EOF
-    rm -f /etc/cockpit/ws-certs.d/*.cert /etc/cockpit/ws-certs.d/*.key
-    ln -sf /var/lib/acme/jannis.nix-dev.link/cert.pem /etc/cockpit/ws-certs.d/10-acme.cert
-    ln -sf /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-acme.key
+    printf 'CF_DNS_API_TOKEN=${secrets.CF_DNS_API_TOKEN}\n' > /run/acme/cloudflare-credentials
+    chown acme:acme /run/acme/cloudflare-credentials
+    chmod 600 /run/acme/cloudflare-credentials
   '';
+
+  # Cockpit braucht die LE-Zertifikate als DATEIEN in ws-certs.d (kein Verzeichnis-Symlink).
+  # Dedizierter Boot-Service: setzt die Symlinks nach dem ACME-Cert, vor Cockpit.
+  systemd.services.cockpit-acme-tls = {
+    description = "Link Let's Encrypt certs into cockpit ws-certs.d";
+    after = [ "network-online.target" "acme-jannis.nix-dev.link.service" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /etc/cockpit/ws-certs.d
+      rm -f /etc/cockpit/ws-certs.d/0-self-signed.cert /etc/cockpit/ws-certs.d/0-self-signed.key
+      ln -sf /var/lib/acme/jannis.nix-dev.link/cert.pem /etc/cockpit/ws-certs.d/10-acme.cert
+      ln -sf /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-acme.key
+      systemctl try-restart cockpit.socket --no-block
+    '';
+  };
   system.activationScripts.ddclientToken = ''
     echo -n "${secrets.CF_DNS_API_TOKEN}" > /run/ddclient-token
     chmod 600 /run/ddclient-token

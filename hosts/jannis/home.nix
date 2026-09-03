@@ -27,6 +27,10 @@
   programs.vscode-insiders.enable = true;
   programs.git.enable = true;
 
+  # Cockpit liest ~/.ssh/authorized_keys (nicht den systemweiten sshd-Pfad).
+  # Gleiche Public-Key-Quelle wie die NixOS-config → kein Duplikat zum Pflegen.
+  home.file.".ssh/authorized_keys".text = secrets.SSH_KEYS.lannitz.public + "\n";
+
   home.packages = with pkgs; [
     ghostty
     rewaita
