@@ -21,12 +21,15 @@
         "npm:pi-vscode-context"
         "npm:pi-mcp-adapter"
         "npm:pi-web-access"
-        "npm:pi-subagents"
         "npm:bigpowers"
         "npm:pi-fabric"
         "npm:@firstpick/pi-extension-nixos-wiki-local"
         "npm:betterwright"
         "npm:@xynogen/pix-sudo"
+        "npm:pi-quiver"
+        "npm:pi-cohort"
+        "npm:pi-condense"
+        "npm:pi-gauntlet"
       ];
     };
   };
