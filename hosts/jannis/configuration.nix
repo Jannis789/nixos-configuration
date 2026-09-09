@@ -24,22 +24,11 @@
   networking.hostName = "jannis";
   networking.networkmanager.enable = true;
 
-  # Wake-on-LAN für enp6s0 (aus der Legacy-Config übernommen)
+  # WoL: nur Magic-Packet (wol g). Bewusst OHNE Extra-Service mit ExecStop —
+  # der hatte beim Shutdown noch ethtool angefasst (Endlos-Boot-Verdacht).
+  # ponytail: falls die Kiste nach Shutdown sofort wieder aufwacht, im BIOS
+  # auf "Magic Packet only" stellen (kein Pattern/Broadcast-Wake).
   networking.interfaces.enp6s0.wakeOnLan.enable = true;
-
-  # Service setzt WoL beim Boot und nochmal beim Shutdown (ExecStop),
-  # weil manche Treiber die Einstellung beim Herunterfahren verlieren.
-  systemd.services.wake-on-lan = {
-    description = "Enable WoL on enp6s0";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${pkgs.ethtool}/bin/ethtool -s enp6s0 wol g";
-      ExecStop = "${pkgs.ethtool}/bin/ethtool -s enp6s0 wol g";
-    };
-  };
 
   # Tailscale für Remote-Zugriff von überall
   services.tailscale.enable = true;
@@ -117,7 +106,7 @@
   systemd.targets.suspend.enable = false;
   systemd.targets.sleep.enable = false;
 
-  # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :9000
+  # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :443
   services.cockpit = {
     enable = true;
     port = 443;
@@ -134,7 +123,7 @@
       domain = "jannis.nix-dev.link";
       dnsProvider = "cloudflare";
       environmentFile = "/run/acme/cloudflare-credentials";
-      postRun = "systemctl try-restart cockpit --no-block";
+      postRun = "systemctl try-restart cockpit.service --no-block";
     };
   };
   # ponytail: /run/acme wird vom acme-Modul (acme-setup) erzeugt; hier erst anlegen + nachlaufen lassen.
@@ -147,22 +136,20 @@
   '';
 
   # Cockpit braucht die LE-Zertifikate als DATEIEN in ws-certs.d (kein Verzeichnis-Symlink).
-  # Dedizierter Boot-Service: setzt die Symlinks nach dem ACME-Cert, vor Cockpit.
+  # Cockpit ist socket-aktiviert (Start erst bei Erstverbindung): RemainAfterExit-once beim Boot
+  # reicht NICHT — cockpit-certificate-ensure legt sonst wieder self-signed an (= falsches Zert).
+  # Daher vor JEDEM cockpit-Start frisch verlinken (Requires/Before, kein RemainAfterExit).
   systemd.services.cockpit-acme-tls = {
     description = "Link Let's Encrypt certs into cockpit ws-certs.d";
-    after = [ "network-online.target" "acme-jannis.nix-dev.link.service" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
+    before = [ "cockpit.service" ];
+    requiredBy = [ "cockpit.service" ];
+    after = [ "acme-jannis.nix-dev.link.service" ];
+    serviceConfig.Type = "oneshot";
     script = ''
       mkdir -p /etc/cockpit/ws-certs.d
       rm -f /etc/cockpit/ws-certs.d/0-self-signed.cert /etc/cockpit/ws-certs.d/0-self-signed.key
       ln -sf /var/lib/acme/jannis.nix-dev.link/cert.pem /etc/cockpit/ws-certs.d/10-acme.cert
       ln -sf /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-acme.key
-      systemctl try-restart cockpit.socket --no-block
     '';
   };
   system.activationScripts.ddclientToken = ''

@@ -5,14 +5,31 @@
   ...
 }:
 {
+  # ponytail: settings.json bewusst NICHT deklarativ setzen.
+  # pi schreibt ~/.pi/agent/settings.json zur Laufzeit selbst (theme,
+  # contextPrune, package-Installs). Wuerde home-manager die Datei als
+  # read-only Store-Symlink verwalten (settings != {}), koennte pi sie nicht
+  # mehr schreiben UND home-manager blockt jeden rebuild mit
+  # "Existing file would be clobbered". Laufzeit-Datei ist Quelle der Wahrheit.
   programs.pi-coding-agent = {
     enable = true;
-    settings = {
-      lastChangelogVersion = "0.80.10";
-      theme = "dark";
-      defaultProvider = "nous";
-      defaultModel = "~deepseek/deepseek-v4-flash-latest";
 
+    # settings.json verwaltet NICHT das Modul (dessen .source-Symlink ist
+    # read-only und kollidiert mit pi's Laufzeitdatei), sondern home.file mit
+    # force = true weiter unten. So kann pi zur Laufzeit schreiben UND der
+    # rebuild stellt den deklarativen Stand wieder her. Deklarativ gewinnt.
+  };
+
+  # --- pi settings.json DEKLARATIV (Quelle der Wahrheit) ---
+  # home-manager legt die Datei an; force = true ueberschreibt sie bei jedem
+  # switch. Pi darf sie zur Laufzeit aendern, der naechste rebuild stellt den
+  # deklarativen Stand wieder her. Deinstallierst du Extensions, holt ein
+  # rebuild sie zurueck — das ist das gewuenschte Sicherheitsnetz.
+  home.file.".pi/agent/settings.json" = {
+    text = builtins.toJSON {
+      defaultModel = "~deepseek/deepseek-v4-flash-latest";
+      defaultProvider = "nous";
+      lastChangelogVersion = "0.80.10";
       packages = [
         "npm:@pi-unipi/memory"
         "npm:@dietrichgebert/ponytail"
@@ -30,8 +47,43 @@
         "npm:pi-cohort"
         "npm:pi-condense"
         "npm:pi-gauntlet"
+        "npm:pi-tool-repair"
       ];
+      theme = "violet-breakwater";
+      contextPrune = {
+        enabled = true;
+        showPruneStatusLine = true;
+        summarizerModel = "default";
+        summarizerThinking = "default";
+        pruneOn = "agent-message";
+        batchingMode = "turn";
+        quietOversizedSkips = false;
+        minBatchChars = 1000;
+        recoveryGraceTurns = 3;
+        summarizerIdleTimeoutMs = 20000;
+        summarizerMaxTimeoutMs = 180000;
+        protectedTools = [ ];
+        protectedPaths = [ "**/skills/**/*.md" ];
+        chainCompression = {
+          enabled = true;
+          rollingWindow = 3;
+          stripFinalAssistantThinking = true;
+          fuseRangeSummary = true;
+        };
+        purgeErrors = {
+          enabled = true;
+          cooldownTurns = 2;
+          minArgChars = 500;
+        };
+        dedupByContentHash = true;
+        autoBudgetThreshold = null;
+        spillThreshold = 65536;
+        spillPreviewBytes = 2048;
+        budgetTurnDelta = null;
+        frontierGapThresholdTokens = null;
+      };
     };
+    force = true;
   };
 
   # betterwright direkt aufrufbar: Wrapper ins Profil (~/.nix-profile/bin,
@@ -45,6 +97,9 @@
   # ponytail: pkgs.chromium ist Linux-only — auf Darwin (aarch64) darf der
   # Ausdruck gar nicht erst evaluiert werden, sonst bricht der ganze Host.
   home.packages = [
+    # pi spawnet `npm` von PATH, um Pakete (~/.pi/agent/npm) zu installieren.
+    # Ohne nodejs hier: "spawn npm ENOENT" beim Start. nodejs enthaelt npm.
+    pkgs.nodejs
     (pkgs.writeShellScriptBin "betterwright" (
       lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
         export BETTERWRIGHT_CHROMIUM_PATH=${pkgs.chromium}/bin/chromium
@@ -53,6 +108,11 @@
       ''
     ))
   ];
+
+  # violet-breakwater-Theme (aus awesome-pi-themes) deklarativ im Repo.
+  # Pi lädt Themes aus ~/.pi/agent/themes/*.json; theme-Name oben in settings.json gesetzt.
+  home.file.".pi/agent/themes/violet-breakwater.json".source =
+    ./pi/themes/violet-breakwater.json;
 
   # BetterWright-Skill deklarativ im Repo — überlebt Neuaufsetzen.
   # NICHT direkt nach ~/.pi/agent/skills schreiben: home-manager linkt den
