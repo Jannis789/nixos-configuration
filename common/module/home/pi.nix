@@ -5,6 +5,23 @@
   ...
 }:
 {
+  # Host-overridebare pi-Defaults (z.B. darwin: github-copilot).
+  # Liegen hier als eigene Option, damit hosts/darwin nur Provider/Model
+  # tauscht, ohne packages/theme/contextPrune zu duplizieren — und ohne
+  # programs.pi-coding-agent.settings zu setzen (das wuerde das
+  # Modul-managed settings.json reaktivieren und mit home.file force=true
+  # kollidieren).
+  options.piAgent = {
+    defaultProvider = lib.mkOption {
+      type = lib.types.str;
+      default = "nous";
+    };
+    defaultModel = lib.mkOption {
+      type = lib.types.str;
+      default = "~deepseek/deepseek-v4-flash-latest";
+    };
+  };
+
   # ponytail: settings.json bewusst NICHT deklarativ setzen.
   # pi schreibt ~/.pi/agent/settings.json zur Laufzeit selbst (theme,
   # contextPrune, package-Installs). Wuerde home-manager die Datei als
@@ -27,8 +44,8 @@
   # rebuild sie zurueck — das ist das gewuenschte Sicherheitsnetz.
   home.file.".pi/agent/settings.json" = {
     text = builtins.toJSON {
-      defaultModel = "~deepseek/deepseek-v4-flash-latest";
-      defaultProvider = "nous";
+      defaultModel = config.piAgent.defaultModel;
+      defaultProvider = config.piAgent.defaultProvider;
       lastChangelogVersion = "0.80.10";
       packages = [
         "npm:@pi-unipi/memory"
