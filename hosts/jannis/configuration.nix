@@ -35,12 +35,18 @@
 
   # Remote-Zugriff über jannis.nix-dev.link (DNS-only, Fritzbox-Portfreigabe):
   # 22  = SSH, 3389 = GNOME Remote Desktop (RDP)
-  networking.firewall.allowedTCPPorts = [ 22 3389 ];
+  # 443 = nginx (terminiert TLS, davor Cockpit direkt)
+  networking.firewall.allowedTCPPorts = [ 22 3389 443 ];
 
-  # GNOME Remote Desktop (RDP :3389) — läuft als User-Service der eingeloggten
-  # Session. Muss einmalig in GNOME Settings > Sharing > Remote Desktop
-  # aktiviert + Passwort gesetzt werden.
+  # GNOME Remote Desktop (RDP :3389) — Remote-Login über GDM (System-Dienst,
+  # kein lokaler User-Login nötig). Der Modul liefert den gnome-remote-desktop-
+  # Dienst; wantedBy stellt sicher, dass er beim Boot mit graphical.target
+  # startet. Auth beim RDP-Login erfolgt über GDM mit den jannis-Credentials.
   services.gnome.gnome-remote-desktop.enable = true;
+  systemd.services."gnome-remote-desktop" = {
+    wantedBy = [ "graphical.target" ];
+    restartIfChanged = false;
+  };
 
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "de_DE.UTF-8";
@@ -106,14 +112,199 @@
   systemd.targets.suspend.enable = false;
   systemd.targets.sleep.enable = false;
 
-  # Web-Dashboard: Restart, Power-Off, Terminal — HTTPS auf :443
+  # Web-Dashboard: Restart, Power-Off, Terminal — laeuft jetzt HINTER nginx
+  # (nginx terminiert TLS auf :443), daher loopback + Klartext, kein eigenes Zert.
+  # UrlRoot = /cockpit: cockpit-ws strippt url_root vom Pfad, BEVOR es matcht
+  # (cockpitwebserver.c: "self->path = path_copy + url_root->len"), deshalb
+  # kollidiert der App-Pfad /cockpit/ nicht mit Cockpits interner API
+  # (/cockpit/cockpit/socket). Verifiziert mit cockpit-ws --no-tls:
+  # / -> 404, /cockpit/ -> 200, /cockpit/cockpit/socket -> 403 (nur Origin fehlt).
   services.cockpit = {
     enable = true;
-    port = 443;
-    openFirewall = true;
+    port = 9090;
+    openFirewall = false; # nur nginx (127.0.0.1) spricht Cockpit an
     # Origin ohne Port — Browser sendet bei 443 keine Portnummer
-    allowed-origins = [ "https://jannis.nix-dev.link" "https://localhost" ];
+    allowed-origins = [
+      "https://jannis.nix-dev.link"
+      "wss://jannis.nix-dev.link"
+      "https://localhost"
+    ];
+    settings.WebService = {
+      UrlRoot = "/cockpit";
+      # nginx terminiert TLS -> Cockpit muss X-Forwarded-Proto glauben
+      ProtocolHeader = "X-Forwarded-Proto";
+      ForwardedForHeader = "X-Forwarded-For";
+    };
   };
+
+  # SSO-Gate: einmal am Apex einloggen, alle Subrouten (/cockpit/, /pi-web/)
+  # erben die Session per auth_request (Cookie auf .jannis.nix-dev.link).
+  # Portal unter /authelia/ (Base-Path traegt Authelia selbst via
+  # server.address), Verify unter /authelia-verify (internal, nur nginx).
+  # Authelia-Credentials deklarativ aus secrets.nix (privates Single-User-Repo,
+  # bewusst Klartext wie der Rest dort). NB: landet dadurch auch lesbar im
+  # /nix/store — bei fremden Augen auf Host/Repo sofort auf sops-nix wechseln.
+  # totp_secret vorab gesetzt => keine QR-Anmeldung noetig, Key direkt in die App.
+  environment.etc = {
+    "authelia/jwt-secret".text = secrets.AUTHELIA_JWT_SECRET;
+    "authelia/storage-key".text = secrets.AUTHELIA_STORAGE_KEY;
+    "authelia/users_database.yml".text = ''
+      users:
+        jannis:
+          displayname: "Jannis"
+          password: "${secrets.AUTHELIA_PASSWORD_HASH}"
+          email: jannis@nix-dev.link
+          groups: []
+          totp_secret: ${secrets.AUTHELIA_TOTP_SECRET}
+    '';
+  };
+  services.authelia.instances.main = {
+    enable = true;
+    secrets.jwtSecretFile = "/etc/authelia/jwt-secret";
+    secrets.storageEncryptionKeyFile = "/etc/authelia/storage-key";
+    settings = {
+      theme = "auto";
+      default_2fa_method = "totp";
+      log.level = "info";
+      server.address = "tcp://127.0.0.1:9091/authelia";
+      totp.issuer = "jannis.nix-dev.link";
+      authentication_backend.file = {
+        path = "/etc/authelia/users_database.yml";
+        password.algorithm = "argon2id";
+      };
+      access_control = {
+        default_policy = "deny";
+        rules = [
+          { domain = "jannis.nix-dev.link"; policy = "two_factor"; }
+        ];
+      };
+      session.cookies = [{
+        domain = "jannis.nix-dev.link";
+        default_redirection_url = "https://jannis.nix-dev.link/";
+        authelia_url = "https://jannis.nix-dev.link/authelia";
+        name = "authelia_session";
+        same_site = "lax";
+        expiration = "1h";
+        inactivity = "5m";
+      }];
+      storage.local.path = "/var/lib/authelia-main/db.sqlite3";
+      notifier.filesystem.filename = "/var/lib/authelia-main/notification.txt";
+    };
+  };
+
+  # Reverse-Proxy + WIP-Hub auf :443. "/" = statische Hub-Seite (./hub/),
+  # "/cockpit/" = Cockpit.
+  services.nginx = {
+    enable = true;
+    # gzip bricht Cockpits ETag-Handling (bekannter Cockpit-bei-Proxy-Fallstrick)
+    recommendedGzipSettings = false;
+    # liefert u.a. Host / X-Real-IP / X-Forwarded-For / X-Forwarded-Proto
+    recommendedProxySettings = true;
+    # Catch-all fuer alles, was nicht jannis.nix-dev.link ist: TLS-Handshake
+    # wird abgewiesen (ssl_reject_handshake), statt den Apex-Vhost zu erben.
+    # Faengt auch alte Hostnamen ab, die noch in DNS-Caches stecken.
+    virtualHosts."_" = {
+      default = true;
+      rejectSSL = true;
+      locations."/" = {
+        return = "444"; # Port 80: Verbindung kommentarlos schliessen
+      };
+    };
+    virtualHosts."jannis.nix-dev.link" = {
+      forceSSL = true;
+      useACMEHost = "jannis.nix-dev.link"; # Reload nach Renewal macht acme selbst
+      root = ./hub;
+      # Hub hinter dem Gate: ohne Session -> 302 zum Portal; nach Login immer Hub (default_redirection_url).
+      locations."/" = {
+        extraConfig = ''
+          auth_request /authelia-verify;
+          auth_request_set $user $upstream_http_remote_user;
+          auth_request_set $email $upstream_http_remote_email;
+          add_header Cache-Control "no-cache" always; # Hub enthaelt Token-Fetch-JS: immer revalidieren (etag spart Traffic)
+          proxy_set_header Remote-User $user;
+          proxy_set_header Remote-Email $email;
+          error_page 401 =302 https://$host/authelia/;
+        '';
+      };
+      # Authelia-Portal (oeffentlich, KEIN auth_request — sonst Login-Loop).
+      # Upstream kennt seinen Base-Path, daher Prefix strippen (trailing slash).
+      locations."/authelia/" = {
+        proxyPass = "http://127.0.0.1:9091/authelia/";
+        proxyWebsockets = true;
+      };
+      locations."= /authelia" = {
+        return = "302 /authelia/";
+      };
+      # Verify-Endpunkt fuer auth_request: internal, nur nginx ruft ihn auf.
+      locations."/authelia-verify" = {
+        extraConfig = ''
+          internal;
+          proxy_pass http://127.0.0.1:9091/authelia/api/verify;
+          proxy_pass_request_body off;
+          proxy_set_header Content-Length "";
+          proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+        '';
+      };
+      locations."/cockpit/" = {
+        # KEIN trailing slash: Cockpit muss "/cockpit/..." sehen (entspricht UrlRoot)
+        proxyPass = "http://127.0.0.1:9090";
+        proxyWebsockets = true; # Cockpit-Terminal/Session laeuft ueber WebSocket
+        extraConfig = ''
+          proxy_buffering off;
+          auth_request /authelia-verify;
+          auth_request_set $user $upstream_http_remote_user;
+          auth_request_set $email $upstream_http_remote_email;
+          proxy_set_header Remote-User $user;
+          proxy_set_header Remote-Email $email;
+          error_page 401 =302 https://$host/authelia/;
+        '';
+      };
+      # pi-web (http://127.0.0.1:8504, per-user Service): braucht KEINE
+      # Prefix-Config — Prefix strippen reicht, Redirect /pi-web -> /pi-web/.
+      locations."/pi-web/" = {
+        proxyPass = "http://127.0.0.1:8504/";
+        proxyWebsockets = true; # Terminals/Sessions laufen ueber WebSocket
+        extraConfig = ''
+          auth_request /authelia-verify;
+          auth_request_set $user $upstream_http_remote_user;
+          auth_request_set $email $upstream_http_remote_email;
+          proxy_set_header Remote-User $user;
+          proxy_set_header Remote-Email $email;
+          error_page 401 =302 https://$host/authelia/;
+        '';
+      };
+      locations."= /pi-web" = {
+        return = "302 /pi-web/";
+      };
+      locations."/betterwright/" = {
+        proxyPass = "http://127.0.0.1:8505/"; # betterwright view (Skill startet ihn auf Fixport 8505)
+        proxyWebsockets = true; # Live-View-Steuerung laeuft ueber WebSocket
+        extraConfig = ''
+          auth_request /authelia-verify;
+          auth_request_set $user $upstream_http_remote_user;
+          auth_request_set $email $upstream_http_remote_email;
+          proxy_set_header Remote-User $user;
+          proxy_set_header Remote-Email $email;
+          error_page 401 =302 https://$host/authelia/;
+        '';
+      };
+      locations."= /betterwright" = {
+        return = "302 /betterwright/";
+      };
+      # Aktueller BetterWright-Token (Skill schreibt ihn hierhin; NICHT /tmp,
+      # nginx läuft mit PrivateTmp) -> Hub-Kachel baut den klickbaren Link.
+      locations."= /bw-url" = {
+        extraConfig = ''
+          auth_request /authelia-verify;
+          error_page 401 =302 https://$host/authelia/;
+          alias /var/lib/betterwright/view-url;
+          default_type text/plain;
+        '';
+      };
+    };
+  };
+  # BetterWright-Viewer-Token fuer die Hub-Kachel (nginx liest die Datei).
+  systemd.tmpfiles.rules = [ "d /var/lib/betterwright 0755 jannis users -" ];
   # Let's Encrypt via security.acme (auto-erneuernd per Timer). DNS-01-Challenge über
   # Cloudflare-DNS-API → kein offener Port 80, bleibt DNS-only für SSH/RDP.
   security.acme = {
@@ -123,7 +314,8 @@
       domain = "jannis.nix-dev.link";
       dnsProvider = "cloudflare";
       environmentFile = "/run/acme/cloudflare-credentials";
-      postRun = "systemctl try-restart cockpit.service --no-block";
+      # nginx liest das Zert; Renewal-Reload macht useACMEHost automatisch
+      group = "nginx";
     };
   };
   # ponytail: /run/acme wird vom acme-Modul (acme-setup) erzeugt; hier erst anlegen + nachlaufen lassen.
@@ -135,23 +327,8 @@
     chmod 600 /run/acme/cloudflare-credentials
   '';
 
-  # Cockpit braucht die LE-Zertifikate als DATEIEN in ws-certs.d (kein Verzeichnis-Symlink).
-  # Cockpit ist socket-aktiviert (Start erst bei Erstverbindung): RemainAfterExit-once beim Boot
-  # reicht NICHT — cockpit-certificate-ensure legt sonst wieder self-signed an (= falsches Zert).
-  # Daher vor JEDEM cockpit-Start frisch verlinken (Requires/Before, kein RemainAfterExit).
-  systemd.services.cockpit-acme-tls = {
-    description = "Link Let's Encrypt certs into cockpit ws-certs.d";
-    before = [ "cockpit.service" ];
-    requiredBy = [ "cockpit.service" ];
-    after = [ "acme-jannis.nix-dev.link.service" ];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      mkdir -p /etc/cockpit/ws-certs.d
-      rm -f /etc/cockpit/ws-certs.d/0-self-signed.cert /etc/cockpit/ws-certs.d/0-self-signed.key
-      ln -sf /var/lib/acme/jannis.nix-dev.link/cert.pem /etc/cockpit/ws-certs.d/10-acme.cert
-      ln -sf /var/lib/acme/jannis.nix-dev.link/key.pem /etc/cockpit/ws-certs.d/10-acme.key
-    '';
-  };
+  # (cockpit-acme-tls entfaellt: Cockpit terminiert kein TLS mehr, nginx macht das.
+  #  Der ws-certs.d-Symlink-Tanz gegen cockpit-certificate-ensure ist damit tot.)
   system.activationScripts.ddclientToken = ''
     echo -n "${secrets.CF_DNS_API_TOKEN}" > /run/ddclient-token
     chmod 600 /run/ddclient-token

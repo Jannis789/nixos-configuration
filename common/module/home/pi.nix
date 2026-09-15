@@ -66,6 +66,7 @@
           "npm:pi-condense"
           "npm:pi-gauntlet"
           "npm:pi-tool-repair"
+          # Dashboard (Bridge + Server). Das Meta-Paket ist SELBST ein
         ];
         theme = "violet-breakwater";
         contextPrune = {

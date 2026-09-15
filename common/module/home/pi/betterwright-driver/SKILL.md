@@ -10,12 +10,15 @@ description: Browser tasks via betterwright view + run (Live View, user watches/
 `run`/`view` need no API key. On skill load, immediately:
 
 ```bash
-nohup betterwright view --host 127.0.0.1 > /tmp/bw-view.log 2>&1 &
-sleep 3 && grep -o 'http://127.0.0.1:[0-9]*/?t=[A-Za-z0-9_-]*' /tmp/bw-view.log
+nohup betterwright view --host 127.0.0.1 --port 8505 > /tmp/bw-view.log 2>&1 &
+sleep 3 && grep -o 'http://127.0.0.1:8505/?t=[A-Za-z0-9_-]*' /tmp/bw-view.log
+grep -o 't=[A-Za-z0-9_-]*' /tmp/bw-view.log | head -1 > /var/lib/betterwright/view-url  # Hub-Kachel wird klickbar (nicht /tmp — nginx PrivateTmp!)
 ```
 
-- Already running (`betterwright sessions` → `default`)? Give the URL from the log, start nothing new.
-- Give the user the URL verbatim (capability token — treat like a password).
+- Already running (`betterwright sessions` → `default`)? Give the URL from the log, start nothing new — aber `/var/lib/betterwright/view-url` ggf. neu schreiben.
+- Give the user the URL rewritten to the dashboard route (nginx proxies /betterwright/ -> 127.0.0.1:8505, hinter Authelia):
+  `http://127.0.0.1:8505/?t=X` -> `https://jannis.nix-dev.link/betterwright/?t=X`
+- Capability token — treat like a password. Port 8505 is fixed for the proxy; never omit it.
 - **This is NOT a task.** Then stop and wait for the actual task — no interpreting, no repo inspection, no commits.
 
 ## Steer: betterwright run (one tool call per step)
