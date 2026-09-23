@@ -60,6 +60,9 @@
       "wheel"
       "networkmanager"
     ];
+    # Linger, damit der User-Service (vscode-insiders-web) ab Boot läuft,
+    # ohne dass jemand lokal eingeloggt ist.
+    linger = true;
   };
   security.sudo.wheelNeedsPassword = false;
 
@@ -73,6 +76,9 @@
     ethtool
     helium
 
+    # nvim aus dem eigenen Nixvim-Flake: Editor + pi (AI-Terminal per <leader>d)
+    inputs.nixvim.packages.${pkgs.system}.default
+
     epiphany
 
     gnomeExtensions.blur-my-shell
@@ -85,6 +91,7 @@
     gnomeExtensions.color-picker
     gnomeExtensions.astra-monitor
     gnomeExtensions.dash-to-dock
+    rustdesk
 
     (tesseract5.override {
       enableLanguages = [
@@ -135,6 +142,15 @@
       ProtocolHeader = "X-Forwarded-Proto";
       ForwardedForHeader = "X-Forwarded-For";
     };
+  };
+
+  # Laufzeit-Downloads ausführbar machen: serve-web (VS Code Web-UI) lädt
+  # einen ungepatchten Microsoft-node nach; nix-ld ersetzt den Stub-Linker
+  # (/lib64/ld-linux -> nix-ld) und reicht libc/libstdc++/zlib durch. Der
+  # vscode-insiders-web-Service setzt NIX_LD(+LIBRARY_PATH) im Unit selbst.
+  programs.nix-ld = {
+    enable = true;
+    libraries = [ (pkgs.lib.getLib pkgs.stdenv.cc.cc) pkgs.zlib ];
   };
 
   # SSO-Gate: einmal am Apex einloggen, alle Subrouten (/cockpit/, /pi-web/)
@@ -290,6 +306,24 @@
       };
       locations."= /betterwright" = {
         return = "302 /betterwright/";
+      };
+      # VS Code Insiders Web-UI (serve-web, User-Service auf 8506, base-path
+      # /vscode): Prefix bleibt AM Proxy haengen (wie Cockpit/UrlRoot), weil
+      # serve-web den vollen Pfad erwartet (--server-base-path).
+      locations."/vscode/" = {
+        proxyPass = "http://127.0.0.1:8506";
+        proxyWebsockets = true; # Editor/Datei-Watcher laufen ueber WebSocket
+        extraConfig = ''
+          auth_request /authelia-verify;
+          auth_request_set $user $upstream_http_remote_user;
+          auth_request_set $email $upstream_http_remote_email;
+          proxy_set_header Remote-User $user;
+          proxy_set_header Remote-Email $email;
+          error_page 401 =302 https://$host/authelia/;
+        '';
+      };
+      locations."= /vscode" = {
+        return = "302 /vscode/";
       };
       # Aktueller BetterWright-Token (Skill schreibt ihn hierhin; NICHT /tmp,
       # nginx läuft mit PrivateTmp) -> Hub-Kachel baut den klickbaren Link.
