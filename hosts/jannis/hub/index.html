@@ -5,32 +5,64 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Jannis-Host Dashboard</title>
 <style>
-  body { font: 16px/1.5 system-ui, sans-serif; margin: 3rem auto; max-width: 34rem; padding: 0 1rem; }
-  h1 { font-size: 1.4rem; }
-  ul { padding-left: 1.2rem; }
-  li { margin: .4rem 0; }
-  .dot { display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: #999; margin-right: .35em; vertical-align: middle; }
-  .dot.on { background: #2e9e4f; }
-  .dot.off { background: #c0392b; }
-  small { color: #666; }
+  :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --fg:#e6edf3; --dim:#8b949e; --ok:#2ea043; --err:#f85149; --idle:#8b949e; --ac:#58a6ff; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg); margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 3rem 1rem; }
+  header { text-align: center; margin-bottom: 2rem; }
+  h1 { font-size: 1.35rem; margin: 0; font-weight: 600; }
+  header p { color: var(--dim); margin: .3rem 0 0; font-size: .85rem; }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; width: 100%; max-width: 46rem; }
+  a.tile { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.2rem; text-decoration: none; color: var(--fg); transition: border-color .15s, transform .15s; }
+  a.tile:hover { border-color: var(--ac); transform: translateY(-2px); }
+  a.tile:not([href]) { opacity: .55; cursor: default; }
+  a.tile:not([href]):hover { border-color: var(--line); transform: none; }
+  .row { display: flex; align-items: center; gap: .55rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--idle); flex: none; }
+  .dot.on { background: var(--ok); box-shadow: 0 0 0 0 rgba(46,160,67,.5); animation: pulse 2s infinite; }
+  .dot.off { background: var(--err); }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(46,160,67,0); } 100% { box-shadow: 0 0 0 0 rgba(46,160,67,0); } }
+  .tile h2 { font-size: 1rem; margin: 0; font-weight: 600; }
+  .tile p { color: var(--dim); margin: .55rem 0 0; font-size: .85rem; }
+  footer { margin-top: 2.5rem; color: var(--dim); font-size: .78rem; }
+  footer .legend { display: inline-flex; align-items: center; gap: .35rem; margin: 0 .8rem; }
 </style>
 </head>
 <body>
-<h1>WIP: Jannis-Host Dashboard</h1>
-<ul>
-  <li><a href="/cockpit/">Cockpit</a> — Reboot, Power-Off, Terminal</li>
-  <li><a href="/pi-web/">pi-web</a> — Pi-Agent-Sessions im Browser</li>
-  <li><span class="dot" id="bw-dot"></span><a id="bw-link">BetterWright</a> — Live-Browser des Agenten <small>(grün = Viewer läuft; Kachel klickbar = Link aktiv)</small></li>
-</ul>
+<header>
+  <h1>Jannis-Host Dashboard</h1>
+  <p>jannis.nix-dev.link — alles hinter Authelia-Login</p>
+</header>
+<main>
+  <a class="tile" href="/cockpit/" id="t-cockpit"><div class="row"><span class="dot" id="d-cockpit"></span><h2>Cockpit</h2></div><p>Reboot, Power-Off, Terminal</p></a>
+  <a class="tile" href="/pi-web/" id="t-piweb"><div class="row"><span class="dot" id="d-piweb"></span><h2>Pi-Web</h2></div><p>Pi-Agent-Sessions im Browser</p></a>
+  <a class="tile" id="t-bw"><div class="row"><span class="dot" id="d-bw"></span><h2>BetterWright</h2></div><p>Live-Browser des Agenten — Klick geht erst, wenn der Viewer läuft</p></a>
+  <a class="tile" href="/vscode/" id="t-vscode"><div class="row"><span class="dot" id="d-vscode"></span><h2>VS Code</h2></div><p>VS Code Insiders im Browser — Editor für den Workspace</p></a>
+</main>
+<footer>
+  <span class="legend"><span class="dot on"></span>erreichbar</span>
+  <span class="legend"><span class="dot off"></span>aus</span>
+  <span class="legend"><span class="dot"></span>Session abgelaufen</span>
+  · Status prüft der Browser alle 30 s
+</footer>
 <script>
-  // Status-Ball BetterWright: Viewer lauscht auf 127.0.0.1:8505 (token-gegate,
-  // ohne Token antwortet er 404 — 502 heisst Prozess tot).
-  fetch("/betterwright/").then(r => {
-    document.getElementById("bw-dot").className = "dot " + ((r.status === 200 || r.status === 404) ? "on" : "off");
-  }).catch(() => document.getElementById("bw-dot").className = "dot off");
-  // Token holen (/bw-url, vom Viewer-Start beschrieben) -> Kachel klickbar machen.
+  // Status pro Kachel: fetch der Route. 2xx/3xx/404 = Dienst lebt (BetterWright
+  // antwortet ohne Token 404), 5xx = tot, Redirect = Session weg.
+  const dots = { cockpit: "/cockpit/", piweb: "/pi-web/", bw: "/betterwright/", vscode: "/vscode/" };
+  const ok404 = new Set(["bw"]); // 404 gilt nur beim Token-Gate als lebt
+  function setDot(k, s) { document.getElementById("d-" + k).className = "dot " + s; }
+  function poll() {
+    for (const [k, url] of Object.entries(dots)) {
+      fetch(url, { redirect: "manual" }).then(r => {
+        if (r.redirected || r.status === 302) return "";          // Session weg -> grau
+        if (r.status < 500 && (r.status !== 404 || ok404.has(k))) return "on";
+        return "off";
+      }).then(s => setDot(k, s)).catch(() => setDot(k, "off"));
+    }
+  }
+  poll(); setInterval(poll, 30000);
+  // BetterWright-Kachel klickbar machen: Token aus /bw-url (Viewer-Start schreibt ihn).
   fetch("/bw-url").then(r => r.ok ? r.text() : null).then(t => {
-    if (t && t.trim()) document.getElementById("bw-link").href = "/betterwright/?" + t.trim();
+    if (t && t.trim()) document.getElementById("t-bw").href = "/betterwright/?" + t.trim();
   }).catch(() => {});
 </script>
 </body>

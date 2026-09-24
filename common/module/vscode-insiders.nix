@@ -99,6 +99,24 @@ in
       default = pkgs.vscode-insiders;
       description = "VS Code binary. Per-Host wählbar (z.B. Insiders-Overlay).";
     };
+    serveWeb = {
+      enable = lib.mkEnableOption "Web-UI via serve-web (VS Code im Browser, hinter nginx+Authelia)";
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 8506;
+        description = "Loopback-Port des serve-web-Dienstes (muss zur nginx-location passen).";
+      };
+      serverBasePath = lib.mkOption {
+        type = lib.types.str;
+        default = "/vscode";
+        description = "Pfad, unter dem serve-web die Web-UI ausliefert (muss exakt der nginx-location entsprechen, ohne trailing slash).";
+      };
+      defaultFolder = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Ordner, der ohne URL-Parameter im Browser geöffnet wird.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -107,6 +125,90 @@ in
       package = cfg.package;
       profiles.default.extensions = resolvedExtensions ++ marketplaceExtensions;
       profiles.default.userSettings = settings;
+    };
+
+    # Web-UI: dasselbe Binary (cfg.package) als serve-web. Läuft als User-
+    # Service (Vollzugriff auf $HOME), Token-Auth bewusst aus — davor sitzen
+    # nginx (TLS) und Authelia (2FA), siehe hosts/jannis/configuration.nix.
+    systemd.user.services.vscode-insiders-web = lib.mkIf cfg.serveWeb.enable {
+      Unit = {
+        Description = "VS Code Insiders Web-UI (serve-web)";
+      };
+      Service = {
+        ExecStart = toString (
+          [
+            "${cfg.package}/bin/code-insiders"
+            "serve-web"
+            "--host" "127.0.0.1"
+            "--port" (toString cfg.serveWeb.port)
+            "--server-base-path" cfg.serveWeb.serverBasePath
+            "--server-data-dir" "${config.home.homeDirectory}/.local/share/vscode-insiders-web"
+            "--without-connection-token"
+            "--accept-server-license-terms"
+            "--disable-telemetry"
+          ]
+          ++ lib.optionals (cfg.serveWeb.defaultFolder != null) [
+            "--default-folder" cfg.serveWeb.defaultFolder
+          ]
+        );
+        # Settings+Extensions aus DIESEM Modul auch für die Web-UI setzen
+        # (gleiche Liste wie die Desktop-App): Extensions per Symlink in den
+        # server-data-dir linken, settings.json deklarativ schreiben. Bei jedem
+        # Start neu gesetzt — Web-UI-Änderungen an den User-Settings werden
+        # beim Neustart zurückgesetzt, exakt wie bei der Desktop-Aktivierung.
+        # serve-web ignoriert Ordner ohne Registry-Eintrag ("Marked extension
+        # as removed"). Die Desktop-Registry von HM nutzt dieselbe Extension-
+        # Liste — als Vorlage nehmen, Pfade umbiegen, Links konsistent benennen.
+        ExecStartPre = toString ([
+          "${pkgs.python3}/bin/python3"
+          "${pkgs.writeText "vscode-web-seed.py" ''
+            import json, os, glob
+            home = os.path.expanduser("~")
+            D = home + "/.local/share/vscode-insiders-web"
+            ext = D + "/extensions"
+            os.makedirs(ext, exist_ok=True)
+            os.makedirs(D + "/data/User", exist_ok=True)
+            settings = json.loads(${builtins.toJSON (builtins.toJSON settings)})
+            open(D + "/data/User/settings.json", "w").write(json.dumps(settings))
+            entries = json.load(open(home + "/.vscode-insiders/extensions/extensions.json"))
+            for l in glob.glob(ext + "/*"):
+                if os.path.islink(l):
+                    os.unlink(l)
+            reg_path = ext + "/extensions.json"
+            reg = json.load(open(reg_path)) if os.path.exists(reg_path) else []
+            # manuell (Marketplace) installierte Extensions behalten: echte
+            # Verzeichnisse, die noch existieren
+            keep = [
+                e for e in reg
+                if os.path.isdir(e["location"]["path"])
+                and not os.path.islink(e["location"]["path"])
+            ]
+            out = list(keep)
+            for e in entries:
+                name = os.path.basename(e["location"]["path"])
+                target = os.path.realpath(e["location"]["path"])
+                if not os.path.isdir(target):
+                    raise SystemExit("Extension-Ordner fehlt: " + name)
+                os.symlink(target, ext + "/" + name)
+                ne = dict(e)
+                ne["location"] = {"$mid": 1, "path": ext + "/" + name, "scheme": "file"}
+                ne["relativeLocation"] = name
+                out.append(ne)
+            json.dump(out, open(reg_path, "w"))
+          ''}"
+        ]);
+        Environment = [
+          # serve-web lädt zur Laufzeit einen ungepatchten Microsoft-node nach
+          # (~/.vscode-insiders/cli/serve-web/). Host-seitig ersetzt nix-ld den
+          # Stub-Linker; diese Env-Variablen im Unit selbst, weil User-Services
+          # die Login-Session nicht zuverlässig erben.
+          "NIX_LD=${pkgs.stdenv.cc.bintools.dynamicLinker}"
+          "NIX_LD_LIBRARY_PATH=${lib.makeLibraryPath [ (pkgs.lib.getLib pkgs.stdenv.cc.cc) pkgs.zlib ]}"
+        ];
+        Restart = "on-failure";
+        RestartSec = 2;
+      };
+      Install.WantedBy = [ "default.target" ];
     };
 
     home.activation.vscodeInsiders = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

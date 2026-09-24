@@ -24,7 +24,14 @@
     . "$HOME/.local/state/home-manager/gcroots/current-home/home-path/etc/profile.d/hm-session-vars.sh"
     fastfetch
   '';
-  programs.vscode-insiders.enable = true;
+  # vscode-insiders: Desktop-App UND Web-UI (jannis.nix-dev.link/vscode).
+  programs.vscode-insiders = {
+    enable = true;
+    serveWeb = {
+      enable = true;
+      defaultFolder = "/home/jannis/workspace";
+    };
+  };
   programs.git.enable = true;
 
   # Cockpit liest ~/.ssh/authorized_keys (nicht den systemweiten sshd-Pfad).
