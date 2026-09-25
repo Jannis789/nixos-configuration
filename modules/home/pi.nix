@@ -110,13 +110,13 @@
     # violet-breakwater-Theme (aus awesome-pi-themes) deklarativ im Repo.
     # Pi lädt Themes aus ~/.pi/agent/themes/*.json; theme-Name oben in settings.json gesetzt.
     home.file.".pi/agent/themes/violet-breakwater.json".source =
-      ./pi/themes/violet-breakwater.json;
+      ../../assets/pi/themes/violet-breakwater.json;
 
     # BetterWright-Skill deklarativ im Repo — überlebt Neuaufsetzen.
     # NICHT direkt nach ~/.pi/agent/skills schreiben: home-manager linkt den
     # Store-Pfad, ein echtes Verzeichnis dort würde den Link blockieren.
     home.file.".pi/agent/skills/betterwright-driver/SKILL.md".source =
-      ./pi/betterwright-driver/SKILL.md;
+      ../../assets/pi/betterwright-driver/SKILL.md;
 
     # Nous-Portal-Extension: auto-discovery der Live-Modelle via inference-api /v1/models.
     # Quelle liegt nicht in einem home-manager-Modul, sondern als plain JS unter

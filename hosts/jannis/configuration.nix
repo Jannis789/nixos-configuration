@@ -229,7 +229,7 @@
     virtualHosts."jannis.nix-dev.link" = {
       forceSSL = true;
       useACMEHost = "jannis.nix-dev.link"; # Reload nach Renewal macht acme selbst
-      root = ./hub;
+      root = ../../assets/hub; # Nicht-Nix-Dateien gehoeren nach assets/
       # Hub hinter dem Gate: ohne Session -> 302 zum Portal; nach Login immer Hub (default_redirection_url).
       locations."/" = {
         extraConfig = ''
