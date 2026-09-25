@@ -33,12 +33,12 @@ let
   };
 
   helium = final: prev: {
-    helium = final.callPackage ./module/custom/helium.nix { };
+    helium = final.callPackage ./packages/helium.nix { };
   };
 
   hanabi = final: prev: {
     gnomeExtensions = prev.gnomeExtensions // {
-      hanabi = final.callPackage ./module/custom/hanabi.nix { };
+      hanabi = final.callPackage ./packages/hanabi.nix { };
     };
   };
   rewaita =

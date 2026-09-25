@@ -51,11 +51,6 @@ EOF
         IdentityFile = "~/.ssh/lannitz";
         IdentitiesOnly = true;
       };
-      "git.prodressnet.de" = {
-        User = "git";
-        IdentityFile = "~/.ssh/arbeit";
-        IdentitiesOnly = true;
-      };
     };
   };
 }

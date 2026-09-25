@@ -44,7 +44,7 @@
       lib = nixpkgs.lib;
       secrets = import ./secrets.nix;
 
-      overlays = import ./common/overlays.nix { };
+      overlays = import ./overlays.nix { };
 
       mkHost =
         {

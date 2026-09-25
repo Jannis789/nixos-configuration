@@ -120,8 +120,8 @@
 
     # Nous-Portal-Extension: auto-discovery der Live-Modelle via inference-api /v1/models.
     # Quelle liegt nicht in einem home-manager-Modul, sondern als plain JS unter
-    # common/3rd-party/ — pi lädt alles unter ~/.pi/agent/extensions/ automatisch.
+    # assets/ — pi lädt alles unter ~/.pi/agent/extensions/ automatisch.
     home.file.".pi/agent/extensions/nous-portal/index.js".source =
-      ../../3rd-party/PiNousPortalExtension.js;
+      ../../assets/PiNousPortalExtension.js;
   };
 }

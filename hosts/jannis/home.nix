@@ -5,13 +5,13 @@
   home.stateVersion = "26.11";
 
   imports = [
-    ../../common/module/home/atuin.nix
-    ../../common/module/home/font.nix
-    ../../common/module/home/gnome
-    ../../common/module/home/pi.nix
-    ../../common/module/home/ssh.nix
-    ../../common/module/home/starship.nix
-    ../../common/module/vscode-insiders.nix
+    ../../modules/home/atuin.nix
+    ../../modules/home/font.nix
+    ../../modules/home/gnome
+    ../../modules/home/pi.nix
+    ../../modules/home/ssh.nix
+    ../../modules/home/starship.nix
+    ../../modules/home/vscode-insiders.nix
   ];
 
   programs.bash.enable = true;
