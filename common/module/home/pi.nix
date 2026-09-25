@@ -49,57 +49,35 @@
         defaultProvider = config.piAgent.defaultProvider;
         lastChangelogVersion = "0.80.10";
         packages = [
-          "npm:@pi-unipi/memory"
-          "npm:@dietrichgebert/ponytail"
-          "npm:context-mode"
-          "npm:pi-lens"
-          "npm:pi-vscode-context"
-          "npm:pi-mcp-adapter"
-          "npm:pi-web-access"
-          "npm:bigpowers"
-          "npm:pi-fabric"
-          "npm:@firstpick/pi-extension-nixos-wiki-local"
+          "npm:@amaster.ai/pi-memory-mem0"
           "npm:betterwright"
+          "npm:pi-lens"
+          "npm:context-mode"
+          "npm:pi-slipstream-compact"
+          "npm:pi-fabric"
+          "npm:pi-mcp-adapter"
           "npm:@xynogen/pix-sudo"
-          "npm:pi-quiver"
-          "npm:pi-cohort"
-          "npm:pi-condense"
-          "npm:pi-gauntlet"
-          "npm:pi-tool-repair"
-          # Dashboard (Bridge + Server). Das Meta-Paket ist SELBST ein
+          "npm:pi-subagents"
+          "npm:pi-web-access"
+          "npm:pi-smart-fetch"
         ];
         theme = "violet-breakwater";
-        contextPrune = {
-          enabled = true;
-          showPruneStatusLine = true;
-          summarizerModel = "default";
-          summarizerThinking = "default";
-          pruneOn = "agent-message";
-          batchingMode = "turn";
-          quietOversizedSkips = false;
-          minBatchChars = 1000;
-          recoveryGraceTurns = 3;
-          summarizerIdleTimeoutMs = 20000;
-          summarizerMaxTimeoutMs = 180000;
-          protectedTools = [ ];
-          protectedPaths = [ "**/skills/**/*.md" ];
-          chainCompression = {
-            enabled = true;
-            rollingWindow = 3;
-            stripFinalAssistantThinking = true;
-            fuseRangeSummary = true;
+        # mem0 semantisches Gedächtnis: embedded = alles lokal, kein Mem0-Cloud.
+        # LLM (Fakten-Extraktion) + Embeddings laufen über den nous-Portal-Provider
+        # (Key kommt zur Laufzeit aus der pi-Model-Registry, useRegistryKeys).
+        "pi-memory-mem0" = {
+          mode = "embedded";
+          memoryMode = "hybrid";
+          oss = {
+            llm = {
+              provider = "nous";
+              config = { model = "~deepseek/deepseek-flash-latest"; };
+            };
+            embedder = {
+              provider = "nous";
+              config = { model = "google/gemini-embedding-2"; };
+            };
           };
-          purgeErrors = {
-            enabled = true;
-            cooldownTurns = 2;
-            minArgChars = 500;
-          };
-          dedupByContentHash = true;
-          autoBudgetThreshold = null;
-          spillThreshold = 65536;
-          spillPreviewBytes = 2048;
-          budgetTurnDelta = null;
-          frontierGapThresholdTokens = null;
         };
       };
       force = true;

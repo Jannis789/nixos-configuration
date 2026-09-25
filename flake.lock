@@ -303,8 +303,8 @@
         "nixvim": "nixvim_2"
       },
       "locked": {
-        "lastModified": 1790250923,
-        "narHash": "sha256-0RTCeCaXKihs7+DUF0BXC3G11JzRuTZe4LZGJZsFXuI=",
+        "lastModified": 1790282882,
+        "narHash": "sha256-wQU6V57AUy8RuzvUDws4xQs9tybjKiIpPzhz4i+2OJY=",
         "path": "/home/jannis/workspace/nixvim",
         "type": "path"
       },
