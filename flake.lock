@@ -304,13 +304,16 @@
       },
       "locked": {
         "lastModified": 1790282882,
-        "narHash": "sha256-wQU6V57AUy8RuzvUDws4xQs9tybjKiIpPzhz4i+2OJY=",
-        "path": "/home/jannis/workspace/nixvim",
-        "type": "path"
+        "narHash": "sha256-KSewHp6pMoqGytFLXYRDYr2IwcGdwht8Jbuni58i+0g=",
+        "owner": "Jannis789",
+        "repo": "nixvim",
+        "rev": "6f78af2410a3a2f0c26313e822f881c351ca9c09",
+        "type": "github"
       },
       "original": {
-        "path": "/home/jannis/workspace/nixvim",
-        "type": "path"
+        "owner": "Jannis789",
+        "repo": "nixvim",
+        "type": "github"
       }
     },
     "nixvim_2": {

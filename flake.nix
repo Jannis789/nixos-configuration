@@ -28,8 +28,8 @@
 
     cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
 
-    # Standalone-Editor-Flake (../nixvim): Nixvim mit pi als AI-Terminal
-    nixvim.url = "path:/home/jannis/workspace/nixvim";
+    # Standalone-Editor-Flake: Nixvim mit pi als AI-Terminal
+    nixvim.url = "github:Jannis789/nixvim";
   };
 
   outputs =
