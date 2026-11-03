@@ -28,8 +28,37 @@
 
     cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
 
-    # Standalone-Editor-Flake: Nixvim mit pi als AI-Terminal
+    # Standalone-Editor-Flake: eigener Nixvim-Fork
     nixvim.url = "github:Jannis789/nixvim";
+
+    # Theming: ein zentraler Theme-Express (base16) statt gepackter Shell-Themes
+    stylix = {
+      url = "github:nix-community/stylix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Privacy-Overlay fuer Firefox (user.js): Fastfox/Securefox/Peskyfox
+    betterfox = {
+      url = "github:yokoffing/Betterfox";
+      flake = false;
+    };
+
+    # Taeglich aktualisierte AI-Agent-Packages (goose-cli 1.53.0 > nixpkgs 1.28.0,
+    # bringt den nativen Z.AI Coding Plan Provider mit)
+    llm-agents.url = "github:numtide/llm-agents.nix";
+
+    # Epic Games Launcher (native Linux-Preview): Epics .deb in FHS-Env,
+    # taeglich aktualisiertes Upstream-Flake (Update: nix flake update epic-games-launcher)
+    epic-games-launcher = {
+      url = "github:kjetteren/epic-games-launcher-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # terminal-browser (Browser im Terminal) — lokaler Nix-Wrap des Upstream-Tarballs.
+    # Overlay liefert pkgs.terminal-browser, das HM-Modul die Agent-Skill-Links.
+    # Absolut statt "path:../terminal-browser": bei dirty git-trees löst Nix relative
+    # path-inputs relativ zur Store-Kopie auf und findet das Nachbar-Repo dann nicht.
+    terminal-browser.url = "path:/home/jannis/workspace/terminal-browser";
   };
 
   outputs =
@@ -55,6 +84,7 @@
           home,
           hostOverlays ? [ ],
           extraModules ? [ ],
+          extraHmSharedModules ? [ ],
         }:
         let
           isNixos = kind == "nixos";
@@ -78,6 +108,10 @@
               nixpkgs.overlays = [
                 overlays."vscode-insiders"
                 overlays.hanabi
+                overlays.toad
+                # pkgs.terminal-browser für alle Hosts (rein additiv) — je Host
+                # aktivierbar via programs.terminal-browser.enable (HM-Modul)
+                inputs.terminal-browser.overlays.default
               ]
               ++ hostOverlays;
 
@@ -85,9 +119,20 @@
                 useGlobalPkgs = true;
                 useUserPackages = true;
 
-                extraSpecialArgs = { inherit secrets; };
+                extraSpecialArgs = {
+                  inherit secrets;
+                  # Betterfox-user.js als Store-Pfad fuer das Firefox-Profil
+                  betterfox = inputs.betterfox;
+
+                  # goose-cli 1.53.0 aus llm-agents.nix (neuer als nixpkgs 1.28.0,
+                  # bringt den nativen Z.AI Coding Plan Provider mit)
+                  goosePkg = inputs.llm-agents.packages.${system}.goose-cli;
+                };
 
                 users.${username} = import home;
+
+                # Gast-Host übergibt hier z.B. das Stylix-Home-Modul
+                sharedModules = extraHmSharedModules;
               };
             }
           ];
@@ -100,12 +145,14 @@
         configuration = ./hosts/jannis/configuration.nix;
         username = "jannis";
         home = ./hosts/jannis/home.nix;
+        extraHmSharedModules = [ inputs.stylix.homeModules.stylix ];
         hostOverlays = [
           overlays.helium
-          overlays.rewaita
           overlays.epiphany-webext
           overlays.cockpit-nerdfont
         ];
+        # NixOS-Modul: programs.epic-games-launcher.enable (siehe hosts/jannis)
+        extraModules = [ inputs.epic-games-launcher.nixosModules.default ];
       };
 
       darwinConfigurations.darwin = mkHost {

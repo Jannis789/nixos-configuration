@@ -66,8 +66,7 @@
   };
   security.sudo.wheelNeedsPassword = false;
 
-  services.displayManager.gdm.enable = true;
-  services.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;  services.desktopManager.gnome.enable = true;
 
   environment.systemPackages = with pkgs; [
     git
@@ -75,8 +74,8 @@
     vim
     ethtool
     helium
-
-    # nvim aus dem eigenen Nixvim-Flake: Editor + pi (AI-Terminal per <leader>d)
+    fragments
+    # nvim aus dem eigenen Nixvim-Flake (Editor)
     inputs.nixvim.packages.${pkgs.system}.default
 
     epiphany
@@ -107,6 +106,10 @@
     enable = true;
     extraCompatPackages = [ pkgs.proton-ge-bin ];
   };
+
+  # Epic Games Launcher (native Linux-Preview): Epics offizielles .deb im
+  # FHS-Env aus dem kjetteren-Flake. Windows-Games laufen dort ueber GE-Proton.
+  programs.epic-games-launcher.enable = true;
 
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
@@ -153,7 +156,7 @@
     libraries = [ (pkgs.lib.getLib pkgs.stdenv.cc.cc) pkgs.zlib ];
   };
 
-  # SSO-Gate: einmal am Apex einloggen, alle Subrouten (/cockpit/, /pi-web/)
+  # SSO-Gate: einmal am Apex einloggen, alle Subrouten (/cockpit/, /vscode/)
   # erben die Session per auth_request (Cookie auf .jannis.nix-dev.link).
   # Portal unter /authelia/ (Base-Path traegt Authelia selbst via
   # server.address), Verify unter /authelia-verify (internal, nur nginx).
@@ -182,7 +185,7 @@
       theme = "auto";
       default_2fa_method = "totp";
       log.level = "info";
-      server.address = "tcp://127.0.0.1:9091/authelia";
+      server.address = "tcp://127.0.0.1:9092/authelia";
       totp.issuer = "jannis.nix-dev.link";
       authentication_backend.file = {
         path = "/etc/authelia/users_database.yml";
@@ -245,7 +248,7 @@
       # Authelia-Portal (oeffentlich, KEIN auth_request — sonst Login-Loop).
       # Upstream kennt seinen Base-Path, daher Prefix strippen (trailing slash).
       locations."/authelia/" = {
-        proxyPass = "http://127.0.0.1:9091/authelia/";
+        proxyPass = "http://127.0.0.1:9092/authelia/";
         proxyWebsockets = true;
       };
       locations."= /authelia" = {
@@ -255,7 +258,7 @@
       locations."/authelia-verify" = {
         extraConfig = ''
           internal;
-          proxy_pass http://127.0.0.1:9091/authelia/api/verify;
+          proxy_pass http://127.0.0.1:9092/authelia/api/verify;
           proxy_pass_request_body off;
           proxy_set_header Content-Length "";
           proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
@@ -275,38 +278,6 @@
           error_page 401 =302 https://$host/authelia/;
         '';
       };
-      # pi-web (http://127.0.0.1:8504, per-user Service): braucht KEINE
-      # Prefix-Config — Prefix strippen reicht, Redirect /pi-web -> /pi-web/.
-      locations."/pi-web/" = {
-        proxyPass = "http://127.0.0.1:8504/";
-        proxyWebsockets = true; # Terminals/Sessions laufen ueber WebSocket
-        extraConfig = ''
-          auth_request /authelia-verify;
-          auth_request_set $user $upstream_http_remote_user;
-          auth_request_set $email $upstream_http_remote_email;
-          proxy_set_header Remote-User $user;
-          proxy_set_header Remote-Email $email;
-          error_page 401 =302 https://$host/authelia/;
-        '';
-      };
-      locations."= /pi-web" = {
-        return = "302 /pi-web/";
-      };
-      locations."/betterwright/" = {
-        proxyPass = "http://127.0.0.1:8505/"; # betterwright view (Skill startet ihn auf Fixport 8505)
-        proxyWebsockets = true; # Live-View-Steuerung laeuft ueber WebSocket
-        extraConfig = ''
-          auth_request /authelia-verify;
-          auth_request_set $user $upstream_http_remote_user;
-          auth_request_set $email $upstream_http_remote_email;
-          proxy_set_header Remote-User $user;
-          proxy_set_header Remote-Email $email;
-          error_page 401 =302 https://$host/authelia/;
-        '';
-      };
-      locations."= /betterwright" = {
-        return = "302 /betterwright/";
-      };
       # VS Code Insiders Web-UI (serve-web, User-Service auf 8506, base-path
       # /vscode): Prefix bleibt AM Proxy haengen (wie Cockpit/UrlRoot), weil
       # serve-web den vollen Pfad erwartet (--server-base-path).
@@ -325,20 +296,8 @@
       locations."= /vscode" = {
         return = "302 /vscode/";
       };
-      # Aktueller BetterWright-Token (Skill schreibt ihn hierhin; NICHT /tmp,
-      # nginx läuft mit PrivateTmp) -> Hub-Kachel baut den klickbaren Link.
-      locations."= /bw-url" = {
-        extraConfig = ''
-          auth_request /authelia-verify;
-          error_page 401 =302 https://$host/authelia/;
-          alias /var/lib/betterwright/view-url;
-          default_type text/plain;
-        '';
-      };
     };
   };
-  # BetterWright-Viewer-Token fuer die Hub-Kachel (nginx liest die Datei).
-  systemd.tmpfiles.rules = [ "d /var/lib/betterwright 0755 jannis users -" ];
   # Let's Encrypt via security.acme (auto-erneuernd per Timer). DNS-01-Challenge über
   # Cloudflare-DNS-API → kein offener Port 80, bleibt DNS-only für SSH/RDP.
   security.acme = {

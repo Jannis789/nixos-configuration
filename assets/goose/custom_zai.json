@@ -1,0 +1,62 @@
+{
+  "name": "custom_zai",
+  "engine": "openai",
+  "display_name": "Z.AI (GLM)",
+  "description": "Z.AI Coding-Plan Custom-Provider (Fallback)",
+  "api_key_env": "ZAI_API_KEY",
+  "base_url": "https://api.z.ai/api/coding/paas/v4/chat/completions",
+  "models": [
+    {
+      "name": "glm-4.7",
+      "context_limit": 204800,
+      "reasoning": true
+    },
+    {
+      "name": "glm-5-turbo",
+      "context_limit": 200000,
+      "reasoning": true
+    },
+    {
+      "name": "glm-5.2",
+      "context_limit": 1000000,
+      "reasoning": true
+    },
+    {
+      "name": "glm-5.2-highspeed",
+      "context_limit": 1000000,
+      "reasoning": true
+    },
+    {
+      "name": "glm-5.3",
+      "context_limit": 1000000,
+      "reasoning": true
+    },
+    {
+      "name": "glm-5.3-flash",
+      "context_limit": 1000000,
+      "reasoning": true
+    },
+    {
+      "name": "glm-5.3-highspeed",
+      "context_limit": 1000000,
+      "reasoning": true
+    }
+  ],
+  "headers": null,
+  "session_id_header_override": null,
+  "timeout_seconds": null,
+  "supports_streaming": true,
+  "requires_auth": true,
+  "catalog_provider_id": null,
+  "base_path": null,
+  "env_vars": null,
+  "auth": null,
+  "dynamic_models": false,
+  "skip_canonical_filtering": false,
+  "model_doc_link": null,
+  "setup_steps": [],
+  "toolshim": false,
+  "preserves_thinking": true,
+  "emit_clear_thinking": false,
+  "setup": null
+}
