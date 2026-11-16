@@ -219,6 +219,7 @@ in
           fi
           if [ -n "$GEO" ] && [ "$GEO" != "none" ]; then
            
+            # shellcheck disable=SC2086
             set -- $GEO
             if [ "$2" -gt "$1" ]; then DIR=down; fi
           else
@@ -268,6 +269,7 @@ in
 
          
          
+          # shellcheck disable=SC2016
           KEY="$KEY" PANEPID="$PANEPID" setsid bash -c '
             while terminal-browser ls --all --json 2>/dev/null | grep -q "\"key\": \"$KEY\""; do
               sleep 2

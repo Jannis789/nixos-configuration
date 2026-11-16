@@ -1,27 +1,17 @@
-{ lib, secrets, ... }:
 {
- 
- 
-  home.activation.sshKeys = lib.mkAfter ''
-    rm -f "$HOME/.ssh/lannitz" "$HOME/.ssh/lannitz.pub" "$HOME/.ssh/arbeit" "$HOME/.ssh/arbeit.pub"
-    umask 077
-    cat > "$HOME/.ssh/lannitz" <<'EOF'
-${secrets.SSH_KEYS.lannitz.private}
-EOF
-    chmod 600 "$HOME/.ssh/lannitz"
-    cat > "$HOME/.ssh/lannitz.pub" <<'EOF'
-${secrets.SSH_KEYS.lannitz.public}
-EOF
-    chmod 644 "$HOME/.ssh/lannitz.pub"
-    cat > "$HOME/.ssh/arbeit" <<'EOF'
-${secrets.SSH_KEYS.arbeit.private}
-EOF
-    chmod 600 "$HOME/.ssh/arbeit"
-    cat > "$HOME/.ssh/arbeit.pub" <<'EOF'
-${secrets.SSH_KEYS.arbeit.public}
-EOF
-    chmod 644 "$HOME/.ssh/arbeit.pub"
+  lib,
+  osConfig,
+  secrets,
+  ...
+}:
+{
+  # ~/.ssh/lannitz ist der Master-Key — echte Datei, NICHT von Nix verwaltet.
+  # Der arbeit-Key kommt als age-Secret und wird per Symlink nach ~/.ssh gelegt.
+  home.activation.linkSshKeys = lib.mkAfter ''
+    ln -sfnT "${osConfig.age.secrets.ssh-arbeit.path}" "$HOME/.ssh/arbeit"
   '';
+  home.file.".ssh/lannitz.pub".text = secrets.SSH_KEYS.lannitz.public + "\n";
+  home.file.".ssh/arbeit.pub".text = secrets.SSH_KEYS.arbeit.public + "\n";
 
   programs.ssh = {
     enable = true;

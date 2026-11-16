@@ -1,6 +1,5 @@
 {
-  lib,
-  secrets,
+  config,
   ...
 }:
 {
@@ -10,22 +9,10 @@
     certs."jannis.nix-dev.link" = {
       domain = "jannis.nix-dev.link";
       dnsProvider = "cloudflare";
-      environmentFile = "/run/acme/cloudflare-credentials";
+      environmentFile = config.age.secrets.cloudflare-credentials.path;
       group = "nginx";
     };
   };
-
-  system.activationScripts.acmeToken = lib.mkAfter ''
-    install -d -m 0700 -o acme -g acme /run/acme
-    printf 'CF_DNS_API_TOKEN=${secrets.CF_DNS_API_TOKEN}\n' > /run/acme/cloudflare-credentials
-    chown acme:acme /run/acme/cloudflare-credentials
-    chmod 600 /run/acme/cloudflare-credentials
-  '';
-
-  system.activationScripts.ddclientToken = ''
-    echo -n "${secrets.CF_DNS_API_TOKEN}" > /run/ddclient-token
-    chmod 600 /run/ddclient-token
-  '';
 
   services.ddclient = {
     enable = true;
@@ -33,7 +20,7 @@
     usev6 = "";
     protocol = "cloudflare";
     username = "token";
-    passwordFile = "/run/ddclient-token";
+    passwordFile = config.age.secrets.cloudflare-token.path;
     zone = "nix-dev.link";
     domains = [ "jannis.nix-dev.link" ];
     interval = "5min";

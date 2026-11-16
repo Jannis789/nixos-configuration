@@ -1,0 +1,20 @@
+# Empfänger für alle Secrets: NUR dein User-Key "lannitz".
+# age matcht SSH-Identitäten direkt gegen SSH-Pubkeys — keine Konvertierung nötig.
+# (Das ist ein öffentlicher Key, kein Geheimnis.)
+# Hinweis: ~/.ssh/lannitz (die private Datei auf diesem Rechner) ist damit der
+# Master-Key — bitte extern sichern (USB/Passwort-Manager), ohne ihn sind die
+# Secrets bei einem Platten-Crash unwiederbringlich weg.
+let
+  lannitz = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOFLkow1lN0X8m8Wc84hXx22dTEpCpcx00kevF4ieVQF";
+in
+{
+  "secrets/arbeit.age".publicKeys = [ lannitz ];
+  "secrets/api-keys-env.age".publicKeys = [ lannitz ];
+  "secrets/authelia-jwt.age".publicKeys = [ lannitz ];
+  "secrets/authelia-storage-key.age".publicKeys = [ lannitz ];
+  "secrets/authelia-users.age".publicKeys = [ lannitz ];
+  "secrets/cloudflare-credentials.age".publicKeys = [ lannitz ];
+  "secrets/cloudflare-token.age".publicKeys = [ lannitz ];
+  "secrets/cockpit-origin-cert.age".publicKeys = [ lannitz ];
+  "secrets/cockpit-origin-key.age".publicKeys = [ lannitz ];
+}

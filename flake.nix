@@ -36,6 +36,11 @@
       url = "path:/home/jannis/.config/nixos-secrets";
       flake = false;
     };
+
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

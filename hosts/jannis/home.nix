@@ -40,6 +40,7 @@
   programs.bash.initExtra = ''
     unset __HM_SESS_VARS_SOURCED
     . "$HOME/.local/state/home-manager/gcroots/current-home/home-path/etc/profile.d/hm-session-vars.sh"
+    if [ -r /run/agenix/api-keys-env ]; then . /run/agenix/api-keys-env; fi
     fastfetch
   '';
 
@@ -62,10 +63,6 @@
     fastfetch
   ];
 
-  home.sessionVariables = {
-    ZAI_API_KEY = secrets.ZAI_API_KEY;
-    ZAI_CODING_PLAN_API_KEY = secrets.ZAI_API_KEY;
-    OPENCODE_API_KEY = secrets.OPENCODE_API_KEY;
-    NOUS_API_KEY = secrets.NOUS_API_KEY;
-  };
+  # API-Keys kommen aus dem age-Secret "api-keys-env" und werden in
+  # programs.bash.initExtra aus /run/agenix/api-keys-env gesourced.
 }

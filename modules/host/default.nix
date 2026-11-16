@@ -11,6 +11,7 @@
     ./authelia.nix
     ./nginx.nix
     ./acme-ddns.nix
+    ./agenix.nix
     ./compatibility.nix
     ./nix-settings.nix
   ];
