@@ -13,9 +13,12 @@ in
 {
   imports = [ inputs.agenix.nixosModules.default ];
 
-  # Root entschlüsselt beim Boot mit deinem lannitz-Key (echte Datei in deinem
-  # Home — root darf sie lesen). Kein Host-Key als Empfänger mehr nötig.
-  age.identityPaths = [ "/home/jannis/.ssh/lannitz" ];
+  # Root entschlüsselt beim Boot mit deinem lannitz-Key. Die dauerhafte Kopie
+  # liegt in /var/lib/agenix/identity (außerhalb von /home, damit Home-Manager
+  # sie nie anfassen kann). Die Datei wird aus ~/.ssh/lannitz synchronisiert —
+  # und umgekehrt wird ~/.ssh/lannitz aus der Root-Kopie restauriert, falls HM
+  # sie mal wegräumt.
+  age.identityPaths = [ "/var/lib/agenix/identity" ];
 
   age.secrets = {
     # arbeit-Key für jannis (symlink von modules/ssh.nix nach ~/.ssh/arbeit).
@@ -67,4 +70,19 @@ in
     agenixWrapped
     pkgs.age
   ];
+
+  # Identity-Sync vor dem Entschlüsseln: ~/.ssh/lannitz <-> /var/lib/agenix/identity
+  system.activationScripts.agenixIdentity.text = ''
+    if [ -f /home/jannis/.ssh/lannitz ]; then
+      if ! cmp -s /home/jannis/.ssh/lannitz /var/lib/agenix/identity; then
+        install -d -m 0700 /var/lib/agenix
+        install -m 0600 /home/jannis/.ssh/lannitz /var/lib/agenix/identity
+      fi
+    elif [ -f /var/lib/agenix/identity ]; then
+      install -d -m 0700 -o jannis -g users /home/jannis/.ssh
+      install -m 0600 -o jannis -g users /var/lib/agenix/identity /home/jannis/.ssh/lannitz
+    fi
+  '';
+  # agenix muss NACH diesem Sync entschlüsseln
+  system.activationScripts.agenixInstall.deps = [ "agenixIdentity" ];
 }

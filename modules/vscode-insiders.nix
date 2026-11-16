@@ -203,6 +203,7 @@ in
     };
 
     home.activation.vscodeInsiders = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      mkdir -p "${config.home.homeDirectory}/.vscode-insiders"
       mkdir -p "${insidersDir}/User"
       ln -sfn "${codeDir}/User/settings.json" "${insidersDir}/User/settings.json"
       rm -rf "${config.home.homeDirectory}/.vscode-insiders/extensions"
