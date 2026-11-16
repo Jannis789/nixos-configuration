@@ -8,7 +8,7 @@
     enable = true;
     autoEnable = false;
 
-    base16Scheme = "${config.stylix.inputs.tinted-schemes}/base16/ayu-dark.yaml";
+    base16Scheme = "${config.stylix.inputs.tinted-schemes}/base16/catppuccin-macchiato.yaml";
     polarity = "dark";
 
     fonts = {
