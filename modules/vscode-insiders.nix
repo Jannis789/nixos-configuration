@@ -8,17 +8,8 @@
 let
   cfg = config.programs.vscode-insiders;
 
-  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
-  codeDir =
-    if isDarwin then
-      "${config.home.homeDirectory}/Library/Application Support/Code"
-    else
-      "${config.home.homeDirectory}/.config/Code";
-  insidersDir =
-    if isDarwin then
-      "${config.home.homeDirectory}/Library/Application Support/Code - Insiders"
-    else
-      "${config.home.homeDirectory}/.config/Code - Insiders";
+  codeDir = "${config.home.homeDirectory}/.config/Code";
+  insidersDir = "${config.home.homeDirectory}/.config/Code - Insiders";
 
   extensions = [
     "ms-python.python"

@@ -1,35 +1,18 @@
 { }:
 let
   vscode-insiders = final: prev: {
-    vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (
-      oldAttrs:
-      if final.stdenv.hostPlatform.isLinux then
-        {
-          src = builtins.fetchTarball {
-            url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
-            sha256 = "04d2hb4fi1r3xfkkcyqys44zfl6xhkpzbf7nlf1lv7vafh5xwp1s";
-          };
-
-          version = "latest";
-
-          buildInputs = oldAttrs.buildInputs ++ [
-            prev.krb5
-            prev.libsoup_3
-            prev.webkitgtk_4_1
-          ];
-        }
-      else
-        {
-          src = prev.fetchurl {
-            name = "vscode-insiders-darwin-arm64.zip";
-            url = "https://update.code.visualstudio.com/latest/darwin-arm64/insider";
-            sha256 = "sha256-klWjuXXXGAEX6ztZ/QuJRib73aXZv4FtK6oQu9ASLYU=";
-          };
-
-          sourceRoot = "";
-          version = "latest";
-        }
-    );
+    vscode-insiders = (prev.vscode.override { isInsiders = true; }).overrideAttrs (oldAttrs: {
+      src = builtins.fetchTarball {
+        url = "https://code.visualstudio.com/sha/download?build=insider&os=linux-x64";
+        sha256 = "04d2hb4fi1r3xfkkcyqys44zfl6xhkpzbf7nlf1lv7vafh5xwp1s";
+      };
+      version = "latest";
+      buildInputs = oldAttrs.buildInputs ++ [
+        prev.krb5
+        prev.libsoup_3
+        prev.webkitgtk_4_1
+      ];
+    });
   };
 
   helium = final: prev: {
