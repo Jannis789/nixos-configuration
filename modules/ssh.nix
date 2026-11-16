@@ -1,7 +1,7 @@
 { lib, secrets, ... }:
 {
-  # ponytail: home.file kann hier kein mode mehr — Dateien wären read-only
-  # Store-Symlinks (chmod scheitert). Keys direkt im Aktivierungsskript schreiben.
+ 
+ 
   home.activation.sshKeys = lib.mkAfter ''
     rm -f "$HOME/.ssh/lannitz" "$HOME/.ssh/lannitz.pub" "$HOME/.ssh/arbeit" "$HOME/.ssh/arbeit.pub"
     umask 077

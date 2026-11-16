@@ -32,7 +32,7 @@
 }:
 
 let
-  version = "0.15.6.1"; # latest (imputnet/helium-linux)
+  version = "0.15.6.1";
   runtimeLibs = [
     glib
     nspr

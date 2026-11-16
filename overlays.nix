@@ -41,28 +41,6 @@ let
       hanabi = final.callPackage ./packages/hanabi.nix { };
     };
   };
-  rewaita =
-    final: prev:
-    let
-      py = prev.python3Packages.overrideScope (
-        pyFinal: pyPrev: {
-          fortune = pyPrev.fortune.overrideAttrs {
-            dontCheckPythonMetadata = true;
-          };
-        }
-      );
-    in
-    {
-      rewaita = (prev.rewaita.override { python3Packages = py; }).overrideAttrs (old: {
-        version = "1.1.6";
-        src = prev.fetchFromGitHub {
-          owner = "SwordPuffin";
-          repo = "Rewaita";
-          tag = "v1.1.6";
-          hash = "sha256-ddfNsa3OWFitt38sRko7oOduAz1ydQG/+OcQNowwuMs=";
-        };
-      });
-    };
 
   epiphany-webext = final: prev: {
     epiphany = prev.epiphany.overrideAttrs (old: {
@@ -76,7 +54,6 @@ let
     });
   };
 
-  # Cockpit-Terminal: FiraCode Nerd Font als Webfont — Icons überall, ohne Client-Installation
   cockpit-nerdfont = final: prev: {
     cockpit = prev.cockpit.overrideAttrs (old: {
       postInstall = (old.postInstall or "") + ''
@@ -84,20 +61,27 @@ let
         cp ${final.nerd-fonts.fira-code}/share/fonts/truetype/NerdFonts/FiraCode/FiraCodeNerdFont-Regular.ttf $FONT_DIR/
         cp ${final.nerd-fonts.fira-code}/share/fonts/truetype/NerdFonts/FiraCode/FiraCodeNerdFont-Bold.ttf $FONT_DIR/
 
-        # fontFamily-Stack im Terminal-JS patchen
         TJS=$out/share/cockpit/systemd/terminal.js.gz
         zcat $TJS |
           sed -e 's/fontFamily:"Menlo, Monaco, Consolas, monospace"/fontFamily:"FiraCode Nerd Font, Menlo, Monaco, Consolas, monospace"/' \
-          -e 's|this.wrapper_element=document.createElement("div")|document.fonts.ready.then(()=>{this.terminal.clearTextureAtlas();this.terminal.refresh(0,this.terminal.rows-1)});this.wrapper_element=document.createElement("div")|' |
+              -e 's|this.wrapper_element=document.createElement("div")|document.fonts.ready.then(()=>{this.terminal.clearTextureAtlas();this.terminal.refresh(0,this.terminal.rows-1)});this.wrapper_element=document.createElement("div")|' |
           gzip -9 > $TJS.tmp && mv $TJS.tmp $TJS
 
-        # @font-face ins Terminal-CSS
-        # Hinweis: /cockpit/static/ ist der echte Serving-Pfad des cockpit-share-Pakets.
-        # Ein relativer Pfad ../static/ wuerde auf /cockpit-system/static/ zeigen (nur Login-Fallback).
         TCS=$out/share/cockpit/systemd/terminal.css.gz
         zcat $TCS | cat - <(echo '@font-face{font-family:"FiraCode Nerd Font";src:url("/cockpit/static/FiraCodeNerdFont-Regular.ttf") format("truetype");font-weight:400;font-display:block}@font-face{font-family:"FiraCode Nerd Font";src:url("/cockpit/static/FiraCodeNerdFont-Bold.ttf") format("truetype");font-weight:700;font-display:block}') | gzip -9 > $TCS.tmp && mv $TCS.tmp $TCS
       '';
     });
+  };
+
+  ocr-deu = final: prev: {
+    gnomeExtensions = prev.gnomeExtensions // {
+      native-screenshot-ui-ocr-extended = prev.gnomeExtensions.native-screenshot-ui-ocr-extended.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace ocrProcessor.js \
+            --replace "['tesseract', filePath, 'stdout']" "['tesseract', filePath, 'stdout', '-l', 'deu+eng']"
+        '';
+      });
+    };
   };
 in
 {
@@ -105,8 +89,8 @@ in
     vscode-insiders
     helium
     hanabi
-    rewaita
     epiphany-webext
     cockpit-nerdfont
+    ocr-deu
     ;
 }

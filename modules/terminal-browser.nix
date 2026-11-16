@@ -8,11 +8,11 @@
 let
   cfg = config.programs.terminal-browser;
 
-  # Skill-Varianten aus dem Paket-Manifest (skills/manifest):
-  #   agent claude .claude/skills default
-  #   agent codex  .codex/skills  codex
-  #   agent cursor .cursor/skills default
-  #   agent gemini .gemini/skills default
+ 
+ 
+ 
+ 
+ 
   variants = {
     claude = "default";
     codex = "codex";
@@ -20,11 +20,13 @@ let
     gemini = "default";
   };
 
-  # Paket aus dem terminal-browser-Flake (extraSpecialArgs), sonst nixpkgs/Overlay
+ 
   flakePkg = args.terminalBrowserPkg or null;
 
-  # Ergänzender Skill-Abschnitt: wird an jede SKILL.md-Variante angehängt
-  # (das Store-Paket ist read-only, daher Kopie + append).
+ 
+ 
+ 
+ 
   skillSplitNote = pkgs.writeText "terminal-browser-skill-split-note.md" ''
     ## NixOS (Host jannis): nativer Split per `terminal-browser-split`
 
@@ -36,6 +38,12 @@ let
     split-down/split-right — derselbe interne Pfad wie ctrl+shift+e), ohne
     Fokus-Wechsel, ohne Tasten-Injektion, ohne neues Fenster.
 
+    Wichtig für Agenten: Agent-Shells (z. B. goose `shell`) haben kein TTY —
+    dort scheitert JEDES `terminal-browser open` mit "could not work out
+    which ghostty pane you are in". `terminal-browser-split` umgeht das: Es
+    bindet stdin/stdout des Browsers an die neue pts und funktioniert deshalb
+    genau dort, wo `open` fehlschlägt.
+
     Die Richtung ist adaptiv nach Fenstergröße: Fenster höher als breit →
     Split nach unten, sonst → nach rechts. Danach hängt der Browser im neuen
     Pane; die Shell dort wird pausiert und nach dem Schließen des Browsers
@@ -44,15 +52,44 @@ let
     --browser <key> -- snapshot|click|fill|eval`.
   '';
 
-  # Kopie der jeweiligen Skill-Variante + Append des split-Abschnitts.
-  # Achtung: Skills liegen unter lib/terminal-browser/skills/, NICHT /skills/.
+ 
+ 
+ 
+ 
+ 
+  hostDescriptionNote = " IMPORTANT on this NixOS/Ghostty host: agent shells have no TTY, so terminal-browser open (with or without --split) fails with could not work out which ghostty pane you are in - use terminal-browser-split <url> instead, it opens the browser in a NATIVE Ghostty split pane and works from agent shells.";
+ 
+ 
+ 
+  gooseDescriptionNote = " In goose: load this skill with load_skill(name: terminal-browser) - the load() tool lists recipes and agents, NOT skills.";
+
+ 
+ 
+ 
   patchedSkill =
-    variant:
-    pkgs.runCommand "terminal-browser-skill-${variant}-patched" { } ''
+    {
+      variant,
+      goose ? false,
+    }:
+    let
+      descSuffix = hostDescriptionNote + lib.optionalString goose gooseDescriptionNote;
+      drvName = "terminal-browser-skill-${variant}-${if goose then "goose" else "std"}-patched";
+    in
+    pkgs.runCommand drvName { } ''
       mkdir -p "$out"
       cp -r "${cfg.package}/lib/terminal-browser/skills/${variant}/terminal-browser"/. "$out/"
       chmod -R u+w "$out"
-      cat "${skillSplitNote}" >> "$out/SKILL.md"
+
+      # 1) Host-Note direkt nach dem Frontmatter (zweite ---Zeile) einfügen.
+      awk -v note="$(cat ${skillSplitNote})" '
+        { print }
+        $0 == "---" { c++; if (c == 2 && !done) { print ""; print note; done = 1 } }
+      ' "$out/SKILL.md" > "$out/SKILL.md.new" && mv "$out/SKILL.md.new" "$out/SKILL.md"
+
+      # 2) Description (immer sichtbar) um die Host-Fakten ergänzen — bleibt
+      #    eine Zeile. sed-Delimiter |, da / und & im Text auftauchen können;
+      #    descSuffix enthält beides nicht.
+      sed -i "s|^description: \(.*\)$|description: \1${descSuffix}|" "$out/SKILL.md"
     '';
 in
 {
@@ -66,9 +103,9 @@ in
       description = "terminal-browser-Paket (Upstream-Tarball, siehe terminal-browser-Flake).";
     };
 
-    # Extra-Skill-Orte zusätzlich zum generischen ~/.agents/skills (das goose liest).
-    # Das CLI-setup linkt nur, wenn das Elternverzeichnis existiert — dieser Default
-    # entspricht genau dem Ist-Zustand auf diesem Host (es gibt kein ~/.cursor).
+   
+   
+   
     agents = lib.mkOption {
       type = lib.types.listOf (lib.types.enum (lib.attrNames variants));
       default = [
@@ -84,7 +121,7 @@ in
     home.packages = [
       cfg.package
 
-      # tb-open: URL in einem neuen Ghostty-Fenster (einfacher Fallback).
+     
       (pkgs.writeShellApplication {
         name = "tb-open";
         runtimeInputs = [ pkgs.ghostty ];
@@ -93,18 +130,18 @@ in
         '';
       })
 
-      # terminal-browser-split: KI-ausführbarer NATIVER Ghostty-Split — OHNE
-      # Fokus-Wechsel, OHNE Tasten-Injektion, OHNE neues Fenster.
-      # Trick: Ghostty 1.4 (GTK) exportiert je Fenster einen D-Bus-Knoten
-      # /com/mitchellh/ghostty/window/<N> mit org.gtk.Actions — inklusive
-      # "split-down"/"split-right", dem exakt selben internen Pfad wie
-      # ctrl+shift+e bzw. ctrl+shift+o. Richtung adaptiv: Fenster höher als
-      # breit → unten (window-calls GetFrameRect, fallback stty), sonst
-      # rechts. Der Browser wird per PIXEL_TTY an die neue pts gehängt
-      # (stdin/stdout müssen TTYs sein, sonst wirft das CLI "could not work
-      # out which ghostty pane"), die Pane-Shell wird eingefroren (SIGSTOP),
-      # damit sie dem Browser keine Tasten klaut, und vom Watcher beim
-      # Browser-Ende wieder aufgeweicht (SIGCONT).
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
       (pkgs.writeShellApplication {
         name = "terminal-browser-split";
         runtimeInputs = [
@@ -123,8 +160,8 @@ in
           URL="''${1:-about:blank}"
           die() { echo "terminal-browser-split: $*" >&2; exit 1; }
 
-          # 1) Eigene pts + Ghostty-Vorfahrprozess finden. goose-Stdin ist oft
-          #    kein tty — daher ctty via ps statt `tty`.
+         
+         
           MY_TTY=$(ps -o tty= -p "$$" | tr -d ' ')
           case "$MY_TTY" in
             pts/*) MYDEV="/dev/$MY_TTY" ;;
@@ -140,7 +177,7 @@ in
           done
           [ -n "$GPID" ] || die "kein Ghostty-Vorfahrprozess gefunden"
 
-          # 2) D-Bus-Verbindung des Ghostty-Prozesses + Fenster-Knoten
+         
           BUS=$(busctl --user list --no-legend 2>/dev/null | awk -v p="$GPID" '$2==p && !found {print $1; found=1}')
           [ -n "$BUS" ] || die "Ghostty-Prozess $GPID hat keine Session-Bus-Verbindung"
           mapfile -t WINS < <(gdbus introspect --session --dest "$BUS" --object-path /com/mitchellh/ghostty/window 2>/dev/null | awk '/node [0-9]+/{print $2}')
@@ -149,10 +186,10 @@ in
           [ -n "$WIN" ] || die "kein Fenster unter $BUS gefunden"
           if [ "$NWINS" -gt 1 ]; then echo "terminal-browser-split: $NWINS Fenster an $BUS — nehme window/$WIN" >&2; fi
 
-          # 3) Richtung adaptiv: Fenster-Geometrie via window-calls (D-Bus-
-          #    Extension; pid-exaktes Matching auf den Ghostty-Prozess),
-          #    Fallback: eigene Pane-Größe via stty. Höhe > Breite → unten,
-          #    sonst → rechts.
+         
+         
+         
+         
           DIR=right
           WID=$(gdbus call --session --dest org.gnome.Shell \
             --object-path /org/gnome/Shell/Extensions/Windows \
@@ -181,7 +218,7 @@ in
           ")
           fi
           if [ -n "$GEO" ] && [ "$GEO" != "none" ]; then
-            # shellcheck disable=SC2086  # GEO ist bewusst "W H" (Word-Splitting)
+           
             set -- $GEO
             if [ "$2" -gt "$1" ]; then DIR=down; fi
           else
@@ -189,7 +226,7 @@ in
             if [ "''${ROWS:-0}" -gt "''${COLS:-0}" ]; then DIR=down; fi
           fi
 
-          # 4) Nativen Split auslösen (= ctrl+shift+e bzw. ctrl+shift+o intern)
+         
           BEFORE=$(find /dev/pts -maxdepth 1 -name '[0-9]*' -printf '%f\n' | sort -n | tr '\n' ' ')
           gdbus call --session --dest "$BUS" \
             --object-path "/com/mitchellh/ghostty/window/$WIN" \
@@ -205,13 +242,13 @@ in
           done
           [ -n "$NEW" ] || die "keine neue pts entstanden — Split fehlgeschlagen"
 
-          # 5) Shell im neuen Pane einfrieren (klaut sonst dem Browser die
-          #    Tasten). Watcher in Schritt 7 macht SIGCONT beim Browser-Ende.
+         
+         
           PANEPID=$(ps -eo pid=,tty=,comm= 2>/dev/null | awk -v t="pts/$NEW" '$2==t && $3~/bash|zsh|fish|nu/ && !found {print $1; found=1}')
           if [ -n "$PANEPID" ]; then kill -STOP "$PANEPID"; fi
 
-          # 6) Browser an die neue pts hängen. stdin/stdout MÜSSEN TTYs sein
-          #    (interactiveTty()-Prüfung des CLI), deshalb die Umleitungen.
+         
+         
           PIXEL_TTY="/dev/pts/$NEW" setsid terminal-browser open "$URL" \
             </dev/pts/"$NEW" >/dev/pts/"$NEW" 2>/dev/null &
           sleep 5
@@ -229,8 +266,8 @@ in
             die "browser konnte nicht an pts/$NEW gestartet werden"
           fi
 
-          # 7) Watcher: Browser zu → Pane-Shell weiterlaufen lassen
-          # shellcheck disable=SC2016  # $KEY/$PANEPID expandieren bewusst im INNEREN bash
+         
+         
           KEY="$KEY" PANEPID="$PANEPID" setsid bash -c '
             while terminal-browser ls --all --json 2>/dev/null | grep -q "\"key\": \"$KEY\""; do
               sleep 2
@@ -251,14 +288,21 @@ in
     home.file = lib.mkMerge (
       [
         {
-          ".agents/skills/terminal-browser".source = patchedSkill "default";
+          # goose liest den generischen Ort ~/.agents/skills — bekommt als
+          # einzige Kopie den goose-Ladehinweis in der description.
+          ".agents/skills/terminal-browser".source = patchedSkill {
+            variant = "default";
+            goose = true;
+          };
 
           ".local/share/gnome-shell/extensions/window-calls@domandoman.xyz".source =
             "${pkgs.gnomeExtensions.window-calls}/share/gnome-shell/extensions/window-calls@domandoman.xyz";
         }
       ]
       ++ map (agent: {
-        ".${agent}/skills/terminal-browser".source = patchedSkill variants.${agent};
+        ".${agent}/skills/terminal-browser".source = patchedSkill {
+          variant = variants.${agent};
+        };
       }) cfg.agents
     );
 

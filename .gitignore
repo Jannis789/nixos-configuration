@@ -1,5 +1,7 @@
-result/
+result
 .pi/
 .vscode/.DS_Store
 secrets/
 .DS_Store
+.freebuff/
+.scratch/

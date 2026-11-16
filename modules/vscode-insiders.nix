@@ -127,9 +127,9 @@ in
       profiles.default.userSettings = settings;
     };
 
-    # Web-UI: dasselbe Binary (cfg.package) als serve-web. Läuft als User-
-    # Service (Vollzugriff auf $HOME), Token-Auth bewusst aus — davor sitzen
-    # nginx (TLS) und Authelia (2FA), siehe hosts/jannis/configuration.nix.
+   
+   
+   
     systemd.user.services.vscode-insiders-web = lib.mkIf cfg.serveWeb.enable {
       Unit = {
         Description = "VS Code Insiders Web-UI (serve-web)";
@@ -151,14 +151,14 @@ in
             "--default-folder" cfg.serveWeb.defaultFolder
           ]
         );
-        # Settings+Extensions aus DIESEM Modul auch für die Web-UI setzen
-        # (gleiche Liste wie die Desktop-App): Extensions per Symlink in den
-        # server-data-dir linken, settings.json deklarativ schreiben. Bei jedem
-        # Start neu gesetzt — Web-UI-Änderungen an den User-Settings werden
-        # beim Neustart zurückgesetzt, exakt wie bei der Desktop-Aktivierung.
-        # serve-web ignoriert Ordner ohne Registry-Eintrag ("Marked extension
-        # as removed"). Die Desktop-Registry von HM nutzt dieselbe Extension-
-        # Liste — als Vorlage nehmen, Pfade umbiegen, Links konsistent benennen.
+       
+       
+       
+       
+       
+       
+       
+       
         ExecStartPre = toString ([
           "${pkgs.python3}/bin/python3"
           "${pkgs.writeText "vscode-web-seed.py" ''
@@ -198,10 +198,10 @@ in
           ''}"
         ]);
         Environment = [
-          # serve-web lädt zur Laufzeit einen ungepatchten Microsoft-node nach
-          # (~/.vscode-insiders/cli/serve-web/). Host-seitig ersetzt nix-ld den
-          # Stub-Linker; diese Env-Variablen im Unit selbst, weil User-Services
-          # die Login-Session nicht zuverlässig erben.
+         
+         
+         
+         
           "NIX_LD=${pkgs.stdenv.cc.bintools.dynamicLinker}"
           "NIX_LD_LIBRARY_PATH=${lib.makeLibraryPath [ (pkgs.lib.getLib pkgs.stdenv.cc.cc) pkgs.zlib ]}"
         ];
