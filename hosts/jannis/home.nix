@@ -56,8 +56,10 @@
 
   programs.git = {
     enable = true;
-    userName = "jannis";
-    userEmail = "jannis@nix-dev.link";
+    settings.user = {
+      name = "jannis";
+      email = "jannis@nix-dev.link";
+    };
   };
 
   home.file.".ssh/authorized_keys".text = secrets.SSH_KEYS.lannitz.public + "\n";
