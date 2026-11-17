@@ -15,5 +15,6 @@
     "User-Agent": "goose/1.55.0"
   },
   "supports_streaming": true,
-  "requires_auth": true
+  "requires_auth": true,
+  "dynamic_models": true
 }
