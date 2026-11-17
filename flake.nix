@@ -25,6 +25,14 @@
 
     llm-agents.url = "github:numtide/llm-agents.nix";
 
+    # heron (ACP-TUI, goose-Backend) oeffentlich aus dem eigenen Repo —
+    # kein lokaler Pfad, ein Pin in flake.lock. nixpkgs follows, damit
+    # heron gegen denselben Nixpkgs-Stand baut wie das System.
+    heron = {
+      url = "github:Jannis789/heron";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     epic-games-launcher = {
       url = "github:kjetteren/epic-games-launcher-flake";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -96,6 +104,7 @@
                   inherit secrets;
                   betterfox = inputs.betterfox;
                   goosePkg = inputs.llm-agents.packages.${system}.goose-cli;
+                  heronPkg = inputs.heron.packages.${system}.default;
                 };
 
                 users.${username} = import home;
