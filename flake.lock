@@ -372,11 +372,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794946669,
-        "narHash": "sha256-2PFwD9t8qO+EnK6NEtWU3fbzufZbYPF5bcXfHDYhDio=",
+        "lastModified": 1794948946,
+        "narHash": "sha256-OqnGNczVQDHlajTG4/g45Waz7ONWL7rh1uXRhztud5o=",
         "owner": "Jannis789",
         "repo": "heron",
-        "rev": "35d71cce37b6a95e301f4b05ff274ced01ac8028",
+        "rev": "e92293b6bf742ad2d6bf53e9314e29e84dd02efe",
         "type": "github"
       },
       "original": {
