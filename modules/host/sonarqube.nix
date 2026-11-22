@@ -135,6 +135,8 @@ in
     description = "TCP-Proxy 127.0.0.1:9000 → SonarQube (internes Podman-Netz)";
     after = [ "podman-sonarqube.service" ];
     requires = [ "podman-sonarqube.service" ];
+    # Container-Neuaufbau ändert die IP → Proxy neu starten (liest die IP neu).
+    partOf = [ "podman-sonarqube.service" ];
     wantedBy = [ "multi-user.target" ];
     path = [
       pkgs.podman
