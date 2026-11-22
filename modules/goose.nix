@@ -13,11 +13,11 @@
   options.gooseAgent = {
     defaultProvider = lib.mkOption {
       type = lib.types.str;
-      default = "custom_nous";
+      default = "custom_zai";
     };
     defaultModel = lib.mkOption {
       type = lib.types.str;
-      default = "~z-ai/glm-flash-latest";
+      default = "glm-5.3";
     };
   };
 

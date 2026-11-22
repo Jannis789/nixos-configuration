@@ -8,11 +8,6 @@
 let
   cfg = config.programs.terminal-browser;
 
- 
- 
- 
- 
- 
   variants = {
     claude = "default";
     codex = "codex";
@@ -20,13 +15,8 @@ let
     gemini = "default";
   };
 
- 
   flakePkg = args.terminalBrowserPkg or null;
 
- 
- 
- 
- 
   skillSplitNote = pkgs.writeText "terminal-browser-skill-split-note.md" ''
     ## NixOS (Host jannis): nativer Split per `terminal-browser-split`
 
@@ -44,28 +34,27 @@ let
     bindet stdin/stdout des Browsers an die neue pts und funktioniert deshalb
     genau dort, wo `open` fehlschlägt.
 
-    Die Richtung ist adaptiv nach Fenstergröße: Fenster höher als breit →
-    Split nach unten, sonst → nach rechts. Danach hängt der Browser im neuen
-    Pane; die Shell dort wird pausiert und nach dem Schließen des Browsers
-    automatisch fortgesetzt. Steuerung wie gewohnt: `terminal-browser ls
-    --all --json` für den browser key, dann `terminal-browser action
-    --browser <key> -- snapshot|click|fill|eval`.
+    Funktioniert auch via SSH: In SSH-Sessions gibt es keinen Ghostty-Vorfahr
+    — das Skript findet das laufende Ghostty dann über den Session-Bus
+    (bevorzugt das fokussierte Ghostty-Fenster) und startet den Browser
+    headless an der neuen pts. Läuft gar kein Ghostty, wird eins als neues
+    Fenster auf der grafischen Session gestartet (`systemd-run --user`);
+    ohne grafische Session gibt es eine klare Fehlermeldung. Weitere
+    `open`-Optionen werden durchgereicht, z. B.
+    `terminal-browser-split localhost:8080 --ssh dev@build-box`; `--split
+    <dir>` legt die Split-Richtung fest (sonst adaptiv: Fenster höher als
+    breit → unten, sonst → rechts).
+
+    Danach hängt der Browser im neuen Pane; die Shell dort wird pausiert und
+    nach dem Schließen des Browsers automatisch fortgesetzt. Steuerung wie
+    gewohnt: `terminal-browser ls --all --json` für den browser key, dann
+    `terminal-browser action --browser <key> -- snapshot|click|fill|eval`.
   '';
 
- 
- 
- 
- 
- 
-  hostDescriptionNote = " IMPORTANT on this NixOS/Ghostty host: agent shells have no TTY, so terminal-browser open (with or without --split) fails with could not work out which ghostty pane you are in - use terminal-browser-split <url> instead, it opens the browser in a NATIVE Ghostty split pane and works from agent shells.";
- 
- 
- 
+  hostDescriptionNote = " IMPORTANT on this NixOS/Ghostty host: agent shells have no TTY, so terminal-browser open (with or without --split) fails with could not work out which ghostty pane you are in - use terminal-browser-split <url> instead, it opens the browser in a NATIVE Ghostty split pane and works from agent shells and SSH sessions (finds the running ghostty via the session bus, starts one on the graphical session if none is running); extra open options are passed through, e.g. terminal-browser-split localhost:8080 --ssh user@host";
+
   gooseDescriptionNote = " In goose: load this skill with load_skill(name: terminal-browser) - the load() tool lists recipes and agents, NOT skills.";
 
- 
- 
- 
   patchedSkill =
     {
       variant,
@@ -103,9 +92,6 @@ in
       description = "terminal-browser-Paket (Upstream-Tarball, siehe terminal-browser-Flake).";
     };
 
-   
-   
-   
     agents = lib.mkOption {
       type = lib.types.listOf (lib.types.enum (lib.attrNames variants));
       default = [
@@ -121,7 +107,7 @@ in
     home.packages = [
       cfg.package
 
-     
+      # Öffnet ein NEUES Ghostty-Fenster mit dem Browser.
       (pkgs.writeShellApplication {
         name = "tb-open";
         runtimeInputs = [ pkgs.ghostty ];
@@ -130,18 +116,14 @@ in
         '';
       })
 
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
+      # Öffnet den Browser in einem NATIVEN Ghostty-Split des aktuellen
+      # Fensters (D-Bus GAction split-right/split-down). Funktioniert auch
+      # aus SSH-Sessions: Ohne Ghostty-Vorfahren wird das laufende Ghostty
+      # über den Session-Bus gefunden (bevorzugt das fokussierte Fenster);
+      # läuft gar kein Ghostty, startet es als neues Fenster auf der
+      # grafischen Session (systemd-run --user). Argumente außer der URL
+      # gehen an `terminal-browser open` durch (--ssh, --size, …);
+      # --split <dir> legt die Split-Richtung fest.
       (pkgs.writeShellApplication {
         name = "terminal-browser-split";
         runtimeInputs = [
@@ -151,23 +133,51 @@ in
           pkgs.gawk
           pkgs.glib.bin
           pkgs.gnugrep
+          pkgs.ghostty
           pkgs.procps
           pkgs.python3
           pkgs.systemd
           pkgs.util-linux
         ];
         text = ''
-          URL="''${1:-about:blank}"
+          # Argumente parsen: URL = erstes Argument ohne führendes "-",
+          # alles andere an `terminal-browser open` durchreichen.
+          # --split wird geschluckt und als Richtung übernommen.
+          URL=""
+          FORCE_DIR=""
+          FWD=()
+          SKIP=0
+          PREV="other"
+          for a in "$@"; do
+            if [ "$SKIP" = 1 ]; then
+              if [ "$PREV" = split ]; then FORCE_DIR="$a"; else FWD+=("$a"); fi
+              SKIP=0
+              continue
+            fi
+            case "$a" in
+              --split) PREV="split"; SKIP=1 ;;
+              --split=*) FORCE_DIR="''${a#--split=}" ;;
+              --ssh|--size) PREV=other; SKIP=1; FWD+=("$a") ;;
+              -*) FWD+=("$a") ;;
+              *) if [ -z "$URL" ]; then URL="$a"; else FWD+=("$a"); fi ;;
+            esac
+          done
+          case "$FORCE_DIR" in
+            right|left|down|up) ;;
+            *) FORCE_DIR="" ;;
+          esac
+          [ -n "$URL" ] || URL="about:blank"
           die() { echo "terminal-browser-split: $*" >&2; exit 1; }
 
-         
-         
+          # Eigene pts: im Ghostty-Fenster unser Pane, per SSH die SSH-pts
+          # (dort nur Größen-Fallback, kein Blocker).
           MY_TTY=$(ps -o tty= -p "$$" | tr -d ' ')
           case "$MY_TTY" in
-            pts/*) MYDEV="/dev/$MY_TTY" ;;
-            /dev/pts/*) MYDEV="$MY_TTY" ;;
-            *) die "keine pts ('$MY_TTY') — aus dem Ghostty-Fenster heraus aufrufen" ;;
+            pts/*|/dev/pts/*) ;;
+            *) die "keine pts ('$MY_TTY') — aus dem Ghostty-Fenster heraus oder per SSH aufrufen" ;;
           esac
+
+          # 1) Ghostty als Vorfahrprozess finden (normaler Aufruf im Fenster).
           pid=$$
           GPID=""
           for _ in 1 2 3 4 5 6 7 8; do
@@ -175,9 +185,55 @@ in
             case "$pid" in ""|0|1) break ;; esac
             if grep -aqi ghostty "/proc/$pid/cmdline" 2>/dev/null; then GPID=$pid; break; fi
           done
-          [ -n "$GPID" ] || die "kein Ghostty-Vorfahrprozess gefunden"
+          SOURCE=pane
+          if [ -z "$GPID" ]; then
+            # 2) Kein Vorfahr (z. B. SSH-Session): laufendes Ghostty über den
+            #    Session-Bus finden — bevorzugt das Fenster mit Fokus.
+            SOURCE=remote
+            FPID=$(gdbus call --session --dest org.gnome.Shell \
+              --object-path /org/gnome/Shell/Extensions/Windows \
+              --method org.gnome.Shell.Extensions.Windows.List 2>/dev/null | python3 -c "
+          import sys, ast, json
+          try:
+            wins = json.loads(ast.literal_eval(sys.stdin.read().strip())[0])
+            g = [w for w in wins if 'ghostty' in str(w.get('wm_class')).lower()]
+            f = [w for w in g if w.get('focus')]
+            cand = f or g
+            print(cand[0]['pid'] if cand else 'none')
+          except Exception:
+            print('none')
+          ")
+            if [ -n "$FPID" ] && [ "$FPID" != none ] && grep -aqi ghostty "/proc/$FPID/cmdline" 2>/dev/null; then
+              GPID=$FPID
+            fi
+          fi
+          if [ -z "$GPID" ]; then
+            # 3) Fallback: alle Bus-Peers nach einem Ghostty-Prozess scannen.
+            while read -r _PEER SPID; do
+              case "$SPID" in ""|-) continue ;; esac
+              if grep -aqi ghostty "/proc/$SPID/cmdline" 2>/dev/null; then GPID=$SPID; break; fi
+            done < <(busctl --user list --no-legend 2>/dev/null | awk '{print $1, $2}')
+          fi
+          if [ -z "$GPID" ]; then
+            # 4) Gar kein Ghostty: als neues Fenster auf der grafischen
+            #    Session starten — der User-Manager hat WAYLAND_DISPLAY/
+            #    DISPLAY der aktiven Session importiert.
+            UNIT="terminal-browser-split-$$"
+            if systemd-run --user --collect --unit="$UNIT" \
+                 ghostty -e terminal-browser open "$URL" ''${FWD[@]+"''${FWD[@]}"} >/dev/null 2>&1; then
+              sleep 2
+              ST=$(systemctl --user is-active "$UNIT" 2>/dev/null || true)
+              case "$ST" in
+                active|activating)
+                  echo "terminal-browser-split: kein laufendes Ghostty — Browser als neues Ghostty-Fenster auf der grafischen Session gestartet ($URL)"
+                  exit 0
+                  ;;
+              esac
+            fi
+            die "kein laufendes Ghostty gefunden und Start auf der grafischen Session fehlgeschlagen — Split braucht ein offenes Ghostty-Fenster"
+          fi
 
-         
+          # Unique Bus-Name des Ghostty-Prozesses.
           BUS=$(busctl --user list --no-legend 2>/dev/null | awk -v p="$GPID" '$2==p && !found {print $1; found=1}')
           [ -n "$BUS" ] || die "Ghostty-Prozess $GPID hat keine Session-Bus-Verbindung"
           mapfile -t WINS < <(gdbus introspect --session --dest "$BUS" --object-path /com/mitchellh/ghostty/window 2>/dev/null | awk '/node [0-9]+/{print $2}')
@@ -186,14 +242,17 @@ in
           [ -n "$WIN" ] || die "kein Fenster unter $BUS gefunden"
           if [ "$NWINS" -gt 1 ]; then echo "terminal-browser-split: $NWINS Fenster an $BUS — nehme window/$WIN" >&2; fi
 
-         
-         
-         
-         
+          # Richtung: --split <dir> > Fenstergeometrie (window-calls) >
+          # tty-Größe. TTY-Messung im Pane-Fall über das eigene pts, sonst
+          # über ein Ghostty-Kind-pts (per SSH ist das eigene pts die
+          # SSH-Verbindung, nicht das Fenster).
           DIR=right
-          WID=$(gdbus call --session --dest org.gnome.Shell \
-            --object-path /org/gnome/Shell/Extensions/Windows \
-            --method org.gnome.Shell.Extensions.Windows.List 2>/dev/null | python3 -c "
+          if [ -n "$FORCE_DIR" ]; then
+            DIR=$FORCE_DIR
+          else
+            WID=$(gdbus call --session --dest org.gnome.Shell \
+              --object-path /org/gnome/Shell/Extensions/Windows \
+              --method org.gnome.Shell.Extensions.Windows.List 2>/dev/null | python3 -c "
           import sys, ast, json
           try:
             wins = json.loads(ast.literal_eval(sys.stdin.read().strip())[0])
@@ -204,11 +263,11 @@ in
           except Exception:
             print('none')
           ")
-          GEO=""
-          if [ -n "$WID" ] && [ "$WID" != "none" ]; then
-            GEO=$(gdbus call --session --dest org.gnome.Shell \
-              --object-path /org/gnome/Shell/Extensions/Windows \
-              --method org.gnome.Shell.Extensions.Windows.GetFrameRect "$WID" 2>/dev/null | python3 -c "
+            GEO=""
+            if [ -n "$WID" ] && [ "$WID" != "none" ]; then
+              GEO=$(gdbus call --session --dest org.gnome.Shell \
+                --object-path /org/gnome/Shell/Extensions/Windows \
+                --method org.gnome.Shell.Extensions.Windows.GetFrameRect "$WID" 2>/dev/null | python3 -c "
           import sys, ast, json
           try:
             d = json.loads(ast.literal_eval(sys.stdin.read().strip())[0])
@@ -216,18 +275,23 @@ in
           except Exception:
             print('none')
           ")
-          fi
-          if [ -n "$GEO" ] && [ "$GEO" != "none" ]; then
-           
-            # shellcheck disable=SC2086
-            set -- $GEO
-            if [ "$2" -gt "$1" ]; then DIR=down; fi
-          else
-            read -r ROWS COLS < <(stty size < "$MYDEV" 2>/dev/null) || true
-            if [ "''${ROWS:-0}" -gt "''${COLS:-0}" ]; then DIR=down; fi
+            fi
+            if [ -n "$GEO" ] && [ "$GEO" != "none" ]; then
+              # shellcheck disable=SC2086
+              set -- $GEO
+              if [ "$2" -gt "$1" ]; then DIR=down; fi
+            else
+              MEAS=""
+              if [ "$SOURCE" = remote ]; then
+                MEAS=$(ps -eo ppid=,tty= 2>/dev/null | awk -v g="$GPID" '$1==g && $2 ~ /^pts\// {print $2; exit}')
+              fi
+              [ -n "$MEAS" ] || MEAS=$MY_TTY
+              read -r ROWS COLS < <(stty size < "/dev/$MEAS" 2>/dev/null) || true
+              if [ "''${ROWS:-0}" -gt "''${COLS:-0}" ]; then DIR=down; fi
+            fi
           fi
 
-         
+          # Split per GAction auslösen und die neu entstandene pts finden.
           BEFORE=$(find /dev/pts -maxdepth 1 -name '[0-9]*' -printf '%f\n' | sort -n | tr '\n' ' ')
           gdbus call --session --dest "$BUS" \
             --object-path "/com/mitchellh/ghostty/window/$WIN" \
@@ -243,17 +307,19 @@ in
           done
           [ -n "$NEW" ] || die "keine neue pts entstanden — Split fehlgeschlagen"
 
-         
-         
+          # Pane-Shell anhalten, damit ihr Prompt das Browser-Rendering
+          # auf der geteilten pts nicht stört.
           PANEPID=$(ps -eo pid=,tty=,comm= 2>/dev/null | awk -v t="pts/$NEW" '$2==t && $3~/bash|zsh|fish|nu/ && !found {print $1; found=1}')
           if [ -n "$PANEPID" ]; then kill -STOP "$PANEPID"; fi
 
-         
-         
-          PIXEL_TTY="/dev/pts/$NEW" setsid terminal-browser open "$URL" \
+          # Browser headless an die neue pts binden (--ssh & Co. durchgereicht;
+          # ohne DISPLAY/WAYLAND setzt das CLI selbst --ozone-platform=headless).
+          PIXEL_TTY="/dev/pts/$NEW" setsid terminal-browser open "$URL" ''${FWD[@]+"''${FWD[@]}"} \
             </dev/pts/"$NEW" >/dev/pts/"$NEW" 2>/dev/null &
-          sleep 5
-          KEY=$(terminal-browser ls --all --json 2>/dev/null | python3 -c "
+          # Browser-Key abwarten (Retry statt festes sleep — Start kann träge sein).
+          KEY=none
+          for _ in 1 2 3 4 5 6 7 8 9 10; do
+            KEY=$(terminal-browser ls --all --json 2>/dev/null | python3 -c "
           import sys, json
           try:
             bs = json.load(sys.stdin)['browsers']
@@ -262,13 +328,15 @@ in
           except Exception:
             print('none')
           ")
-          if [ "$KEY" = "none" ]; then
+            if [ "$KEY" != none ]; then break; fi
+            sleep 1
+          done
+          if [ "$KEY" = none ]; then
             if [ -n "$PANEPID" ]; then kill -CONT "$PANEPID"; fi
             die "browser konnte nicht an pts/$NEW gestartet werden"
           fi
 
-         
-         
+          # Pane-Shell automatisch fortsetzen, sobald der Browser weg ist.
           # shellcheck disable=SC2016
           KEY="$KEY" PANEPID="$PANEPID" setsid bash -c '
             while terminal-browser ls --all --json 2>/dev/null | grep -q "\"key\": \"$KEY\""; do
@@ -286,7 +354,8 @@ in
     # optionalen Agent-Verzeichnisse mit ihrer jeweiligen Variante — jeweils
     # als gepatchte Kopie mit dem terminal-browser-split-Abschnitt.
     # window-calls-Extension als User-Symlink: wird von terminal-browser-split
-    # für die adaptive Richtungs-Messung gebraucht (Fenstergröße).
+    # für die adaptive Richtungs-Messung (Fenstergröße) und zum Auffinden des
+    # fokussierten Ghostty-Fensters per SSH gebraucht.
     home.file = lib.mkMerge (
       [
         {

@@ -10,6 +10,7 @@
       "monitor@astraext.github.io"
       "dash-to-dock@micxgx.gmail.com"
       "clipboard-indicator@tudmotu.com"
+      "user-theme@gnome-shell-extensions.gcampax.github.com"
       "window-calls@domandoman.xyz"
       "ocr-to-clipboard@oreocapybara"
     ];

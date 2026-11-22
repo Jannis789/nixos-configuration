@@ -25,6 +25,13 @@
 
     llm-agents.url = "github:numtide/llm-agents.nix";
 
+    # solid-skills: Agent-Skill (SOLID/TDD/Clean Code) für goose —
+    # landet als Skill in ~/.agents/skills/solid (modules/solid-skills.nix)
+    solid-skills = {
+      url = "github:ramziddin/solid-skills";
+      flake = false;
+    };
+
     # heron (ACP-TUI, goose-Backend) oeffentlich aus dem eigenen Repo —
     # kein lokaler Pfad, ein Pin in flake.lock. nixpkgs follows, damit
     # heron gegen denselben Nixpkgs-Stand baut wie das System.
@@ -92,6 +99,7 @@
                 overlays."vscode-insiders"
                 overlays.hanabi
                 overlays.ocr-deu
+                overlays.gnome-51
                 inputs.terminal-browser.overlays.default
               ]
               ++ hostOverlays;
@@ -105,6 +113,7 @@
                   betterfox = inputs.betterfox;
                   goosePkg = inputs.llm-agents.packages.${system}.goose-cli;
                   heronPkg = inputs.heron.packages.${system}.default;
+                  solidSkills = inputs.solid-skills;
                 };
 
                 users.${username} = import home;
@@ -126,6 +135,7 @@
           overlays.helium
           overlays.epiphany-webext
           overlays.cockpit-nerdfont
+          overlays.grd-vnc
         ];
         extraModules = [ inputs.epic-games-launcher.nixosModules.default ];
       };

@@ -66,6 +66,53 @@ let
       });
     };
   };
+  # gnome-remote-desktop mit VNC-Backend: upstream/nixpkgs bauen GRD seit 47
+  # ohne VNC (meson: -Dvnc=false) — der Daemon lauscht dann nur auf RDP (3389)
+  # und grdctl kennt keine vnc-Subcommands. Mit -Dvnc=true + libvncserver
+  # kommt der klassische VNC-Server (Port 5900) zurück; Encodings inkl. Tight
+  # handelt libvncserver direkt mit dem VNC-Client aus.
+  grd-vnc = final: prev: {
+    # libvncserver wählt beim SetEncodings-Handshake das erste Encoding aus
+    # der Client-Liste als "preferred". RFB erlaubt dem Server aber jedes
+    # client-angefragte Encoding — der Patch lässt Tight gewinnen, sobald
+    # der Client es anbietet (auch wenn er es z. B. hinter Hextile listet).
+    libvncserver = prev.libvncserver.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [ ./packages/libvncserver-prefer-tight.patch ];
+    });
+
+    gnome-remote-desktop = prev.gnome-remote-desktop.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or [ ]) ++ [ "-Dvnc=true" ];
+      buildInputs = (old.buildInputs or [ ]) ++ [ final.libvncserver ];
+    });
+  };
+
+  # GNOME-51-Kompatibilität: nixpkgs baut Extensions aus extensions.gnome.org
+  # und pinnt deren metadata.json. Einträge ohne "51" lädt GNOME Shell 51 als
+  # OUT OF DATE nicht.
+  #
+  # - window-calls: upstream-Fix ist reiner Metadata-Bump (PR #58, 2026-11-18).
+  # - native-screenshot-ui-ocr-extended (ocr-to-clipboard): Metadata-Bump plus
+  #   Code-Fix aus upstream-PR #23 — GNOME 51 hat St.BoxLayout.vertical
+  #   entfernt, daher orientation nutzen, wenn die Property existiert.
+  gnome-51 = final: prev: {
+    gnomeExtensions = prev.gnomeExtensions // {
+      window-calls = prev.gnomeExtensions.window-calls.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          sed -i 's/"50"/"50", "51"/' metadata.json
+        '';
+      });
+
+      native-screenshot-ui-ocr-extended = prev.gnomeExtensions.native-screenshot-ui-ocr-extended.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          sed -i 's/"50"/"50", "51"/' metadata.json
+          substituteInPlace extension.js --replace-fail "vertical: true," \
+            "...('orientation' in St.BoxLayout.prototype
+                    ? { orientation: Clutter.Orientation.VERTICAL }
+                    : { vertical: true }),"
+        '';
+      });
+    };
+  };
 in
 {
   inherit
@@ -75,5 +122,7 @@ in
     epiphany-webext
     cockpit-nerdfont
     ocr-deu
+    gnome-51
+    grd-vnc
     ;
 }

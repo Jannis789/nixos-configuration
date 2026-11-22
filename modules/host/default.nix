@@ -14,5 +14,6 @@
     ./agenix.nix
     ./compatibility.nix
     ./nix-settings.nix
+    ./sonarqube.nix
   ];
 }

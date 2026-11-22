@@ -1,0 +1,16 @@
+--- a/src/libvncserver/rfbserver.c
++++ b/src/libvncserver/rfbserver.c
+@@ -2371,6 +2371,13 @@
+                 if (cl->preferredEncoding == -1)
+                     cl->preferredEncoding = enc;
+ 
++                /* Prefer Tight whenever the client offers it,
++                 * regardless of its position in the client encoding
++                 * list. RFB allows the server to use any encoding
++                 * the client requested. */
++                if (enc == rfbEncodingTight)
++                    cl->preferredEncoding = rfbEncodingTight;
++
+ 
+                 break;
+ 	    case rfbEncodingXCursor:

@@ -16,6 +16,7 @@
     ../../modules/gnome
     ../../modules/goose.nix
     ../../modules/heron.nix
+    ../../modules/solid-skills.nix
     ../../modules/ssh.nix
     ../../modules/starship.nix
     ../../modules/terminal-browser.nix

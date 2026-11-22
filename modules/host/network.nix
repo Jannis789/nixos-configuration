@@ -8,6 +8,7 @@
     22
     3389
     443
+    5900 # VNC (gnome-remote-desktop mit VNC-Backend, Overlay "grd-vnc")
   ];
 
   services.tailscale.enable = true;

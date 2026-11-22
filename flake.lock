@@ -372,11 +372,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795357142,
-        "narHash": "sha256-8BQDf03bmtO8dpH4ni4OFvM3e+RpUOyYykM7cSP5mak=",
+        "lastModified": 1795374371,
+        "narHash": "sha256-0NPwOX7kFx4PZXUPWAhKJXQrQsvRsZwzV2rdJY3umYE=",
         "owner": "Jannis789",
         "repo": "heron",
-        "rev": "1c996dc52776cf86a1b5dd9906402bfcc70c3836",
+        "rev": "49de6b0fec917bf2e33762163b7eac6c620527ea",
         "type": "github"
       },
       "original": {
@@ -643,8 +643,25 @@
         "nixos-secrets": "nixos-secrets",
         "nixpkgs": "nixpkgs_3",
         "nixvim": "nixvim",
+        "solid-skills": "solid-skills",
         "stylix": "stylix",
         "terminal-browser": "terminal-browser"
+      }
+    },
+    "solid-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788451792,
+        "narHash": "sha256-06iPdUK1YjiFBbwXGe7mo0WCjml0SOoZRDBdiIwppB0=",
+        "owner": "ramziddin",
+        "repo": "solid-skills",
+        "rev": "94978c9cb06da1cb643ee4fe8a83bc8bac97c0a8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ramziddin",
+        "repo": "solid-skills",
+        "type": "github"
       }
     },
     "stylix": {
