@@ -133,6 +133,7 @@
         extraHmSharedModules = [ inputs.stylix.homeModules.stylix ];
         hostOverlays = [
           overlays.sunshine-virtual
+          overlays.xdg-desktop-portal-gnome-virtual
           overlays.helium
           overlays.epiphany-webext
           overlays.cockpit-nerdfont

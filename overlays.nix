@@ -33,6 +33,24 @@ let
     });
   };
 
+  # xdg-desktop-portal-gnome: virtuellen Monitor in Client-Auflösung
+  # anlegen. mutter 51 kennt für RecordVirtual die Property "modes"
+  # (aa{sv}: size, refresh-rate, is-preferred), aber der ScreenCast-
+  # Portal-Vertrag hat dafür keine Option und das GNOME-Backend reicht
+  # nur cursor-mode durch. Der Patch liest die gewünschte Größe aus
+  # ~/.config/sunshine/virtual_monitor_size (geschrieben vom
+  # Sunshine-Prep-Command) und hängt sie als preferred mode an.
+  # Patch: packages/patches/xdg-desktop-portal-gnome-*.patch
+  # Rückbau: Block entfernen (dann kommt der virtuelle Monitor mit der
+  # Größe hoch, die mutter selbst wählt).
+  xdg-desktop-portal-gnome-virtual = final: prev: {
+    xdg-desktop-portal-gnome = prev.xdg-desktop-portal-gnome.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [
+        ./packages/patches/xdg-desktop-portal-gnome-virtual-monitor-size.patch
+      ];
+    });
+  };
+
   helium = final: prev: {
     helium = final.callPackage ./packages/helium.nix { };
   };
@@ -148,5 +166,6 @@ in
     grd-vnc
     selkies
     sunshine-virtual
+    xdg-desktop-portal-gnome-virtual
     ;
 }

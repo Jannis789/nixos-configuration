@@ -15,10 +15,12 @@
 #      auf graphical-session.target (siehe unten, inkl. Lock-Warnung).
 #   2. geringe Latenz → UDP + VA-API/H.264 (radeonsi), Animationen aus
 #      (modules/gnome).
-#   3. adaptive Auflösung → global_prep_cmd → sunshine-display-mode apply
-#      setzt den primären Monitor auf den Modus, der der Client-Auflösung
-#      am nächsten kommt (der XZ342CU bietet 720p … 3440x1440@165 und 4K
-#      nativ an); `restore` beim Trennen stellt das alte Layout wieder her.
+#   3. adaptive Auflösung → global_prep_cmd schreibt die Client-Auflösung
+#      nach ~/.config/sunshine/virtual_monitor_size; das gepatchte
+#      xdg-desktop-portal-gnome legt den virtuellen Monitor genau in dieser
+#      Größe an (RecordVirtual → modes → preferred mode in mutter 51).
+#      Der Stream läuft damit in Client-Auflösung, unabhängig davon,
+#      welche Modi die physischen Monitore anbieten.
 #
 # Capture-Pfad: `capture = portal` — auf GNOME ist das der einzige Weg:
 #   * wlr/wlgrab  → braucht zwlr_screencopy_v1, hat mutter nicht
@@ -42,20 +44,41 @@
 let
   displayMode = pkgs.callPackage ../../packages/sunshine-display-mode.nix { };
 
-  # Sollzustand des Schreibtischs. Wird gebraucht, weil mutter in
-  # GetCurrentState seit 47 den aktiven Modus NICHT mehr meldet (nur
-  # Connector/Vendor/Product/Serial) — ohne dieses Profil könnte `restore`
-  # nur raten, worauf DP-3 vor dem Stream stand. Bei Monitorwechsel hier
-  # anpassen (Format: CONNECTOR=BREITExHÖHE@HZ, kommasepariert).
+  # Sollzustand des Schreibtischs (nur noch für den Notausgang
+  # capture = "kms" relevant — mit dem virtuellen Monitor wird am
+  # physischen Layout nichts mehr umgebaut).
   deskProfile = "DP-3=3440x1440@165,HDMI-1=2560x1440@144";
 
-  # JSON, so wie Sunshine es in sunshine.conf erwartet. Das Skript liest die
-  # Client-Auflösung selbst aus der Umgebung — Sunshine setzt
-  # SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS für prep-Commands (src/process.cpp).
+  # Übergibt die Client-Auflösung an das gepatchte
+  # xdg-desktop-portal-gnome (overlays.nix: xdg-desktop-portal-gnome-virtual).
+  # Sunshine ruft Prep-Commands VOR dem Aufbau der Capture-Session auf und
+  # setzt in der Umgebung SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS
+  # (src/process.cpp). Das Portal-Backend liest daraus den preferred mode
+  # für den virtuellen Monitor (Format BREITExHÖHE@HZ).
+  virtualMonitor = pkgs.writeShellScript "sunshine-virtual-monitor" ''
+    set -eu
+    confdir="''${XDG_CONFIG_HOME:-$HOME/.config}/sunshine"
+    case "''${1:-}" in
+      set)
+        mkdir -p "$confdir"
+        width="''${SUNSHINE_CLIENT_WIDTH:-0}"
+        height="''${SUNSHINE_CLIENT_HEIGHT:-0}"
+        fps="''${SUNSHINE_CLIENT_FPS:-60}"
+        if [ "$width" -gt 0 ] && [ "$height" -gt 0 ]; then
+          printf '%sx%s@%s\n' "$width" "$height" "$fps" > "$confdir/virtual_monitor_size"
+        fi
+        ;;
+      clear)
+        rm -f "$confdir/virtual_monitor_size"
+        ;;
+    esac
+  '';
+
+  # JSON, so wie Sunshine es in sunshine.conf erwartet.
   prepCommands = builtins.toJSON [
     {
-      do = "${displayMode}/bin/sunshine-display-mode apply ${deskProfile}";
-      undo = "${displayMode}/bin/sunshine-display-mode restore";
+      do = "${virtualMonitor} set";
+      undo = "${virtualMonitor} clear";
     }
   ];
 in
@@ -133,14 +156,13 @@ in
       # die legitime Herkunft.
       csrf_allowed_origins = "https://jannis.nix-dev.link";
 
-      # KEIN global_prep_cmd mehr: mit dem virtuellen Monitor wird am
-      # physischen Schreibtisch nichts mehr umgebaut (kein Monitor wird
-      # ausgeblendet, kein Modus verbogen). Die Größe des Streams kommt
-      # aus dem virtuellen Ausgang selbst — Sunshine übernimmt die
-      # `size`-Property der Portal-Antwort (portalgrab.cpp).
-      #
-      # Nur für den Notausgang capture = "kms" wieder aktivieren:
-      # global_prep_cmd = prepCommands;
+      # Prep-Command: schreibt die Client-Auflösung nach
+      # ~/.config/sunshine/virtual_monitor_size, von wo das gepatchte
+      # Portal-Backend sie beim Anlegen des virtuellen Monitors liest.
+      # Damit kommt der virtuelle Monitor in exakt der Auflösung hoch, die
+      # der Client angefragt hat — adaptive Auflösung ohne Umbau des
+      # physischen Layouts.
+      global_prep_cmd = prepCommands;
     };
 
     # Keine `applications` hier: solange kein apps.json gesetzt ist, kann man

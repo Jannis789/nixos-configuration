@@ -1,0 +1,100 @@
+diff --git a/src/gnomescreencast.c b/src/gnomescreencast.c
+index 6583144..0386288 100644
+--- a/src/gnomescreencast.c
++++ b/src/gnomescreencast.c
+@@ -21,6 +21,7 @@
+ #include "shell-dbus.h"
+ 
+ #include <stdint.h>
++#include <stdio.h>
+ 
+ enum
+ {
+@@ -456,6 +457,49 @@ gnome_screen_cast_session_record_monitor (GnomeScreenCastSession  *gnome_screen_
+   return TRUE;
+ }
+ 
++/*
++ * Lokaler Patch (nixos-configuration): Größe für den virtuellen Monitor.
++ *
++ * mutter >= 51 kennt für RecordVirtual die Property "modes" (aa{sv} mit
++ * "size" (uu), "refresh-rate" d, "is-preferred" b). Der ScreenCast-
++ * Portal-Vertrag bietet dafür keine Option, deshalb liest das Backend die
++ * gewünschte Stream-Größe aus ~/.config/sunshine/virtual_monitor_size.
++ * Die Datei schreibt das Sunshine-Prep-Command, das die Client-Auflösung
++ * als SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS in der Umgebung hat.
++ * Format: <breite>x<höhe>@<hz>, z. B. "1920x1080@60".
++ */
++static gboolean
++lookup_requested_virtual_monitor_size (uint32_t *out_width,
++                                       uint32_t *out_height,
++                                       double   *out_refresh_rate)
++{
++  g_autofree char *path = g_build_filename (g_get_user_config_dir (),
++                                            "sunshine",
++                                            "virtual_monitor_size",
++                                            NULL);
++  g_autofree char *contents = NULL;
++  unsigned int width = 0;
++  unsigned int height = 0;
++  double refresh_rate = 0.0;
++  int n_fields;
++
++  if (!g_file_get_contents (path, &contents, NULL, NULL))
++    return FALSE;
++
++  n_fields = sscanf (contents, "%ux%u@%lf", &width, &height, &refresh_rate);
++  if (n_fields < 2 || width == 0 || height == 0 ||
++      width > 16384 || height > 16384)
++    {
++      g_warning ("Ignoring invalid virtual monitor size in %s", path);
++      return FALSE;
++    }
++
++  *out_width = width;
++  *out_height = height;
++  *out_refresh_rate = (n_fields >= 3 && refresh_rate > 0.0) ? refresh_rate : 60.0;
++  return TRUE;
++}
++
+ static gboolean
+ gnome_screen_cast_session_record_virtual (GnomeScreenCastSession  *gnome_screen_cast_session,
+                                           uint32_t                 id,
+@@ -482,6 +526,37 @@ gnome_screen_cast_session_record_virtual (GnomeScreenCastSession  *gnome_screen_
+                              "cursor-mode",
+                              g_variant_new_uint32 (gnome_cursor_mode));
+     }
++
++  /* Lokaler Patch: virtuellen Monitor in Client-Auflösung anlegen. */
++  {
++    uint32_t stream_width, stream_height;
++    double stream_refresh_rate;
++
++    if (lookup_requested_virtual_monitor_size (&stream_width,
++                                               &stream_height,
++                                               &stream_refresh_rate))
++      {
++        GVariantBuilder modes_builder;
++
++        g_variant_builder_init (&modes_builder, G_VARIANT_TYPE ("aa{sv}"));
++        g_variant_builder_open (&modes_builder, G_VARIANT_TYPE ("a{sv}"));
++        g_variant_builder_add (&modes_builder, "{sv}",
++                               "size",
++                               g_variant_new ("(uu)",
++                                              stream_width,
++                                              stream_height));
++        g_variant_builder_add (&modes_builder, "{sv}",
++                               "refresh-rate",
++                               g_variant_new_double (stream_refresh_rate));
++        g_variant_builder_add (&modes_builder, "{sv}",
++                               "is-preferred",
++                               g_variant_new_boolean (TRUE));
++        g_variant_builder_close (&modes_builder);
++        g_variant_builder_add (&properties_builder, "{sv}",
++                               "modes",
++                               g_variant_builder_end (&modes_builder));
++      }
++  }
+   properties = g_variant_builder_end (&properties_builder);
+ 
+   if (!org_gnome_mutter_screen_cast_session_call_record_virtual_sync (session_proxy,
