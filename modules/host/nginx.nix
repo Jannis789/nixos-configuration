@@ -97,7 +97,6 @@
           error_page 401 =302 https://$host/authelia/;
 
           proxy_set_header Host $host;
-          proxy_set_header Origin "";
           proxy_redirect ~^/(.*)$ /sunshine/$1;
           proxy_read_timeout 120s;
         '';

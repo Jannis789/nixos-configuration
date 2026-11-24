@@ -113,6 +113,14 @@ in
       # schließen und per SSH-Tunnel zugreifen.
       origin_web_ui_allowed = "wan";
 
+      # CSRF-Freigabe für den Proxy-Zugriff: der Browser schickt beim POST
+      # (Passwort setzen, Pairing-PIN) "Origin: https://jannis.nix-dev.link",
+      # Sunshine erwartet seine eigene Adresse und antwortet sonst mit
+      # "CSRF protection blocked request from origin" (HTTP 500 im UI:
+      # "Error! Internal Server Error"). Über nginx ist die öffentliche URL
+      # die legitime Herkunft.
+      csrf_allowed_origins = "https://jannis.nix-dev.link";
+
       # Adaptive Auflösung: Modus beim Start setzen, beim Stop zurück.
       global_prep_cmd = prepCommands;
     };
