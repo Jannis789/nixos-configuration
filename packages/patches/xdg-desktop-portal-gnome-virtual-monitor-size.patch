@@ -1,5 +1,5 @@
 diff --git a/src/gnomescreencast.c b/src/gnomescreencast.c
-index 6583144..0386288 100644
+index 6583144..9be058c 100644
 --- a/src/gnomescreencast.c
 +++ b/src/gnomescreencast.c
 @@ -21,6 +21,7 @@
@@ -10,7 +10,87 @@ index 6583144..0386288 100644
  
  enum
  {
-@@ -456,6 +457,49 @@ gnome_screen_cast_session_record_monitor (GnomeScreenCastSession  *gnome_screen_
+@@ -73,6 +74,10 @@ typedef struct _GnomeScreenCastStream
+   int width;
+   int height;
+ 
++  /* Lokaler Patch: angeforderte Groesse (virtueller Monitor). */
++  int requested_width;
++  int requested_height;
++
+   char *mapping_id;
+ } GnomeScreenCastStream;
+ 
+@@ -247,6 +252,42 @@ gnome_screen_cast_session_add_stream_properties (GnomeScreenCastSession *gnome_s
+                              "source_type",
+                              g_variant_new_uint32 (stream->source_type));
+ 
++      /* Lokaler Patch: size/position nachziehen. Bei virtuellen Monitoren
++       * stehen sie erst, wenn der Monitor konfiguriert ist - also nach dem
++       * Zeitpunkt, an dem der Stream angelegt wurde. */
++      if (!stream->has_size || !stream->has_position)
++        {
++          GVariant *parameters =
++            org_gnome_mutter_screen_cast_stream_get_parameters (stream->proxy);
++
++          if (parameters)
++            {
++              if (!stream->has_position &&
++                  g_variant_lookup (parameters, "position", "(ii)", &x, &y))
++                {
++                  stream->x = x;
++                  stream->y = y;
++                  stream->has_position = TRUE;
++                }
++              if (!stream->has_size &&
++                  g_variant_lookup (parameters, "size", "(ii)", &width, &height))
++                {
++                  stream->width = width;
++                  stream->height = height;
++                  stream->has_size = TRUE;
++                }
++            }
++        }
++
++      /* mutter meldet fuer virtuelle Streams gar keine size - dann die
++       * angeforderte Groesse nehmen. */
++      if (!stream->has_size && stream->requested_width > 0)
++        {
++          stream->width = stream->requested_width;
++          stream->height = stream->requested_height;
++          stream->has_size = TRUE;
++        }
++
+       if (gnome_screen_cast_stream_get_position (stream, &x, &y))
+         g_variant_builder_add (&stream_properties_builder, "{sv}",
+                                "position",
+@@ -323,7 +364,11 @@ gnome_screen_cast_session_record_window (GnomeScreenCastSession  *gnome_screen_c
+                                                                      &stream_path,
+                                                                      NULL,
+                                                                      error))
+-    return FALSE;
++    {
++      g_message ("[virtmon] RecordVirtual fehlgeschlagen: %s", (*error)->message);
++      return FALSE;
++    }
++  g_message ("[virtmon] RecordVirtual ok: %s", stream_path);
+ 
+   connection = g_dbus_proxy_get_connection (G_DBUS_PROXY (session_proxy));
+   stream_proxy =
+@@ -408,7 +453,11 @@ gnome_screen_cast_session_record_monitor (GnomeScreenCastSession  *gnome_screen_
+                                                                       &stream_path,
+                                                                       NULL,
+                                                                       error))
+-    return FALSE;
++    {
++      g_message ("[virtmon] RecordVirtual FEHLER: %s", (*error)->message);
++      return FALSE;
++    }
++  g_message ("[virtmon] RecordVirtual ok, %s", stream_path);
+ 
+   connection = g_dbus_proxy_get_connection (G_DBUS_PROXY (session_proxy));
+   stream_proxy =
+@@ -456,6 +505,59 @@ gnome_screen_cast_session_record_monitor (GnomeScreenCastSession  *gnome_screen_
    return TRUE;
  }
  
@@ -41,14 +121,24 @@ index 6583144..0386288 100644
 +  int n_fields;
 +
 +  if (!g_file_get_contents (path, &contents, NULL, NULL))
-+    return FALSE;
++    {
++      /* Kein Wunsch hinterlegt (z. B. beim Display-Enumeration beim Start):
++       * Standardgroesse, damit mutter ueberhaupt einen Monitor anlegt. */
++      *out_width = 1920;
++      *out_height = 1080;
++      *out_refresh_rate = 60.0;
++      return TRUE;
++    }
 +
 +  n_fields = sscanf (contents, "%ux%u@%lf", &width, &height, &refresh_rate);
 +  if (n_fields < 2 || width == 0 || height == 0 ||
 +      width > 16384 || height > 16384)
 +    {
-+      g_warning ("Ignoring invalid virtual monitor size in %s", path);
-+      return FALSE;
++      g_warning ("Ignoring invalid virtual monitor size in %s, using 1920x1080", path);
++      *out_width = 1920;
++      *out_height = 1080;
++      *out_refresh_rate = 60.0;
++      return TRUE;
 +    }
 +
 +  *out_width = width;
@@ -60,19 +150,22 @@ index 6583144..0386288 100644
  static gboolean
  gnome_screen_cast_session_record_virtual (GnomeScreenCastSession  *gnome_screen_cast_session,
                                            uint32_t                 id,
-@@ -482,6 +526,37 @@ gnome_screen_cast_session_record_virtual (GnomeScreenCastSession  *gnome_screen_
+@@ -482,14 +584,53 @@ gnome_screen_cast_session_record_virtual (GnomeScreenCastSession  *gnome_screen_
                               "cursor-mode",
                               g_variant_new_uint32 (gnome_cursor_mode));
      }
 +
 +  /* Lokaler Patch: virtuellen Monitor in Client-Auflösung anlegen. */
-+  {
-+    uint32_t stream_width, stream_height;
-+    double stream_refresh_rate;
++  uint32_t stream_width = 0;
++  uint32_t stream_height = 0;
++  double stream_refresh_rate = 0.0;
++  gboolean have_size;
 +
-+    if (lookup_requested_virtual_monitor_size (&stream_width,
-+                                               &stream_height,
-+                                               &stream_refresh_rate))
++  have_size = lookup_requested_virtual_monitor_size (&stream_width,
++                                                     &stream_height,
++                                                     &stream_refresh_rate);
++    g_message ("[virtmon] Groesse gelesen: %d", (int) have_size);
++    if (have_size)
 +      {
 +        GVariantBuilder modes_builder;
 +
@@ -93,8 +186,32 @@ index 6583144..0386288 100644
 +        g_variant_builder_add (&properties_builder, "{sv}",
 +                               "modes",
 +                               g_variant_builder_end (&modes_builder));
-+      }
-+  }
++    }
    properties = g_variant_builder_end (&properties_builder);
++  g_message ("[virtmon] RecordVirtual mit Properties: %s",
++             g_variant_print (properties, FALSE));
  
    if (!org_gnome_mutter_screen_cast_session_call_record_virtual_sync (session_proxy,
+                                                                       properties,
+                                                                       &stream_path,
+                                                                       NULL,
+-                                                                      error))
+-    return FALSE;
++      error))
++    {
++      g_message ("[virtmon] RecordVirtual FEHLER: %s", (*error)->message);
++      return FALSE;
++    }
++  g_message ("[virtmon] RecordVirtual ok: %s", stream_path);
+ 
+   connection = g_dbus_proxy_get_connection (G_DBUS_PROXY (session_proxy));
+   stream_proxy =
+@@ -508,6 +649,8 @@ gnome_screen_cast_session_record_virtual (GnomeScreenCastSession  *gnome_screen_
+   stream->path = g_strdup (stream_path);
+   stream->proxy = stream_proxy;
+   stream->id = id;
++  stream->requested_width = have_size ? (int) stream_width : 0;
++  stream->requested_height = have_size ? (int) stream_height : 0;
+ 
+   parameters = org_gnome_mutter_screen_cast_stream_get_parameters (stream->proxy);
+   if (parameters)
