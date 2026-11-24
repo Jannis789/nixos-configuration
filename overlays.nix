@@ -28,7 +28,20 @@ let
                          'constexpr uint32_t SOURCE_TYPE_MONITOR = 1;
   constexpr uint32_t SOURCE_TYPE_VIRTUAL = 4;' \
           --replace-fail 'g_variant_new_uint32(SOURCE_TYPE_MONITOR)' \
-                         'g_variant_new_uint32(SOURCE_TYPE_VIRTUAL)'
+                         'g_variant_new_uint32(SOURCE_TYPE_VIRTUAL)' \
+          --replace-fail 'bool use_screencast_only = !try_remote_desktop_session(loop, &session_path, session_token);' \
+                         'bool use_screencast_only = true; (void) session_token;'
+
+        # Kein kombiniertes RemoteDesktop+ScreenCast-Portal-Session mehr
+        # (Zeile darüber): bei einer RemoteDesktop-Session verlangt
+        # xdg-desktop-portal-gnome für Start einen Bestätigungsdialog
+        # ("Fernsteuerung erlauben"). In der headless Session gibt es kein
+        # Display für den Dialog — Start bleibt hängen bzw. liefert
+        # response=2 (cancelled). Reine ScreenCast-Sessions mit
+        # types=VIRTUAL laufen dagegen über den Bypass im Portal-Patch
+        # dialogfrei. Die Portal-RemoteDesktop-Session wird hier auch nicht
+        # gebraucht: Tastatur/Maus gehen über org.gnome.Mutter.RemoteDesktop
+        # direkt in den Compositor (Patch unten).
 
         # Tastatur/Maus über org.gnome.Mutter.RemoteDesktop in den Compositor
         # einspeisen, statt kernelweite uinput-Geräte anzulegen (die landen am

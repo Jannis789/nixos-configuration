@@ -25,8 +25,11 @@
   # Linger: der Manager startet beim Boot, ohne Login.
   users.users.virtual-jannis = {
     isNormalUser = true;
-    description = "Stream-Session (Headless GNOME)";
+    # Feste UID: /run/user/1001, user@1001.service und die System-Unit
+    # sunshine-stream (modules/host/sunshine.nix) verweisen darauf.
+    uid = 1001;
     home = "/home/virtual-jannis";
+    description = "Stream-Session (Headless GNOME)";
     initialPassword = "changeme";
     extraGroups = [
       # /dev/dri/renderD128 ist 0666, aber video/render schadet nicht:

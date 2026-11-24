@@ -43,6 +43,12 @@
   ...
 }:
 let
+  # Account, in dem die Stream-Session läuft (modules/host/users.nix,
+  # dort mit fester UID — /run/user/<uid> und user@<uid>.service hängen
+  # daran).
+  streamUser = "virtual-jannis";
+  streamUid = config.users.users.${streamUser}.uid;
+
   displayMode = pkgs.callPackage ../../packages/sunshine-display-mode.nix { };
 
   # Sollzustand des Schreibtischs (nur noch für den Notausgang
@@ -101,8 +107,10 @@ let
   # dieser Datei ausdrücklich, weil er den ExecStart des Moduls ersetzt.
   configFile = (pkgs.formats.keyValue { }).generate "sunshine.conf" config.services.sunshine.settings;
 
-  # Startet EINE komplette, unsichtbare GNOME-Session in einem eigenen
-  # D-Bus und darin Sunshine:
+  # Startet EINE komplette, unsichtbare GNOME-Session und darin Sunshine.
+  # Das Skript läuft als User-Unit im Manager von virtual-jannis (uid 1001);
+  # dessen Session-Bus (/run/user/1001/bus) ist der private Bus dieser
+  # Session — kein dbus-run-session mehr nötig:
   #   gnome-shell (headless)  ->  xdg-desktop-portal-gnome + -portal  ->  sunshine
   # Vorteile gegenüber "virtueller Monitor in der laufenden Session":
   #   * der virtuelle Monitor ist hier der EINZIGE Monitor, also liegen
@@ -114,10 +122,14 @@ let
   headlessSession = pkgs.writeShellScript "sunshine-headless-session" ''
     set -eu
 
-    # Der User-Manager erbt beim Start die Anzeige-Namen der physischen
-    # Sitzung (WAYLAND_DISPLAY=wayland-0, DISPLAY=:0). Unser Compositor legt
-    # aber wayland-1/:2 an — ohne dieses unset starten Apps auf dem echten
-    # Schreibtisch oder gar nicht. mutter setzt die richtigen Werte selbst.
+    # Portal-Konfiguration (gnome.portal, gnome-portals.conf) und GNOME-
+    # Schemata vor die geerbten Pfade legen (siehe portalDataDirs oben).
+    export XDG_DATA_DIRS="${portalDataDirs}''${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+
+    # Verteidigungslinie: sollte die Unit doch einmal aus einer Sitzung mit
+    # Anzeige gestartet werden (manuell, alter Stand), sind diese Namen
+    # falsch. Unser Compositor legt seine eigenen an — mutter setzt die
+    # richtigen Werte selbst, wir ermitteln sie unten über seine Sockets.
     unset WAYLAND_DISPLAY DISPLAY XAUTHORITY GNOME_SETUP_DISPLAY XDG_SESSION_ID
 
     # Zeitmarke: daran erkennen wir später, welche Dateien (z. B. die
@@ -188,6 +200,15 @@ let
     #    laufen: das Frontend cached die Fähigkeiten des Backends
     #    (available-cursor-modes) und lehnt sonst jede Anfrage ab.
     ${pkgs.xdg-desktop-portal-gnome}/libexec/xdg-desktop-portal-gnome &
+
+    # WICHTIG: erst warten, bis das Backend seinen Busnamen hat. Das Frontend
+    # legt beim Start einen GDBusProxy auf org.freedesktop.impl.portal.desktop.
+    # gnome an und liest dessen Properties (available-source-types,
+    # available-cursor-modes). Ist der Name noch frei, sind die Properties 0
+    # und das Frontend lehnt danach JEDE ScreenCast-Anfrage ab
+    # ("Unavailable cursor mode 2").
+    wait_for org.freedesktop.impl.portal.desktop.gnome
+
     ${pkgs.xdg-desktop-portal}/libexec/xdg-desktop-portal &
 
     wait_for org.freedesktop.portal.Desktop
@@ -199,8 +220,6 @@ let
   '';
 
   # Environment des Dienstes: eigene GNOME-Session, eigene Anzeige.
-  # Ohne das findet das Portal seine Backend-Konfiguration (gnome-portals.conf,
-  # gnome.portal) und die GSettings-Schemata nicht.
   headlessEnv = {
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "gnome";
@@ -212,14 +231,19 @@ let
     # libvirtualhid legt sonst kernelweite uinput-Geräte an, die am
     # physischen Seat landen — die headless-Session hat keinen Seat.
     SUNSHINE_GNOME_REMOTE_DESKTOP_INPUT = "1";
-    XDG_DATA_DIRS = lib.concatStringsSep ":" [
-      "${pkgs.xdg-desktop-portal-gnome}/share"
-      "${pkgs.gnome-session}/share"
-      "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/gsettings-desktop-schemas"
-      "${pkgs.gnome-shell}/share"
-      "/run/current-system/sw/share"
-    ];
   };
+
+  # Zusätzliche XDG_DATA_DIRS VOR die vom User-Manager geerbten setzen (im
+  # Skript, nicht hier: der Manager liefert u. a. die nixos-mimeapps- und
+  # desktops-Pakete, die dürfen nicht verloren gehen). Ohne diese Pfade
+  # findet das Portal seine Backend-Konfiguration (gnome-portals.conf,
+  # gnome.portal) und GNOME seine GSettings-Schemata nicht.
+  portalDataDirs = lib.concatStringsSep ":" [
+    "${pkgs.xdg-desktop-portal-gnome}/share"
+    "${pkgs.gnome-session}/share"
+    "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/gsettings-desktop-schemas"
+    "${pkgs.gnome-shell}/share"
+  ];
 in
 {
   services.sunshine = {
@@ -332,12 +356,16 @@ in
   # Statt den virtuellen Monitor in die laufende Sitzung zu hängen (nur
   # eine Erweiterung: kein Panel, keine Fenster, und der Umbau des
   # Live-Layouts hat gnome-shell zum Absturz gebracht), läuft der Stream
-  # in einer eigenen GNOME-Session:
-  #   dbus-run-session → gnome-shell --headless → xdg-desktop-portal(-gnome)
-  #   → sunshine
+  # in einer eigenen GNOME-Session im Account virtual-jannis:
+  #   gnome-shell --headless → xdg-desktop-portal(-gnome) → sunshine
   # In dieser Session ist der virtuelle Monitor der einzige Monitor, also
   # liegen Panel/Fenster/Übersicht im Stream. Der physische Schreibtisch
   # (inkl. Rotation des 27") bleibt völlig unberührt.
+  #
+  # Eigener Account, weil pro UID genau ein systemd --user und ein dconf
+  # existieren: im jannis-Manager gestartete Apps erbten dessen
+  # WAYLAND_DISPLAY=wayland-0 und landeten auf dem physischen Schreibtisch,
+  # und der Stream hätte das dconf/PermissionStore des Schreibtischs benutzt.
   #
   # Die Portal-Patches (overlays.nix / packages/patches) sorgen dafür, dass
   #   * der virtuelle Monitor in Client-Auflösung angelegt wird
@@ -351,39 +379,64 @@ in
   # Dienst daneben gestellt), damit nur EINE Sunshine-Instanz läuft und die
   # gerenderte sunshine.conf (services.sunshine.settings) weiterhin die
   # einzige Konfigurationsquelle bleibt.
+  #
+  # wantedBy = [ ]: die Unit liegt in /etc/systemd/user und gilt damit für
+  # ALLE User-Manager (auch jannis mit Linger). Automatisch gestartet wird
+  # sie nur dort, wo die System-Unit sunshine-stream sie anfordert — also
+  # ausschließlich im Manager von virtual-jannis.
   systemd.user.services.sunshine = {
     description = lib.mkForce "Sunshine (headless GNOME-Session)";
 
-    # Nicht an graphical-session.target gebunden: mit Linger
-    # (modules/host/users.nix) startet der Dienst schon beim Boot, ohne
-    # dass sich jemand anmelden muss (Anforderung 1).
-    wantedBy = lib.mkForce [ "default.target" ];
+    wantedBy = lib.mkForce [ ];
     after = lib.mkForce [ ];
     wants = lib.mkForce [ ];
     partOf = lib.mkForce [ ];
 
     environment = headlessEnv // {
-      # Das Modul setzt PATH mit mkForce auf null (Tray-Symbole). Für das
-      # Startskript brauchen wir coreutils (sleep) und busctl; mkOverride 40
-      # gewinnt gegen mkForce (Priorität 50).
+      # Das Modul setzt PATH mit mkForce auf null (Tray-Symbole). Das
+      # Startskript braucht coreutils (sleep/touch), busctl, ss, find, grep
+      # und dbus-update-activation-environment; mkOverride 40 gewinnt gegen
+      # mkForce (Priorität 50).
       PATH = lib.mkOverride 40 (
         lib.concatStringsSep ":" [
-          "/run/wrappers/bin"
-          "/etc/profiles/per-user/jannis/bin"
-          "/run/current-system/sw/bin"
           (lib.makeBinPath [
             pkgs.coreutils
             pkgs.systemd
             pkgs.dbus
+            pkgs.iproute2
+            pkgs.findutils
+            pkgs.gnugrep
+            pkgs.gnused
           ])
+          "/run/current-system/sw/bin"
         ]
       );
     };
 
     serviceConfig = {
-      ExecStart = lib.mkForce "${pkgs.dbus}/bin/dbus-run-session -- ${headlessSession}";
+      # Kein dbus-run-session: der Session-Bus des Managers von
+      # virtual-jannis (/run/user/1001/bus) ist bereits privat und gehört
+      # dieser Session.
+      ExecStart = lib.mkForce "${headlessSession}";
       Restart = lib.mkForce "on-failure";
       RestartSec = lib.mkForce 5;
+    };
+  };
+
+  # Systemseite des Cutovers: startet die User-Unit im Manager von
+  # virtual-jannis, sobald dieser (dank Linger beim Boot) läuft.
+  systemd.services.sunshine-stream = {
+    description = "Sunshine in der headless GNOME-Session von virtual-jannis";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "user@${toString streamUid}.service" ];
+    after = [ "user@${toString streamUid}.service" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      # Kurz warten, bis der Manager seinen Bus angenommen hat.
+      ExecStart = "${pkgs.bash}/bin/bash -c 'i=0; until ${config.systemd.package}/bin/systemctl --machine virtual-jannis@.host --user start sunshine.service; do i=$((i + 1)); [ \"$i\" -ge 30 ] && exit 1; sleep 2; done'";
+      ExecStop = "${config.systemd.package}/bin/systemctl --machine virtual-jannis@.host --user stop sunshine.service";
     };
   };
 }
