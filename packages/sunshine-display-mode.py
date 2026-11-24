@@ -31,6 +31,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 DEST = "org.gnome.Mutter.DisplayConfig"
 OBJ = "/org/gnome/Mutter/DisplayConfig"
@@ -224,6 +225,42 @@ def apply_layout(layout) -> None:
     gdbus("ApplyMonitorsConfig", str(serial), "1", fmt_layout(layout), "{}")
 
 
+def layout_signature(layout) -> list[tuple]:
+    return sorted(
+        (
+            entry["connector"],
+            entry["x"],
+            entry["y"],
+            round(entry["scale"], 3),
+            entry["transform"],
+            entry["primary"],
+        )
+        for entry in layout
+    )
+
+
+def wait_until_applied(expected, timeout: float = 2.0) -> None:
+    """Wartet, bis der Compositor das Layout wirklich übernommen hat.
+
+    ApplyMonitorsConfig kehrt zurück, bevor der KMS-Moduswechsel gelandet ist.
+    Sunshine liest die Framebuffer-Größe unmittelbar danach — ohne dieses
+    Warten startet die KMS-Capture noch mit der alten Auflösung (Log:
+    "Mismatch on expected Resolution compared to actual resolution").
+    """
+    signature = layout_signature(expected)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            _, _, current = get_state()
+        except RuntimeError:
+            break
+        if layout_signature(current) == signature:
+            time.sleep(0.25)  # Moduswechsel im KMS-Thread auslaufen lassen
+            return
+        time.sleep(0.05)
+    log("Warnung: Layout nach 2 s noch nicht übernommen")
+
+
 def resolve_layout(connectors, layout, profile: dict[str, str]) -> list[dict]:
     """Aktuelles Layout mit expliziten Modus-IDs (Sollzustand des Desktops)."""
     resolved = []
@@ -312,6 +349,7 @@ def cmd_apply(profile_arg: str | None = None) -> int:
 
     new_layout = streaming_layout(connectors, resolved, target, mode, scale)
     apply_layout(new_layout)
+    wait_until_applied(new_layout)
     log(
         f"Client {width}x{height}@{fps:g} → {connector} {mode['id']} "
         f"(scale {scale:g}); Desktop wird beim Trennen zurückgesetzt"
@@ -330,6 +368,7 @@ def cmd_restore() -> int:
 
     try:
         apply_layout(state["layout"])
+        wait_until_applied(state["layout"])
     except (RuntimeError, KeyError) as error:
         log(f"Restore fehlgeschlagen ({error}) — setze bevorzugten Modus")
         return cmd_reset(state.get("connector"), None)
