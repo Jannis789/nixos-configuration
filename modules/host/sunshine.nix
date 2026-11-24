@@ -114,6 +114,17 @@ let
   headlessSession = pkgs.writeShellScript "sunshine-headless-session" ''
     set -eu
 
+    # Der User-Manager erbt beim Start die Anzeige-Namen der physischen
+    # Sitzung (WAYLAND_DISPLAY=wayland-0, DISPLAY=:0). Unser Compositor legt
+    # aber wayland-1/:2 an — ohne dieses unset starten Apps auf dem echten
+    # Schreibtisch oder gar nicht. mutter setzt die richtigen Werte selbst.
+    unset WAYLAND_DISPLAY DISPLAY XAUTHORITY GNOME_SETUP_DISPLAY XDG_SESSION_ID
+
+    # Zeitmarke: daran erkennen wir später, welche Dateien (z. B. die
+    # Xwayland-Auth-Datei) zu DIESER Session gehören.
+    marker="$XDG_RUNTIME_DIR/.sunshine-headless-start"
+    touch "$marker"
+
     # 1) Compositor (mutter headless-Backend, kein DRM-Gerät, keine Seat).
     ${pkgs.gnome-shell}/bin/gnome-shell --headless &
     shell_pid=$!
@@ -141,6 +152,36 @@ let
     }
 
     wait_for org.gnome.Mutter.ScreenCast
+
+    # 2) Anzeige-Namen der headless-Session in die D-Bus-Aktivierungsumgebung
+    # heben. D-Bus-aktivierte Apps (Nautilus, Console, Text Editor,
+    # Einstellungen ...) startet der Bus-Daemon, sie erben dessen
+    # Environment — nicht das der Shell. Ohne diesen Schritt bekommen sie
+    # WAYLAND_DISPLAY=wayland-0 (physischer Schreibtisch) bzw. starten nicht.
+    # /proc/<pid>/environ zeigt nur den Stand beim exec; mutter setzt
+    # WAYLAND_DISPLAY/DISPLAY erst zur Laufzeit (set_gnome_env). Deshalb über
+    # die offenen Sockets des Compositors fragen.
+    sockets="$(ss -xlp 2>/dev/null | grep "pid=$shell_pid," || true)"
+
+    wl_path="$(printf '%s\n' "$sockets" | grep -o '/run/user/[0-9]*/wayland-[0-9]*' | head -1)"
+    if [ -n "$wl_path" ]; then
+      export WAYLAND_DISPLAY=''${wl_path##*/}
+    fi
+
+    # Die öffentliche Xwayland-Anzeige hat die kleinere Nummer; die andere ist
+    # GNOME_SETUP_DISPLAY.
+    x_num="$(printf '%s\n' "$sockets" | grep -o '/tmp/.X11-unix/X[0-9]*' | sed 's#.*/X##' | sort -n | head -1)"
+    if [ -n "$x_num" ]; then
+      export DISPLAY=":$x_num"
+    fi
+
+    xauth="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name '.mutter-Xwaylandauth.*' -newer "$marker" 2>/dev/null | head -1)"
+    if [ -n "$xauth" ]; then
+      export XAUTHORITY="$xauth"
+    fi
+
+    ${pkgs.dbus}/bin/dbus-update-activation-environment --all || true
+    echo "headless display: WAYLAND_DISPLAY=''${WAYLAND_DISPLAY:-?} DISPLAY=''${DISPLAY:-?} XAUTHORITY=''${XAUTHORITY:-?}"
 
     # 2) Portal-Backend (gepatcht: virtuelle Stream-Größe = Client-Größe,
     #    kein Consent-Dialog) und Frontend im selben Bus. Beide müssen hier
@@ -325,7 +366,18 @@ in
       # Das Modul setzt PATH mit mkForce auf null (Tray-Symbole). Für das
       # Startskript brauchen wir coreutils (sleep) und busctl; mkOverride 40
       # gewinnt gegen mkForce (Priorität 50).
-      PATH = lib.mkOverride 40 (lib.makeBinPath [ pkgs.coreutils pkgs.systemd pkgs.dbus ]);
+      PATH = lib.mkOverride 40 (
+        lib.concatStringsSep ":" [
+          "/run/wrappers/bin"
+          "/etc/profiles/per-user/jannis/bin"
+          "/run/current-system/sw/bin"
+          (lib.makeBinPath [
+            pkgs.coreutils
+            pkgs.systemd
+            pkgs.dbus
+          ])
+        ]
+      );
     };
 
     serviceConfig = {
