@@ -294,9 +294,17 @@ def resolve_layout(connectors, layout, profile: dict[str, str]) -> list[dict]:
 
 
 def streaming_layout(connectors, resolved, target, mode, scale) -> list[dict]:
-    """Ziel-Monitor auf (0,0) als Primary, Rest rechts daneben (kein Overlap)."""
+    """Nur den Ziel-Monitor aktiv lassen, alle anderen ausblenden.
+
+    Sunshines KMS-Capture greift sich das erste aktive CRTC — sind zwei
+    Monitore aktiv, ist das nicht zwingend der gewünschte (im Log stand
+    "Mapped 'HDMI-A-1' to kmsgrab monitor index 0", also der 27"-Portrait-
+    Monitor). Mit genau einem aktiven Monitor ist die Capture eindeutig:
+    richtige Auflösung, richtige Ausrichtung, keine Fenster auf einem
+    unsichtbaren Schirm, und der Desktop ist exakt so groß wie der Client.
+    """
     target_connector = target["monitors"][0][0]
-    new_layout = [
+    return [
         {
             "x": 0,
             "y": 0,
@@ -306,14 +314,6 @@ def streaming_layout(connectors, resolved, target, mode, scale) -> list[dict]:
             "monitors": [(target_connector, mode["id"])],
         }
     ]
-    offset = round(mode["w"] / scale)
-    for entry in resolved:
-        if entry["monitors"][0][0] == target_connector:
-            continue
-        new_layout.append({**entry, "x": offset, "y": 0, "primary": False})
-        other_mode = find_mode(connectors[entry["monitors"][0][0]], entry["monitors"][0][1])
-        offset += round((other_mode["w"] if other_mode else 0) / entry["scale"])
-    return new_layout
 
 
 # -------------------------------------------------------------------- Befehle
@@ -381,7 +381,6 @@ def cmd_restore() -> int:
 
     with open(STATE_PATH, encoding="utf-8") as handle:
         state = json.load(handle)
-    os.unlink(STATE_PATH)
 
     try:
         apply_layout(state["layout"])
@@ -390,6 +389,7 @@ def cmd_restore() -> int:
         log(f"Restore fehlgeschlagen ({error}) — setze bevorzugten Modus")
         return cmd_reset(state.get("connector"), None)
 
+    os.unlink(STATE_PATH)  # erst nach erfolgreichem Zurücksetzen wegwerfen
     log("Desktop-Layout wiederhergestellt")
     return 0
 
@@ -406,13 +406,12 @@ def cmd_reset(connector: str | None = None, profile_arg: str | None = None) -> i
         return 1
 
     if connector:
-        # Einzelnen Monitor auf Profil-/Vorzug-Modus zurücksetzen.
+        # Einzelnen Monitor auf Profil-/Vorzug-Modus zurücksetzen; alle
+        # anderen Monitore bleiben (bzw. werden wieder) aktiv.
         for entry in resolved:
             if entry["monitors"][0][0] == connector:
                 mode = find_mode(connectors[connector], entry["monitors"][0][1])
-                apply_layout(
-                    streaming_layout(connectors, resolved, entry, mode, entry["scale"])
-                )
+                apply_layout(resolved)
                 log(f"{connector} zurück auf {mode['id']}")
                 return 0
         log(f"{connector} ist derzeit nicht aktiv")
