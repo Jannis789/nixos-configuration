@@ -87,8 +87,13 @@
       # Origin zur eigenen Adresse passt — hier ist der Proxy die eigene
       # Adresse, und Authhelia hat vorher schon authentifiziert.
       locations."/sunshine/" = {
-        proxyPass = "http://127.0.0.1:47989/";
+        # 47990 (HTTPS) ist die Web-UI; 47989 ist der GameStream-HTTP-Dienst
+        # und antwortet auf "/" nur mit <root status_code="404"/>.
+        proxyPass = "https://127.0.0.1:47990/";
         extraConfig = ''
+          # Selbstsigniertes Zertifikat von Sunshine — TLS endet hier am
+          # nginx, nach außen gilt das ACME-Zert der Domain.
+          proxy_ssl_verify off;
           auth_request /authelia-verify;
           auth_request_set $user $upstream_http_remote_user;
           auth_request_set $email $upstream_http_remote_email;
