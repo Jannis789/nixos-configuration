@@ -15,6 +15,24 @@ let
     });
   };
 
+  # Sunshine mit VIRTUAL-Quellentyp: der Portal-Backend fragt bei
+  # ScreenCast.SelectSources einen virtuellen Monitor an (Portal-Wert 4)
+  # statt eines physischen. Zweck: Stream-Auflösung unabhängig von den
+  # Monitor-Modi. Zwei Ersetzungen, kein Patch-File nötig.
+  # Rückbau: diesen Block entfernen.
+  sunshine-virtual = final: prev: {
+    sunshine = prev.sunshine.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        substituteInPlace src/platform/linux/portalgrab.cpp \
+          --replace-fail 'constexpr uint32_t SOURCE_TYPE_MONITOR = 1;' \
+                         'constexpr uint32_t SOURCE_TYPE_MONITOR = 1;
+  constexpr uint32_t SOURCE_TYPE_VIRTUAL = 4;' \
+          --replace-fail 'g_variant_new_uint32(SOURCE_TYPE_MONITOR)' \
+                         'g_variant_new_uint32(SOURCE_TYPE_VIRTUAL)'
+      '';
+    });
+  };
+
   helium = final: prev: {
     helium = final.callPackage ./packages/helium.nix { };
   };

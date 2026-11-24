@@ -132,6 +132,7 @@
         home = ./hosts/jannis/home.nix;
         extraHmSharedModules = [ inputs.stylix.homeModules.stylix ];
         hostOverlays = [
+          overlays.sunshine-virtual
           overlays.helium
           overlays.epiphany-webext
           overlays.cockpit-nerdfont
