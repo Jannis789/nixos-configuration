@@ -36,12 +36,10 @@
   # während der User-Daemon mit dem virtuellen Monitor kein einziges Paket
   # sah. Wer Remote Login doch will: wantedBy wieder auf graphical.target
   # setzen UND dem User-Daemon dann einen anderen RDP-Port gönnen.
-  # TESTWEISE AKTIV (2026-11-24): Remote Login an, um den GDM-Dialog
-  # "laufende Sitzung schließen?" gegen Sunshine abzuwägen. Der User-Daemon
-  # (Desktop Sharing) ist per dconf aus, damit gibt es keinen Port-Konflikt.
-  # Rückbau: wantedBy wieder auf lib.mkForce [ ] setzen.
+  # System-Daemon ("Remote Login") bleibt AUS: Sunshine ist der Streaming-Weg.
+  # Wer ihn testen will, setzt wantedBy auf [ "graphical.target" ].
   systemd.services."gnome-remote-desktop" = {
-    wantedBy = lib.mkForce [ "graphical.target" ];
+    wantedBy = lib.mkForce [ ];
     restartIfChanged = false;
   };
 }
