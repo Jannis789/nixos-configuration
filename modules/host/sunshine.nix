@@ -66,20 +66,37 @@ in
     # 47984-47990/tcp + 47998-48010/udp (Ports werden von `port` abgeleitet).
     openFirewall = true;
 
-    # Kein capSysAdmin: das ist nur für KMS-Capture nötig, wir capturen
-    # über das Portal. Kein root-Wrapper = kleinerer Fußabdruck.
+    # Nur für KMS-Capture nötig: /dev/dri liest fremde Frames nur mit
+    # CAP_SYS_ADMIN (drmPrimeHandleToFD auf Handles des Compositors). Das
+    # NixOS-Modul baut dafür einen setcap-Wrapper ($wrapperDir/sunshine)
+    # und startet den Dienst darüber — kein root-Dienst, nur die Capability
+    # am Binary.
+    capSysAdmin = true;
+
     settings = {
       sunshine_name = "jannis-desktop";
       port = 47989;
 
-      # GNOME-fähiger Capture-Pfad, siehe Kopfkommentar.
-      capture = "portal";
+      # GNOME-fähiger Capture-Pfad. KMS statt Portal, weil das Portal beim
+      # ersten Start einen Consent-Dialog am PHYSISCHEN Monitor verlangt —
+      # für einen Remote-only-Zugang (Ziel dieses Setups) unerreichbar.
+      # KMS liest den DRM-Framebuffer direkt (cap_sys_admin, siehe unten):
+      # kein Dialog, keine Portal-Session, und der mutter-Lock-Inhibitor
+      # ("Session creation inhibited") kann den Stream nicht mehr kippen.
+      # Den Mauszeiger liefert Sunshine aus der DRM-Cursor-Plane mit.
+      capture = "kms";
 
       # AMD (radeonsi über mesa) → h264_vaapi. Fallback auf Software
       # (x264) macht Sunshine selbst, wenn VA-API nicht initialisiert.
       encoder = "vaapi";
 
       min_log_level = "info";
+
+      # Kein Tray-Icon: durch die mkForce'd PATH-Umgebung des NixOS-Moduls
+      # und den fehlenden StatusNotifier-Host (GNOME ohne AppIndicator-
+      # Extension) scheitert die Tray-Initialisierung und Sunshine loggt
+      # "Error: System tray is not initialized" und beendet seinen Main-Loop.
+      system_tray = false;
 
       # Adaptive Auflösung: Modus beim Start setzen, beim Stop zurück.
       global_prep_cmd = prepCommands;
