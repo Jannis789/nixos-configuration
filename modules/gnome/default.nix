@@ -5,6 +5,15 @@
     ./extensions.nix
   ];
 
+  # Tastaturlayout als systemweiter Default. Wichtig für die Stream-Session
+  # (Account virtual-jannis): der hat keine eigene dconf-DB, mutter-headless
+  # nimmt dann den xkb-Default "us" — jede Taste kommt falsch an (y/z,
+  # Satzzeichen, keine Umlaute). jannis hat den Wert in seiner User-DB, der
+  # überschreibt diesen Default; dort ändert sich also nichts.
+  dconf.settings."org/gnome/desktop/input-sources" = {
+    sources = [ (lib.gvariant.mkTuple [ "xkb" "de" ]) ];
+  };
+
   # Animationen aus: größter Einzelgewinn für gefühlte Responsiveness über
   # RDP/Selkies (jede Shell-Animation ist ein zusätzlicher Frame-Burst über
   # die Leitung). PoC 2026-11-24.

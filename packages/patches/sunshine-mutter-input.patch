@@ -1,5 +1,5 @@
 diff --git a/src/platform/virtualhid_input.cpp b/src/platform/virtualhid_input.cpp
-index 362f50a..eb2b8de 100644
+index 362f50a..625337d 100644
 --- a/src/platform/virtualhid_input.cpp
 +++ b/src/platform/virtualhid_input.cpp
 @@ -6,6 +6,7 @@
@@ -10,7 +10,7 @@ index 362f50a..eb2b8de 100644
  #include <cmath>
  #include <cstddef>
  #include <cstdint>
-@@ -15,9 +16,14 @@
+@@ -15,9 +16,16 @@
  #include <numbers>
  #include <optional>
  #include <random>
@@ -20,12 +20,14 @@ index 362f50a..eb2b8de 100644
  
 +#if defined(__linux__)
 +  #include <gio/gio.h>
++  // KEY_*-Konstanten (evdev-Codes) fuer die VK-Umrechnung in mutter_input_t.
++  #include <linux/input-event-codes.h>
 +#endif
 +
  // local includes
  #include "src/config.h"
  #include "src/logging.h"
-@@ -26,6 +32,264 @@
+@@ -26,6 +34,399 @@
  using namespace std::literals;
  
  namespace platf::virtualhid {
@@ -129,10 +131,145 @@ index 362f50a..eb2b8de 100644
 +      }
 +    }
 +
++    /**
++     * @brief Windows-VK-Code -> Linux-evdev-Code.
++     *
++     * NotifyKeyboardKeycode erwartet einen evdev-Code: mutter reicht das
++     * Argument unveraendert an clutter_virtual_input_device_notify_key
++     * weiter (meta-remote-desktop-session.c). Sunshine liefert aber
++     * VK-Codes (modcode aus src/input.cpp). Dieselbe Umrechnung wie in
++     * libvirtualhid (third-party/libvirtualhid/src/platform/linux/
++     * uhid_backend.cpp, key_code_to_linux).
++     */
++    static std::optional<std::uint32_t> vk_to_evdev(std::uint32_t key_code) {
++      static constexpr std::array special_keys {
++        std::pair {0x08u, static_cast<std::uint32_t>(KEY_BACKSPACE)},
++        std::pair {0x09u, static_cast<std::uint32_t>(KEY_TAB)},
++        std::pair {0x0Du, static_cast<std::uint32_t>(KEY_ENTER)},
++        std::pair {0x10u, static_cast<std::uint32_t>(KEY_LEFTSHIFT)},
++        std::pair {0xA0u, static_cast<std::uint32_t>(KEY_LEFTSHIFT)},
++        std::pair {0x11u, static_cast<std::uint32_t>(KEY_LEFTCTRL)},
++        std::pair {0xA2u, static_cast<std::uint32_t>(KEY_LEFTCTRL)},
++        std::pair {0x12u, static_cast<std::uint32_t>(KEY_LEFTALT)},
++        std::pair {0xA4u, static_cast<std::uint32_t>(KEY_LEFTALT)},
++        std::pair {0x14u, static_cast<std::uint32_t>(KEY_CAPSLOCK)},
++        std::pair {0x1Bu, static_cast<std::uint32_t>(KEY_ESC)},
++        std::pair {0x20u, static_cast<std::uint32_t>(KEY_SPACE)},
++        std::pair {0x21u, static_cast<std::uint32_t>(KEY_PAGEUP)},
++        std::pair {0x22u, static_cast<std::uint32_t>(KEY_PAGEDOWN)},
++        std::pair {0x23u, static_cast<std::uint32_t>(KEY_END)},
++        std::pair {0x24u, static_cast<std::uint32_t>(KEY_HOME)},
++        std::pair {0x25u, static_cast<std::uint32_t>(KEY_LEFT)},
++        std::pair {0x26u, static_cast<std::uint32_t>(KEY_UP)},
++        std::pair {0x27u, static_cast<std::uint32_t>(KEY_RIGHT)},
++        std::pair {0x28u, static_cast<std::uint32_t>(KEY_DOWN)},
++        std::pair {0x2Cu, static_cast<std::uint32_t>(KEY_SYSRQ)},
++        std::pair {0x2Du, static_cast<std::uint32_t>(KEY_INSERT)},
++        std::pair {0x2Eu, static_cast<std::uint32_t>(KEY_DELETE)},
++        std::pair {0x5Bu, static_cast<std::uint32_t>(KEY_LEFTMETA)},
++        std::pair {0x5Cu, static_cast<std::uint32_t>(KEY_RIGHTMETA)},
++        std::pair {0x6Au, static_cast<std::uint32_t>(KEY_KPASTERISK)},
++        std::pair {0x6Bu, static_cast<std::uint32_t>(KEY_KPPLUS)},
++        std::pair {0x6Du, static_cast<std::uint32_t>(KEY_KPMINUS)},
++        std::pair {0x6Eu, static_cast<std::uint32_t>(KEY_KPDOT)},
++        std::pair {0x6Fu, static_cast<std::uint32_t>(KEY_KPSLASH)},
++        std::pair {0x90u, static_cast<std::uint32_t>(KEY_NUMLOCK)},
++        std::pair {0x91u, static_cast<std::uint32_t>(KEY_SCROLLLOCK)},
++        std::pair {0xA1u, static_cast<std::uint32_t>(KEY_RIGHTSHIFT)},
++        std::pair {0xA3u, static_cast<std::uint32_t>(KEY_RIGHTCTRL)},
++        std::pair {0xA5u, static_cast<std::uint32_t>(KEY_RIGHTALT)},
++        std::pair {0xBAu, static_cast<std::uint32_t>(KEY_SEMICOLON)},
++        std::pair {0xBBu, static_cast<std::uint32_t>(KEY_EQUAL)},
++        std::pair {0xBCu, static_cast<std::uint32_t>(KEY_COMMA)},
++        std::pair {0xBDu, static_cast<std::uint32_t>(KEY_MINUS)},
++        std::pair {0xBEu, static_cast<std::uint32_t>(KEY_DOT)},
++        std::pair {0xBFu, static_cast<std::uint32_t>(KEY_SLASH)},
++        std::pair {0xC0u, static_cast<std::uint32_t>(KEY_GRAVE)},
++        std::pair {0xDBu, static_cast<std::uint32_t>(KEY_LEFTBRACE)},
++        std::pair {0xDCu, static_cast<std::uint32_t>(KEY_BACKSLASH)},
++        std::pair {0xDDu, static_cast<std::uint32_t>(KEY_RIGHTBRACE)},
++        std::pair {0xDEu, static_cast<std::uint32_t>(KEY_APOSTROPHE)},
++        std::pair {0xE2u, static_cast<std::uint32_t>(KEY_102ND)},
++      };
++      for (const auto &[vk, evdev] : special_keys) {
++        if (vk == key_code) {
++          return evdev;
++        }
++      }
++
++      static constexpr std::array letter_keys {
++        static_cast<std::uint32_t>(KEY_A), static_cast<std::uint32_t>(KEY_B),
++        static_cast<std::uint32_t>(KEY_C), static_cast<std::uint32_t>(KEY_D),
++        static_cast<std::uint32_t>(KEY_E), static_cast<std::uint32_t>(KEY_F),
++        static_cast<std::uint32_t>(KEY_G), static_cast<std::uint32_t>(KEY_H),
++        static_cast<std::uint32_t>(KEY_I), static_cast<std::uint32_t>(KEY_J),
++        static_cast<std::uint32_t>(KEY_K), static_cast<std::uint32_t>(KEY_L),
++        static_cast<std::uint32_t>(KEY_M), static_cast<std::uint32_t>(KEY_N),
++        static_cast<std::uint32_t>(KEY_O), static_cast<std::uint32_t>(KEY_P),
++        static_cast<std::uint32_t>(KEY_Q), static_cast<std::uint32_t>(KEY_R),
++        static_cast<std::uint32_t>(KEY_S), static_cast<std::uint32_t>(KEY_T),
++        static_cast<std::uint32_t>(KEY_U), static_cast<std::uint32_t>(KEY_V),
++        static_cast<std::uint32_t>(KEY_W), static_cast<std::uint32_t>(KEY_X),
++        static_cast<std::uint32_t>(KEY_Y), static_cast<std::uint32_t>(KEY_Z),
++      };
++      if (key_code >= 0x41 && key_code <= 0x5A) {
++        return letter_keys[key_code - 0x41];
++      }
++
++      static constexpr std::array digit_keys {
++        static_cast<std::uint32_t>(KEY_0), static_cast<std::uint32_t>(KEY_1),
++        static_cast<std::uint32_t>(KEY_2), static_cast<std::uint32_t>(KEY_3),
++        static_cast<std::uint32_t>(KEY_4), static_cast<std::uint32_t>(KEY_5),
++        static_cast<std::uint32_t>(KEY_6), static_cast<std::uint32_t>(KEY_7),
++        static_cast<std::uint32_t>(KEY_8), static_cast<std::uint32_t>(KEY_9),
++      };
++      if (key_code >= 0x30 && key_code <= 0x39) {
++        return digit_keys[key_code - 0x30];
++      }
++
++      static constexpr std::array keypad_digit_keys {
++        static_cast<std::uint32_t>(KEY_KP0), static_cast<std::uint32_t>(KEY_KP1),
++        static_cast<std::uint32_t>(KEY_KP2), static_cast<std::uint32_t>(KEY_KP3),
++        static_cast<std::uint32_t>(KEY_KP4), static_cast<std::uint32_t>(KEY_KP5),
++        static_cast<std::uint32_t>(KEY_KP6), static_cast<std::uint32_t>(KEY_KP7),
++        static_cast<std::uint32_t>(KEY_KP8), static_cast<std::uint32_t>(KEY_KP9),
++      };
++      if (key_code >= 0x60 && key_code <= 0x69) {
++        return keypad_digit_keys[key_code - 0x60];
++      }
++
++      static constexpr std::array function_keys {
++        static_cast<std::uint32_t>(KEY_F1), static_cast<std::uint32_t>(KEY_F2),
++        static_cast<std::uint32_t>(KEY_F3), static_cast<std::uint32_t>(KEY_F4),
++        static_cast<std::uint32_t>(KEY_F5), static_cast<std::uint32_t>(KEY_F6),
++        static_cast<std::uint32_t>(KEY_F7), static_cast<std::uint32_t>(KEY_F8),
++        static_cast<std::uint32_t>(KEY_F9), static_cast<std::uint32_t>(KEY_F10),
++        static_cast<std::uint32_t>(KEY_F11), static_cast<std::uint32_t>(KEY_F12),
++        static_cast<std::uint32_t>(KEY_F13), static_cast<std::uint32_t>(KEY_F14),
++        static_cast<std::uint32_t>(KEY_F15), static_cast<std::uint32_t>(KEY_F16),
++        static_cast<std::uint32_t>(KEY_F17), static_cast<std::uint32_t>(KEY_F18),
++        static_cast<std::uint32_t>(KEY_F19), static_cast<std::uint32_t>(KEY_F20),
++        static_cast<std::uint32_t>(KEY_F21), static_cast<std::uint32_t>(KEY_F22),
++        static_cast<std::uint32_t>(KEY_F23), static_cast<std::uint32_t>(KEY_F24),
++      };
++      if (key_code >= 0x70 && key_code <= 0x87) {
++        return function_keys[key_code - 0x70];
++      }
++
++      return std::nullopt;
++    }
++
++    /// @brief keycode ist ein Windows-VK-Code (siehe vk_to_evdev).
 +    void key(std::uint32_t keycode, bool pressed) {
++      const auto evdev = vk_to_evdev(keycode);
++      if (!evdev) {
++        BOOST_LOG(debug) << "mutter input: unbekannter VK-Code "sv << keycode;
++        return;
++      }
++
 +      std::lock_guard lock {mutex_};
 +      if (ensure_locked()) {
-+        send_locked("NotifyKeyboardKeycode", g_variant_new("(ub)", keycode, pressed));
++        send_locked("NotifyKeyboardKeycode", g_variant_new("(ub)", *evdev, pressed));
 +      }
 +    }
 +
@@ -290,7 +427,7 @@ index 362f50a..eb2b8de 100644
    /**
     * @brief Runtime state for one virtual gamepad.
     */
-@@ -459,6 +723,11 @@ namespace platf::virtualhid {
+@@ -459,6 +860,11 @@ namespace platf::virtualhid {
  
    void input_context_t::refresh_keyboard() {
      keyboard.reset();
@@ -302,7 +439,7 @@ index 362f50a..eb2b8de 100644
      if (!runtime || !runtime->capabilities().supports_keyboard) {
        return;
      }
-@@ -476,6 +745,9 @@ namespace platf::virtualhid {
+@@ -476,6 +882,9 @@ namespace platf::virtualhid {
  
    void input_context_t::refresh_mouse() {
      mouse.reset();
@@ -312,7 +449,7 @@ index 362f50a..eb2b8de 100644
      if (!runtime || !runtime->capabilities().supports_mouse) {
        return;
      }
-@@ -497,6 +769,13 @@ namespace platf::virtualhid {
+@@ -497,6 +906,13 @@ namespace platf::virtualhid {
        return;
      }
  
@@ -326,7 +463,7 @@ index 362f50a..eb2b8de 100644
      const auto &capabilities = global->runtime->capabilities();
      if (capabilities.supports_touchscreen) {
        lvh::CreateTouchscreenOptions options;
-@@ -794,12 +1073,22 @@ namespace platf::virtualhid {
+@@ -794,12 +1210,22 @@ namespace platf::virtualhid {
    }
  
    void move_mouse(input_context_t &context, int delta_x, int delta_y) {
@@ -349,7 +486,7 @@ index 362f50a..eb2b8de 100644
      if (context.mouse) {
        log_failure(
          "submit libvirtualhid absolute mouse movement"sv,
-@@ -814,6 +1103,34 @@ namespace platf::virtualhid {
+@@ -814,6 +1240,34 @@ namespace platf::virtualhid {
    }
  
    void button_mouse(input_context_t &context, int button, bool release) {
@@ -384,7 +521,7 @@ index 362f50a..eb2b8de 100644
      if (context.mouse) {
        const auto converted = mouse_button(button);
        if (!converted) {
-@@ -825,30 +1142,74 @@ namespace platf::virtualhid {
+@@ -825,30 +1279,74 @@ namespace platf::virtualhid {
    }
  
    void scroll(input_context_t &context, int high_res_distance) {
@@ -459,7 +596,7 @@ index 362f50a..eb2b8de 100644
      if (!context.touch) {
        return;
      }
-@@ -893,6 +1254,11 @@ namespace platf::virtualhid {
+@@ -893,6 +1391,11 @@ namespace platf::virtualhid {
    }
  
    void pen_update(client_context_t &context, const touch_port_t &touch_port, const pen_input_t &pen) {
