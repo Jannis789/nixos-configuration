@@ -74,6 +74,38 @@
         return = "302 /vscode/";
       };
 
+      # Sunshine-Web-UI hinter Authelia: /sunshine/ → 127.0.0.1:47989.
+      # Damit muss Port 47990 (bzw. 47984/47989) NICHT mehr ins Internet —
+      # sunshine.nix setzt openFirewall = false, nur nginx kommt noch dran.
+      #
+      # Warum das ohne Pfad-Rewriting funktioniert: Sunshines Web-UI lädt
+      # alles relativ (./assets/…, ./api/password), Präfix-Strippen per
+      # proxyPass mit abschließendem Slash reicht also. Einzig der
+      # absolute 307-Redirect auf /welcome (Erst-Einrichtung) muss über
+      # proxy_redirect in den Präfix zurückgebogen werden. Der Origin-Header
+      # wird geleert, weil Sunshine bei POSTs CSRF-mäßig erwartet, dass
+      # Origin zur eigenen Adresse passt — hier ist der Proxy die eigene
+      # Adresse, und Authhelia hat vorher schon authentifiziert.
+      locations."/sunshine/" = {
+        proxyPass = "http://127.0.0.1:47989/";
+        extraConfig = ''
+          auth_request /authelia-verify;
+          auth_request_set $user $upstream_http_remote_user;
+          auth_request_set $email $upstream_http_remote_email;
+          proxy_set_header Remote-User $user;
+          proxy_set_header Remote-Email $email;
+          error_page 401 =302 https://$host/authelia/;
+
+          proxy_set_header Host $host;
+          proxy_set_header Origin "";
+          proxy_redirect ~^/(.*)$ /sunshine/$1;
+          proxy_read_timeout 120s;
+        '';
+      };
+      locations."= /sunshine" = {
+        return = "302 /sunshine/";
+      };
+
       # Moonlight-Web-Stream unter /stream/ — Browser-Client für den
       # Sunshine-Host (modules/host/moonlight-web.nix). Kein eigenes
       # Subdomain-VHost: der hätte einen manuellen CNAME in Cloudflare

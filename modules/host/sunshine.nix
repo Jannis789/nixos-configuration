@@ -64,7 +64,13 @@ in
     enable = true;
 
     # 47984-47990/tcp + 47998-48010/udp (Ports werden von `port` abgeleitet).
-    openFirewall = true;
+    # BEWUSST AUS: Sunshine wird ausschließlich lokal angesprochen —
+    # moonlight-web (Pairing/RTSP/RTP) und das Web-UI über nginx
+    # (/sunshine/, hinter Authelia). Ein offener Port 47990 im Internet wäre
+    # eine Admin-Oberfläche ohne 2FA gewesen (genau der 403-Fall von
+    # 2026-11-24). Wer einen NATIVEN Moonlight-Client im LAN nutzen will,
+    # braucht diese Ports — dann hier gezielt wieder aktivieren.
+    openFirewall = false;
 
     # Nur für KMS-Capture nötig: /dev/dri liest fremde Frames nur mit
     # CAP_SYS_ADMIN (drmPrimeHandleToFD auf Handles des Compositors). Das
@@ -97,6 +103,15 @@ in
       # Extension) scheitert die Tray-Initialisierung und Sunshine loggt
       # "Error: System tray is not initialized" und beendet seinen Main-Loop.
       system_tray = false;
+
+      # Web-UI auch von außerhalb erreichbar (Default ist "lan"): von einer
+      # WAN-IP antwortet Sunshine sonst mit 403 Forbidden — genau das trat
+      # beim Aufruf von https://<host>:47990 aus dem Internet auf (im Log
+      # steht dazu nur auf Debug-Level etwas, deshalb war nichts zu sehen).
+      # Nur das Web-UI; Pairing bleibt über moonlight-web lokal (127.0.0.1).
+      # Nach dem Einrichten des Passworts Port 47990 im Router wieder
+      # schließen und per SSH-Tunnel zugreifen.
+      origin_web_ui_allowed = "wan";
 
       # Adaptive Auflösung: Modus beim Start setzen, beim Stop zurück.
       global_prep_cmd = prepCommands;
