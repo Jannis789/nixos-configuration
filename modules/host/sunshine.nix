@@ -77,9 +77,22 @@ let
   # JSON, so wie Sunshine es in sunshine.conf erwartet.
   prepCommands = builtins.toJSON [
     {
+      # Client-Auflösung für den virtuellen Monitor hinterlegen.
       do = "${virtualMonitor} set";
       undo = "${virtualMonitor} clear";
     }
+    # AUSKOMMENTIERT (2026-11-24): `watch` hat das Live-Layout des
+    # Schreibtischs umgebaut (virtueller Monitor als einziger Monitor).
+    # Ergebnis: gnome-shell ist beim Drehen eines physischen Monitors mit
+    # SIGSEGV abgestürzt, und die Umstellung bringt mehr Risiko als Nutzen.
+    # Ohne diesen Schritt ist der virtuelle Monitor eine reine ERWEITERUNG
+    # des Desktops — kein Panel, keine Fenster, aber auch kein Eingriff in
+    # die physische Anzeige. Der saubere Weg ist eine eigene headless
+    # GNOME-Session (siehe Notiz unten), nicht ein Umbau der laufenden.
+    # {
+    #   do = "${displayMode}/bin/sunshine-display-mode watch";
+    #   undo = "${displayMode}/bin/sunshine-display-mode restore";
+    # }
   ];
 in
 {

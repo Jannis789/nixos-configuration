@@ -29,6 +29,7 @@ import ast
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import time
@@ -39,6 +40,11 @@ IFACE = "org.gnome.Mutter.DisplayConfig"
 
 STATE_PATH = os.path.join(
     os.environ.get("XDG_RUNTIME_DIR") or "/tmp", "sunshine-display-mode.json"
+)
+
+# PID des Hintergrund-Wächters (siehe cmd_watch).
+WATCH_PID_PATH = os.path.join(
+    os.environ.get("XDG_RUNTIME_DIR") or "/tmp", "sunshine-display-mode.watch.pid"
 )
 
 TYPES_RE = re.compile(
@@ -316,6 +322,141 @@ def streaming_layout(connectors, resolved, target, mode, scale) -> list[dict]:
     ]
 
 
+
+
+# ------------------------------------------------- virtueller Monitor (Portal)
+def kill_watcher() -> None:
+    """Beendet einen noch laufenden Hintergrund-Wächter (falls vorhanden)."""
+    try:
+        with open(WATCH_PID_PATH, encoding="utf-8") as handle:
+            pid = int(handle.read().strip())
+    except (OSError, ValueError):
+        return
+    try:
+        os.kill(pid, signal.SIGTERM)
+        log(f"alter Wächter {pid} beendet")
+    except OSError:
+        pass
+    try:
+        os.unlink(WATCH_PID_PATH)
+    except OSError:
+        pass
+
+
+def find_virtual_monitor(connectors, width: int, height: int):
+    """Connector+Modus des virtuellen Monitors mit der gesuchten Größe.
+
+    mutter legt Portal-Virtual-Monitore als "Meta-0", "Meta-1", … an
+    (Vendor "MetaVendor"). Die Größe kommt vom gepatchten Portal
+    (~/.config/sunshine/virtual_monitor_size), also ist sie bekannt.
+    """
+    for connector, modes in connectors.items():
+        if not connector.startswith("Meta"):
+            continue
+        for mode in modes:
+            if mode["w"] == width and mode["h"] == height:
+                return connector, mode
+    return None, None
+
+
+def cmd_watch() -> int:
+    """Wartet im Hintergrund auf den virtuellen Monitor und macht ihn zum
+    einzigen aktiven Monitor.
+
+    Warum: der Portal-Virtual-Monitor ist zunächst eine bloße ERWEITERUNG des
+    Desktops — dort ist kein Panel, keine Fenster, nichts. Erst wenn er der
+    einzige (und primäre) Monitor ist, zeigt der Stream den echten Desktop in
+    Client-Auflösung. Der physische Schreibtisch wird dabei ausgeblendet
+    (wie beim früheren KMS-Weg) und von `restore` exakt zurückgebracht.
+
+    Der Wächter muss im Hintergrund laufen, weil das Prep-Command VOR dem
+    Aufbau der Capture-Session läuft — der virtuelle Monitor existiert also
+    noch nicht, wenn wir hier stehen.
+    """
+    width = int(os.environ.get("SUNSHINE_CLIENT_WIDTH") or 0)
+    height = int(os.environ.get("SUNSHINE_CLIENT_HEIGHT") or 0)
+    if not (width and height):
+        width, height = 1920, 1080
+
+    kill_watcher()
+
+    profile = parse_profile(os.environ.get("SUNSHINE_DISPLAY_PROFILE"))
+    _, connectors, layout = get_state()
+    if not layout:
+        log("kein aktives Monitor-Layout — nichts zu tun")
+        return 0
+
+    resolved = resolve_layout(connectors, layout, profile)
+    if not resolved:
+        return 1
+
+    # Sollzustand des Desktops sichern (Grundlage für `restore`), aber nur
+    # wenn er zum aktuellen Layout passt — sonst hat ein abgebrochener Stream
+    # den Streaming-Zustand hinterlassen.
+    stale = False
+    if os.path.exists(STATE_PATH):
+        try:
+            with open(STATE_PATH, encoding="utf-8") as handle:
+                saved = json.load(handle)
+            stale = layout_signature(saved["layout"]) != layout_signature(layout)
+        except (OSError, ValueError, KeyError):
+            stale = True
+    if stale:
+        log("gespeicherter Zustand passt nicht zum Desktop — wird überschrieben")
+    if not os.path.exists(STATE_PATH) or stale:
+        with open(STATE_PATH, "w", encoding="utf-8") as handle:
+            json.dump({"layout": resolved, "connector": None}, handle)
+
+    log(f"warte auf virtuellen Monitor {width}x{height}")
+
+    pid = os.fork()
+    if pid:
+        with open(WATCH_PID_PATH, "w", encoding="utf-8") as handle:
+            handle.write(str(pid))
+        return 0  # Prep-Command kehrt sofort zurück, Capture kann starten
+
+    # --- Kindprozess: warten und umschalten ---
+    try:
+        os.setsid()
+        deadline = time.monotonic() + 30.0
+        while time.monotonic() < deadline:
+            try:
+                _, connectors, _ = get_state()
+            except RuntimeError:
+                time.sleep(0.25)
+                continue
+            connector, mode = find_virtual_monitor(connectors, width, height)
+            if connector:
+                new_layout = [
+                    {
+                        "x": 0,
+                        "y": 0,
+                        "scale": pick_scale(mode),
+                        "transform": 0,
+                        "primary": True,
+                        "monitors": [(connector, mode["id"])],
+                    }
+                ]
+                try:
+                    apply_layout(new_layout)
+                    wait_until_applied(new_layout)
+                    log(
+                        f"{connector} ({mode['w']}x{mode['h']}) ist jetzt der "
+                        "einzige Monitor"
+                    )
+                except RuntimeError as error:
+                    log(f"Layout konnte nicht gesetzt werden: {error}")
+                break
+            time.sleep(0.2)
+        else:
+            log("kein virtueller Monitor aufgetaucht — Layout bleibt unverändert")
+    finally:
+        try:
+            os.unlink(WATCH_PID_PATH)
+        except OSError:
+            pass
+        os._exit(0)
+
 # -------------------------------------------------------------------- Befehle
 def cmd_apply(profile_arg: str | None = None) -> int:
     width = int(os.environ.get("SUNSHINE_CLIENT_WIDTH") or 0)
@@ -375,6 +516,7 @@ def cmd_apply(profile_arg: str | None = None) -> int:
 
 
 def cmd_restore() -> int:
+    kill_watcher()
     if not os.path.exists(STATE_PATH):
         log("kein gespeicherter Zustand — nichts zurückzusetzen")
         return 0
@@ -444,6 +586,8 @@ def main(argv: list[str]) -> int:
             return cmd_apply(argument)
         if command == "restore":
             return cmd_restore()
+        if command == "watch":
+            return cmd_watch()
         if command == "reset":
             return cmd_reset(argument, argv[3] if len(argv) > 3 else None)
         if command == "show":
