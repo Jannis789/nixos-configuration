@@ -8,6 +8,7 @@
     ./gaming.nix
     ./remote-desktop.nix
     ./sunshine.nix
+    ./moonlight-web.nix
     # Selkies deaktiviert (2026-11-24): kann keine adaptive Auflösung und
     # belegt dieselbe einzige RemoteDesktop-Session von mutter wie Sunshine.
     # ./selkies.nix
