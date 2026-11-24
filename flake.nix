@@ -136,6 +136,7 @@
           overlays.epiphany-webext
           overlays.cockpit-nerdfont
           overlays.grd-vnc
+          overlays.selkies
         ];
         extraModules = [ inputs.epic-games-launcher.nixosModules.default ];
       };

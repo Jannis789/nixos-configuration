@@ -4,3 +4,6 @@ result
 .DS_Store
 .freebuff/
 .scratch/
+
+# Python-Bytcode aus Ad-hoc-Tests
+__pycache__/

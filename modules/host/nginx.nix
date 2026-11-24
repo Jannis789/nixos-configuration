@@ -16,7 +16,8 @@
     virtualHosts."jannis.nix-dev.link" = {
       forceSSL = true;
       useACMEHost = "jannis.nix-dev.link";
-      root = "/var/www/hub";
+      # Hub-Dashboard deklarativ aus dem Store (assets/hub/index.html)
+      root = "${../../assets/hub}";
       locations."/" = {
         extraConfig = ''
           auth_request /authelia-verify;
@@ -72,6 +73,26 @@
       locations."= /vscode" = {
         return = "302 /vscode/";
       };
+
+      # /stream/ (Selkies) ist am 2026-11-24 abgeschaltet: Selkies kann keine
+      # adaptive Auflösung und teilt sich mit Sunshine dieselbe (einzige)
+      # RemoteDesktop-Session von mutter — zwei Tools am selben Port wären
+      # wieder die "drei halben Lösungen". Streaming läuft jetzt über
+      # Sunshine/Moonlight (modules/host/sunshine.nix), das Web-UI von
+      # Sunshine bleibt LAN-only auf Port 47990 (SSH-Tunnel, kein nginx).
+      # Wer Selkies zurückholen will: modules/host/selkies.nix wieder in
+      # modules/host/default.nix importieren UND diesen Block reaktivieren:
+      #
+      #   locations."/stream/" = {
+      #     proxyPass = "http://127.0.0.1:8080";   # ohne URI-Teil: Präfix bleibt
+      #     proxyWebsockets = true;
+      #     extraConfig = ''
+      #       auth_request /authelia-verify;
+      #       proxy_buffering off;
+      #       proxy_read_timeout 3600s;
+      #     '';
+      #   };
+      #   locations."= /stream" = { return = "302 /stream/"; };
     };
   };
 }

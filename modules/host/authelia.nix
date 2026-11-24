@@ -17,6 +17,8 @@
       access_control = {
         default_policy = "deny";
         rules = [
+          # Deckt auch /cockpit, /vscode und /stream (Selkies) ab, da alles
+          # auf derselben Domain läuft.
           {
             domain = "jannis.nix-dev.link";
             policy = "two_factor";

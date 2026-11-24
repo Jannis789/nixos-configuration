@@ -22,11 +22,22 @@
 #    der Client es anbietet (RFB wählt sonst das erste Encoding der
 #    Client-Liste). dconf-Settings: modules/gnome
 #    (org/gnome/desktop/remote-desktop/vnc).
-{ ... }:
+{ lib, ... }:
 {
+  # Paket + Integration aktiv lassen (braucht auch der User-Daemon), aber:
   services.gnome.gnome-remote-desktop.enable = true;
+
+  # System-Daemon ("Remote Login": RDP-Logins mit EIGENEN Headless-Sessions)
+  # NICHT automatisch starten. Er belegt Port 3389 und fängt damit alle
+  # RDP-Verbindungen ab, die zum USER-Daemon (Desktop Sharing, extend-Modus
+  # aus modules/gnome) gehören — genau das passierte am 2026-11-24: Client
+  # landete auf dem System-Daemon (Auth-Fehler "Could not find user in SAM
+  # database", dessen Credentials via `sudo grdctl --system` gepflegt würden),
+  # während der User-Daemon mit dem virtuellen Monitor kein einziges Paket
+  # sah. Wer Remote Login doch will: wantedBy wieder auf graphical.target
+  # setzen UND dem User-Daemon dann einen anderen RDP-Port gönnen.
   systemd.services."gnome-remote-desktop" = {
-    wantedBy = [ "graphical.target" ];
+    wantedBy = lib.mkForce [ ];
     restartIfChanged = false;
   };
 }

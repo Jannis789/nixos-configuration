@@ -7,6 +7,10 @@
     ./editor.nix
     ./gaming.nix
     ./remote-desktop.nix
+    ./sunshine.nix
+    # Selkies deaktiviert (2026-11-24): kann keine adaptive Auflösung und
+    # belegt dieselbe einzige RemoteDesktop-Session von mutter wie Sunshine.
+    # ./selkies.nix
     ./cockpit.nix
     ./authelia.nix
     ./nginx.nix

@@ -19,6 +19,10 @@ let
     helium = final.callPackage ./packages/helium.nix { };
   };
 
+  selkies = final: prev: {
+    selkies = final.callPackage ./packages/selkies.nix { };
+  };
+
   hanabi = final: prev: {
     gnomeExtensions = prev.gnomeExtensions // {
       hanabi = final.callPackage ./packages/hanabi.nix { };
@@ -124,5 +128,6 @@ in
     ocr-deu
     gnome-51
     grd-vnc
+    selkies
     ;
 }
