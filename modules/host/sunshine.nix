@@ -237,6 +237,26 @@ let
     "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/gsettings-desktop-schemas"
     "${pkgs.gnome-shell}/share"
   ];
+  # Eigner Profil-Ordner fuer die Chromium-Familie (siehe Modul-Body):
+  # sonst verweigert der zweite Start "Profil wird bereits verwendet".
+  streamHelium = pkgs.writeShellScriptBin "stream-helium" ''
+    exec ${pkgs.helium}/bin/helium \
+      --user-data-dir="''${XDG_CONFIG_HOME:-$HOME/.config}/sunshine/stream-helium" \
+      "$@"
+  '';
+  streamHeliumDesktop = pkgs.runCommand "stream-helium-desktop" { } ''
+    mkdir -p $out/share/applications
+    cat > $out/share/applications/stream-helium.desktop <<EOF
+    [Desktop Entry]
+    Type=Application
+    Name=Helium (Stream-Profil)
+    Comment=Helium mit eigenem Profil — parallel zum Desktop startbar
+    Exec=${streamHelium}/bin/stream-helium %U
+    Icon=helium
+    Categories=Network;WebBrowser;
+    Terminal=false
+    EOF
+  '';
 in
 {
   services.sunshine = {
@@ -343,7 +363,24 @@ in
   };
 
   # Werkzeug auch in der interaktiven Shell haben (Debug/„Monitor zurück“).
-  environment.systemPackages = [ displayMode ];
+  environment.systemPackages = [
+    displayMode
+    streamHelium
+    streamHeliumDesktop
+  ];
+
+  # --- Programme, die pro Profil nur EINMAL laufen ------------------------
+  # Die allermeisten GNOME-Apps sind D-Bus-Single-Instance. Weil die
+  # Stream-Session einen EIGENEN Session-Bus hat, registriert dort eine
+  # zweite Instanz und bekommt ihr Fenster im Stream — die laufende
+  # Desktop-Instanz bleibt unangetastet. Nichts zu tun.
+  #
+  # Anders die Chromium-Familie: die prüft einen SingletonLock im
+  # user-data-dir, unabhängig vom Bus. Zweiter Start = "Profil wird bereits
+  # verwendet". Dafür ein eigenes Datenverzeichnis (eigenes Profil: Logins
+  # müssen dort einmal gemacht werden). Der Wrapper steht im let-Block.
+  #
+  # Erscheint in der App-Übersicht (auch im Stream) als eigener Eintrag.
 
   # --- Eine eigene, unsichtbare GNOME-Session für den Stream ------------
   # Statt den virtuellen Monitor in die laufende Sitzung zu hängen (nur
