@@ -1,0 +1,473 @@
+diff --git a/src/platform/virtualhid_input.cpp b/src/platform/virtualhid_input.cpp
+index 362f50a..eb2b8de 100644
+--- a/src/platform/virtualhid_input.cpp
++++ b/src/platform/virtualhid_input.cpp
+@@ -6,6 +6,7 @@
+ // standard includes
+ #include <algorithm>
+ #include <array>
++#include <chrono>
+ #include <cmath>
+ #include <cstddef>
+ #include <cstdint>
+@@ -15,9 +16,14 @@
+ #include <numbers>
+ #include <optional>
+ #include <random>
++#include <string>
+ #include <string_view>
+ #include <utility>
+ 
++#if defined(__linux__)
++  #include <gio/gio.h>
++#endif
++
+ // local includes
+ #include "src/config.h"
+ #include "src/logging.h"
+@@ -26,6 +32,264 @@
+ using namespace std::literals;
+ 
+ namespace platf::virtualhid {
++  /**
++   * @brief Keyboard/pointer injection into the compositor owning the session bus.
++   *
++   * libvirtualhid only knows kernel-level virtual HID devices (/dev/uhid,
++   * /dev/uinput). Those devices belong to the machine, so their events are
++   * delivered to the physical seat. A "gnome-shell --headless" session has no
++   * seat at all and therefore never sees them.
++   *
++   * mutter exports org.gnome.Mutter.RemoteDesktop on the session bus and
++   * injects events straight into its own compositor. This is the same API
++   * gnome-remote-desktop uses for headless sessions.
++   *
++   * Selected with SUNSHINE_GNOME_REMOTE_DESKTOP_INPUT=1. Gamepads keep using
++   * libvirtualhid: they need no compositor, games read /dev/input directly.
++   */
++#if defined(__linux__)
++  class mutter_input_t {
++  public:
++    static mutter_input_t &instance() {
++      static mutter_input_t session;
++      return session;
++    }
++
++    /** @brief Whether events are injected via mutter (initializes lazily). */
++    bool available() {
++      std::lock_guard lock {mutex_};
++      return ensure_locked();
++    }
++
++    void motion_relative(double dx, double dy) {
++      if (dx == 0.0 && dy == 0.0) {
++        return;
++      }
++
++      std::lock_guard lock {mutex_};
++      if (ensure_locked()) {
++        send_locked("NotifyPointerMotionRelative", g_variant_new("(dd)", dx, dy));
++      }
++    }
++
++    /**
++     * @brief Absolute positioning, translated into relative motion.
++     *
++     * mutter rejects NotifyPointerMotionAbsolute ("No screen cast active")
++     * unless the screen cast stream lives in this very RemoteDesktop session.
++     * Our stream is owned by the portal, so the absolute target is translated
++     * into relative motion against the position injected last.
++     */
++    void motion_absolute(const touch_port_t &touch_port, float x, float y) {
++      std::lock_guard lock {mutex_};
++      if (!ensure_locked()) {
++        return;
++      }
++
++      const int width = std::max(1, touch_port.width);
++      const int height = std::max(1, touch_port.height);
++      if (width != last_width_ || height != last_height_) {
++        last_width_ = width;
++        last_height_ = height;
++        have_last_ = false;
++      }
++
++      const double target_x = std::clamp(static_cast<double>(x), 0.0, static_cast<double>(width - 1));
++      const double target_y = std::clamp(static_cast<double>(y), 0.0, static_cast<double>(height - 1));
++      if (!have_last_) {
++        have_last_ = true;
++        last_x_ = target_x;
++        last_y_ = target_y;
++        return;
++      }
++
++      const double dx = target_x - last_x_;
++      const double dy = target_y - last_y_;
++      last_x_ = target_x;
++      last_y_ = target_y;
++      if (dx != 0.0 || dy != 0.0) {
++        send_locked("NotifyPointerMotionRelative", g_variant_new("(dd)", dx, dy));
++      }
++    }
++
++    void button(int evdev_button, bool pressed) {
++      std::lock_guard lock {mutex_};
++      if (ensure_locked()) {
++        send_locked("NotifyPointerButton", g_variant_new("(ib)", evdev_button, pressed));
++      }
++    }
++
++    /** @brief Smooth scroll; mutter uses 10.0 units per wheel notch. */
++    void axis(double dx, double dy) {
++      if (dx == 0.0 && dy == 0.0) {
++        return;
++      }
++
++      std::lock_guard lock {mutex_};
++      // flags: 2 = source_wheel
++      if (ensure_locked()) {
++        send_locked("NotifyPointerAxis", g_variant_new("(ddu)", dx, dy, 2u));
++      }
++    }
++
++    void key(std::uint32_t keycode, bool pressed) {
++      std::lock_guard lock {mutex_};
++      if (ensure_locked()) {
++        send_locked("NotifyKeyboardKeycode", g_variant_new("(ub)", keycode, pressed));
++      }
++    }
++
++    void keysym(std::uint32_t keysym_value, bool pressed) {
++      std::lock_guard lock {mutex_};
++      if (ensure_locked()) {
++        send_locked("NotifyKeyboardKeysym", g_variant_new("(ub)", keysym_value, pressed));
++      }
++    }
++
++  private:
++    enum class state_e {
++      unknown,
++      active,
++      unsupported,
++    };
++
++    mutter_input_t() = default;
++
++    bool requested_locked() {
++      if (requested_checked_) {
++        return requested_;
++      }
++
++      requested_checked_ = true;
++      const char *value = g_getenv("SUNSHINE_GNOME_REMOTE_DESKTOP_INPUT");
++      requested_ = value && (g_strcmp0(value, "1") == 0 || g_ascii_strcasecmp(value, "true") == 0);
++      return requested_;
++    }
++
++    bool ensure_locked() {
++      if (state_ == state_e::active) {
++        return true;
++      }
++
++      const auto now = std::chrono::steady_clock::now();
++      if (state_ == state_e::unsupported && now - last_attempt_ < std::chrono::seconds {2}) {
++        return false;
++      }
++      last_attempt_ = now;
++      state_ = state_e::unsupported;
++
++      if (!requested_locked()) {
++        return false;
++      }
++
++      g_autoptr(GError) error = nullptr;
++      if (!connection_) {
++        connection_ = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
++        if (!connection_) {
++          BOOST_LOG(warning) << "mutter input: no session bus: "sv << (error ? error->message : "unknown");
++          return false;
++        }
++      }
++
++      g_autoptr(GDBusProxy) remote_desktop = g_dbus_proxy_new_sync(
++        connection_,
++        static_cast<GDBusProxyFlags>(G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START),
++        nullptr,
++        "org.gnome.Mutter.RemoteDesktop",
++        "/org/gnome/Mutter/RemoteDesktop",
++        "org.gnome.Mutter.RemoteDesktop",
++        nullptr,
++        &error
++      );
++      if (!remote_desktop) {
++        BOOST_LOG(warning) << "mutter input: remote desktop proxy failed: "sv << (error ? error->message : "unknown");
++        return false;
++      }
++
++      g_autofree gchar *owner = g_dbus_proxy_get_name_owner(remote_desktop);
++      if (!owner) {
++        BOOST_LOG(info) << "mutter input: org.gnome.Mutter.RemoteDesktop not available"sv;
++        return false;
++      }
++
++      g_autoptr(GVariant) created = g_dbus_proxy_call_sync(
++        remote_desktop, "CreateSession", nullptr, G_DBUS_CALL_FLAGS_NONE, -1, nullptr, &error);
++      if (!created) {
++        BOOST_LOG(warning) << "mutter input: CreateSession failed: "sv << (error ? error->message : "unknown");
++        return false;
++      }
++
++      const gchar *path = nullptr;
++      g_variant_get(created, "(&o)", &path);
++      session_path_ = path ? path : "";
++
++      g_autoptr(GDBusProxy) session = g_dbus_proxy_new_sync(
++        connection_,
++        static_cast<GDBusProxyFlags>(G_DBUS_PROXY_FLAGS_NONE),
++        nullptr,
++        "org.gnome.Mutter.RemoteDesktop",
++        session_path_.c_str(),
++        "org.gnome.Mutter.RemoteDesktop.Session",
++        nullptr,
++        &error
++      );
++      if (!session) {
++        BOOST_LOG(warning) << "mutter input: session proxy failed: "sv << (error ? error->message : "unknown");
++        return false;
++      }
++
++      g_autoptr(GVariant) started = g_dbus_proxy_call_sync(
++        session, "Start", nullptr, G_DBUS_CALL_FLAGS_NONE, -1, nullptr, &error);
++      if (!started) {
++        BOOST_LOG(warning) << "mutter input: Start failed: "sv << (error ? error->message : "unknown");
++        return false;
++      }
++
++      proxy_ = static_cast<GDBusProxy *>(g_object_ref(session));
++      state_ = state_e::active;
++      BOOST_LOG(info) << "mutter input: injecting keyboard/pointer via "sv << session_path_;
++      return true;
++    }
++
++    void send_locked(const char *method, GVariant *parameters) {
++      g_dbus_proxy_call(proxy_, method, parameters, G_DBUS_CALL_FLAGS_NONE, -1, nullptr, nullptr, nullptr);
++    }
++
++    std::mutex mutex_;
++    state_e state_ = state_e::unknown;
++    std::chrono::steady_clock::time_point last_attempt_ {};
++    bool requested_checked_ = false;
++    bool requested_ = false;
++    GDBusConnection *connection_ = nullptr;
++    GDBusProxy *proxy_ = nullptr;
++    std::string session_path_;
++    bool have_last_ = false;
++    double last_x_ = 0.0;
++    double last_y_ = 0.0;
++    int last_width_ = 0;
++    int last_height_ = 0;
++  };
++#else
++  class mutter_input_t {
++  public:
++    static mutter_input_t &instance() {
++      static mutter_input_t session;
++      return session;
++    }
++
++    bool available() {
++      return false;
++    }
++
++    void motion_relative(double, double) {}
++    void motion_absolute(const touch_port_t &, float, float) {}
++    void button(int, bool) {}
++    void axis(double, double) {}
++    void key(std::uint32_t, bool) {}
++    void keysym(std::uint32_t, bool) {}
++  };
++#endif
++
+   /**
+    * @brief Runtime state for one virtual gamepad.
+    */
+@@ -459,6 +723,11 @@ namespace platf::virtualhid {
+ 
+   void input_context_t::refresh_keyboard() {
+     keyboard.reset();
++    if (mutter_input_t::instance().available()) {
++      // Injecting through mutter; a machine-wide uinput keyboard would drive
++      // the physical seat instead of the headless compositor.
++      return;
++    }
+     if (!runtime || !runtime->capabilities().supports_keyboard) {
+       return;
+     }
+@@ -476,6 +745,9 @@ namespace platf::virtualhid {
+ 
+   void input_context_t::refresh_mouse() {
+     mouse.reset();
++    if (mutter_input_t::instance().available()) {
++      return;
++    }
+     if (!runtime || !runtime->capabilities().supports_mouse) {
+       return;
+     }
+@@ -497,6 +769,13 @@ namespace platf::virtualhid {
+       return;
+     }
+ 
++    if (mutter_input_t::instance().available()) {
++      // Touch/pen need absolute positions inside a screencast stream, which
++      // mutter only accepts for streams owned by the same RemoteDesktop
++      // session. Skip the virtual devices rather than driving the real seat.
++      return;
++    }
++
+     const auto &capabilities = global->runtime->capabilities();
+     if (capabilities.supports_touchscreen) {
+       lvh::CreateTouchscreenOptions options;
+@@ -794,12 +1073,22 @@ namespace platf::virtualhid {
+   }
+ 
+   void move_mouse(input_context_t &context, int delta_x, int delta_y) {
++    if (mutter_input_t::instance().available()) {
++      mutter_input_t::instance().motion_relative(delta_x, delta_y);
++      return;
++    }
++
+     if (context.mouse) {
+       log_failure("submit libvirtualhid mouse movement"sv, context.mouse->move_relative(delta_x, delta_y));
+     }
+   }
+ 
+   void abs_mouse(input_context_t &context, const touch_port_t &touch_port, float x, float y) {
++    if (mutter_input_t::instance().available()) {
++      mutter_input_t::instance().motion_absolute(touch_port, x, y);
++      return;
++    }
++
+     if (context.mouse) {
+       log_failure(
+         "submit libvirtualhid absolute mouse movement"sv,
+@@ -814,6 +1103,34 @@ namespace platf::virtualhid {
+   }
+ 
+   void button_mouse(input_context_t &context, int button, bool release) {
++    if (mutter_input_t::instance().available()) {
++      // Moonlight button ids -> evdev BTN_* codes expected by mutter.
++      int evdev_button = 0;
++      switch (button) {
++        case BUTTON_LEFT:
++          evdev_button = 0x110;  // BTN_LEFT
++          break;
++        case BUTTON_MIDDLE:
++          evdev_button = 0x112;  // BTN_MIDDLE
++          break;
++        case BUTTON_RIGHT:
++          evdev_button = 0x111;  // BTN_RIGHT
++          break;
++        case BUTTON_X1:
++          evdev_button = 0x113;  // BTN_SIDE
++          break;
++        case BUTTON_X2:
++          evdev_button = 0x114;  // BTN_EXTRA
++          break;
++        default:
++          BOOST_LOG(warning) << "Unknown mouse button: "sv << button;
++          return;
++      }
++
++      mutter_input_t::instance().button(evdev_button, !release);
++      return;
++    }
++
+     if (context.mouse) {
+       const auto converted = mouse_button(button);
+       if (!converted) {
+@@ -825,30 +1142,74 @@ namespace platf::virtualhid {
+   }
+ 
+   void scroll(input_context_t &context, int high_res_distance) {
++    if (mutter_input_t::instance().available()) {
++      // 120 high-res units are one notch; mutter counts 10.0 per notch and
++      // uses positive dy for scrolling down.
++      mutter_input_t::instance().axis(0.0, -high_res_distance / 12.0);
++      return;
++    }
++
+     if (context.mouse) {
+       log_failure("submit libvirtualhid vertical scroll"sv, context.mouse->vertical_scroll(high_res_distance));
+     }
+   }
+ 
+   void hscroll(input_context_t &context, int high_res_distance) {
++    if (mutter_input_t::instance().available()) {
++      mutter_input_t::instance().axis(high_res_distance / 12.0, 0.0);
++      return;
++    }
++
+     if (context.mouse) {
+       log_failure("submit libvirtualhid horizontal scroll"sv, context.mouse->horizontal_scroll(high_res_distance));
+     }
+   }
+ 
+   void keyboard_update(input_context_t &context, std::uint16_t modcode, bool release, std::uint8_t flags) {
++    if (mutter_input_t::instance().available()) {
++      // modcode is the evdev key code, exactly what mutter expects.
++      mutter_input_t::instance().key(modcode, !release);
++      return;
++    }
++
+     if (context.keyboard) {
+       log_failure("submit libvirtualhid keyboard input"sv, context.keyboard->submit(keyboard_event(modcode, release, flags)));
+     }
+   }
+ 
+   void unicode(input_context_t &context, const char *utf8, int size) {
++    if (mutter_input_t::instance().available()) {
++      if (utf8 && size > 0) {
++        const gchar *cursor = utf8;
++        const gchar *end = cursor + size;
++        while (cursor < end) {
++          const gunichar character = g_utf8_get_char_validated(cursor, end - cursor);
++          if (character == static_cast<gunichar>(-1) || character == static_cast<gunichar>(-2)) {
++            break;
++          }
++
++          // Latin-1 maps 1:1 to keysyms, everything else uses the Unicode form.
++          const std::uint32_t keysym = character < 0x100 ? character : (0x01000000u | character);
++          mutter_input_t::instance().keysym(keysym, true);
++          mutter_input_t::instance().keysym(keysym, false);
++          cursor = g_utf8_next_char(cursor);
++        }
++      }
++
++      return;
++    }
++
+     if (context.keyboard && utf8 && size > 0) {
+       log_failure("submit libvirtualhid text input"sv, context.keyboard->type_text({.text = std::string {utf8, static_cast<std::size_t>(size)}}));
+     }
+   }
+ 
+   void touch_update(client_context_t &context, const touch_port_t &touch_port, const touch_input_t &touch) {
++    if (mutter_input_t::instance().available()) {
++      // No virtual touchscreen in mutter mode, see client_context_t.
++      return;
++    }
++
+     if (!context.touch) {
+       return;
+     }
+@@ -893,6 +1254,11 @@ namespace platf::virtualhid {
+   }
+ 
+   void pen_update(client_context_t &context, const touch_port_t &touch_port, const pen_input_t &pen) {
++    if (mutter_input_t::instance().available()) {
++      // No virtual pen tablet in mutter mode, see client_context_t.
++      return;
++    }
++
+     if (!context.pen) {
+       return;
+     }

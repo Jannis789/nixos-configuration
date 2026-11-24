@@ -165,6 +165,12 @@ let
     XDG_SESSION_DESKTOP = "gnome";
     XDG_CURRENT_DESKTOP = "GNOME";
     GNOME_SHELL_SESSION_MODE = "user";
+
+    # Tastatur/Maus über org.gnome.Mutter.RemoteDesktop einspeisen
+    # (src/platform/virtualhid_input.cpp, patches/sunshine-mutter-input.patch).
+    # libvirtualhid legt sonst kernelweite uinput-Geräte an, die am
+    # physischen Seat landen — die headless-Session hat keinen Seat.
+    SUNSHINE_GNOME_REMOTE_DESKTOP_INPUT = "1";
     XDG_DATA_DIRS = lib.concatStringsSep ":" [
       "${pkgs.xdg-desktop-portal-gnome}/share"
       "${pkgs.gnome-session}/share"

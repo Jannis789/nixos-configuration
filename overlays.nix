@@ -29,6 +29,11 @@ let
   constexpr uint32_t SOURCE_TYPE_VIRTUAL = 4;' \
           --replace-fail 'g_variant_new_uint32(SOURCE_TYPE_MONITOR)' \
                          'g_variant_new_uint32(SOURCE_TYPE_VIRTUAL)'
+
+        # Tastatur/Maus über org.gnome.Mutter.RemoteDesktop in den Compositor
+        # einspeisen, statt kernelweite uinput-Geräte anzulegen (die landen am
+        # physischen Seat und damit am echten Schreibtisch).
+        patch -p1 < ${./packages/patches/sunshine-mutter-input.patch}
       '';
     });
   };
