@@ -44,7 +44,12 @@
       # Sunshines libvirtualhid-Pfad.
       "input"
     ];
-    linger = true;
+    # Linger: der Manager startet beim Boot, ohne Login.
+    # AKTUELL NICHT GENUTZT: der Stream läuft seit dem Umbau wieder im
+    # Konto jannis (gleiche Programme/Home, zweiter Display). Der Account
+    # bleibt als Reserve/Experimentierkonto, startet aber nichts mehr
+    # (linger = false), solange modules/host/sunshine.nix ihn nicht nutzt.
+    linger = false;
   };
 
   # --- Steam-Bibliothek wird GETEILT, nicht kopiert -------------------------

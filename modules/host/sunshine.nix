@@ -43,12 +43,6 @@
   ...
 }:
 let
-  # Account, in dem die Stream-Session läuft (modules/host/users.nix,
-  # dort mit fester UID — /run/user/<uid> und user@<uid>.service hängen
-  # daran).
-  streamUser = "virtual-jannis";
-  streamUid = config.users.users.${streamUser}.uid;
-
   displayMode = pkgs.callPackage ../../packages/sunshine-display-mode.nix { };
 
   # Sollzustand des Schreibtischs (nur noch für den Notausgang
@@ -108,9 +102,8 @@ let
   configFile = (pkgs.formats.keyValue { }).generate "sunshine.conf" config.services.sunshine.settings;
 
   # Startet EINE komplette, unsichtbare GNOME-Session und darin Sunshine.
-  # Das Skript läuft als User-Unit im Manager von virtual-jannis (uid 1001);
-  # dessen Session-Bus (/run/user/1001/bus) ist der private Bus dieser
-  # Session — kein dbus-run-session mehr nötig:
+  # Das Skript läuft als User-Unit im Manager von jannis (dieselbe UID wie
+  # der physische Schreibtisch), aber in einem eigenen dbus-run-session-Bus:
   #   gnome-shell (headless)  ->  xdg-desktop-portal-gnome + -portal  ->  sunshine
   # Vorteile gegenüber "virtueller Monitor in der laufenden Session":
   #   * der virtuelle Monitor ist hier der EINZIGE Monitor, also liegen
@@ -380,14 +373,13 @@ in
   # gerenderte sunshine.conf (services.sunshine.settings) weiterhin die
   # einzige Konfigurationsquelle bleibt.
   #
-  # wantedBy = [ ]: die Unit liegt in /etc/systemd/user und gilt damit für
-  # ALLE User-Manager (auch jannis mit Linger). Automatisch gestartet wird
-  # sie nur dort, wo die System-Unit sunshine-stream sie anfordert — also
-  # ausschließlich im Manager von virtual-jannis.
+  # Der Dienst läuft im Manager von jannis (Linger: startet beim Boot, ohne
+  # Login) und umfasst NUR die headless-Session — der physische Schreibtisch
+  # läuft in einer anderen Session derselben UID.
   systemd.user.services.sunshine = {
     description = lib.mkForce "Sunshine (headless GNOME-Session)";
 
-    wantedBy = lib.mkForce [ ];
+    wantedBy = lib.mkForce [ "default.target" ];
     after = lib.mkForce [ ];
     wants = lib.mkForce [ ];
     partOf = lib.mkForce [ ];
@@ -408,35 +400,23 @@ in
             pkgs.gnugrep
             pkgs.gnused
           ])
+          "/etc/profiles/per-user/jannis/bin"
+          "/run/current-system/bin"
           "/run/current-system/sw/bin"
         ]
       );
     };
 
     serviceConfig = {
-      # Kein dbus-run-session: der Session-Bus des Managers von
-      # virtual-jannis (/run/user/1001/bus) ist bereits privat und gehört
-      # dieser Session.
-      ExecStart = lib.mkForce "${headlessSession}";
+      # dbus-run-session: DIESELBE UID wie der physische Schreibtisch, aber
+      # ein eigener Session-Bus. Nur so können Apps zweimal laufen (Shell,
+      # Nautilus, Einstellungen) und D-Bus-Aktivierung landet nicht auf
+      # wayland-0. Genau dieses Muster beschreibt mutters
+      # doc/building-and-running.md (dbus-session.sh new + gnome-shell
+      # --headless) für eine zweite Sitzung derselben UID.
+      ExecStart = lib.mkForce "${pkgs.dbus}/bin/dbus-run-session -- ${headlessSession}";
       Restart = lib.mkForce "on-failure";
       RestartSec = lib.mkForce 5;
-    };
-  };
-
-  # Systemseite des Cutovers: startet die User-Unit im Manager von
-  # virtual-jannis, sobald dieser (dank Linger beim Boot) läuft.
-  systemd.services.sunshine-stream = {
-    description = "Sunshine in der headless GNOME-Session von virtual-jannis";
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "user@${toString streamUid}.service" ];
-    after = [ "user@${toString streamUid}.service" ];
-
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      # Kurz warten, bis der Manager seinen Bus angenommen hat.
-      ExecStart = "${pkgs.bash}/bin/bash -c 'i=0; until ${config.systemd.package}/bin/systemctl --machine virtual-jannis@.host --user start sunshine.service; do i=$((i + 1)); [ \"$i\" -ge 30 ] && exit 1; sleep 2; done'";
-      ExecStop = "${config.systemd.package}/bin/systemctl --machine virtual-jannis@.host --user stop sunshine.service";
     };
   };
 }
