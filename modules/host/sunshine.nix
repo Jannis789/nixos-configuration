@@ -83,14 +83,26 @@ in
       sunshine_name = "jannis-desktop";
       port = 47989;
 
-      # GNOME-fähiger Capture-Pfad. KMS statt Portal, weil das Portal beim
-      # ersten Start einen Consent-Dialog am PHYSISCHEN Monitor verlangt —
-      # für einen Remote-only-Zugang (Ziel dieses Setups) unerreichbar.
-      # KMS liest den DRM-Framebuffer direkt (cap_sys_admin, siehe unten):
-      # kein Dialog, keine Portal-Session, und der mutter-Lock-Inhibitor
-      # ("Session creation inhibited") kann den Stream nicht mehr kippen.
-      # Den Mauszeiger liefert Sunshine aus der DRM-Cursor-Plane mit.
-      capture = "kms";
+      # Capture über das Portal, aber mit einem VIRTUELLEN Monitor:
+      # Sunshine fragt in ScreenCast.SelectSources types=VIRTUAL (4) statt
+      # types=MONITOR (1) an — das erledigt das Overlay `sunshine-virtual`
+      # (overlays.nix, postPatch auf src/platform/linux/portalgrab.cpp).
+      # mutter legt daraufhin einen zusätzlichen, unsichtbaren Monitor an,
+      # der von den physischen Ausgängen, ihren Modi und ihrer EDID
+      # unabhängig ist. Der Stream hängt damit nicht mehr an einem
+      # Connector-Namen und nicht am Modus eines realen Monitors.
+      #
+      # Preis: beim allerersten Verbinden erscheint einmalig der
+      # Portal-Dialog ("Bildschirm teilen") und muss am physischen Monitor
+      # bestätigt werden. Danach wird die Session über den persistierenden
+      # Restore-Token (persist_mode=UNTIL_REVOKED, Datei
+      # ~/.config/sunshine/portal_token) dialogfrei wiederhergestellt —
+      # auch nach einem Reboot.
+      #
+      # Notausgang: capture = "kms" (liest den DRM-Framebuffer direkt,
+      # ohne Dialog, braucht cap_sys_admin und die DisplayConfig-Umbauten
+      # aus prepCommands, siehe unten).
+      capture = "portal";
 
       # AMD (radeonsi über mesa) → h264_vaapi. Fallback auf Software
       # (x264) macht Sunshine selbst, wenn VA-API nicht initialisiert.
@@ -121,8 +133,14 @@ in
       # die legitime Herkunft.
       csrf_allowed_origins = "https://jannis.nix-dev.link";
 
-      # Adaptive Auflösung: Modus beim Start setzen, beim Stop zurück.
-      global_prep_cmd = prepCommands;
+      # KEIN global_prep_cmd mehr: mit dem virtuellen Monitor wird am
+      # physischen Schreibtisch nichts mehr umgebaut (kein Monitor wird
+      # ausgeblendet, kein Modus verbogen). Die Größe des Streams kommt
+      # aus dem virtuellen Ausgang selbst — Sunshine übernimmt die
+      # `size`-Property der Portal-Antwort (portalgrab.cpp).
+      #
+      # Nur für den Notausgang capture = "kms" wieder aktivieren:
+      # global_prep_cmd = prepCommands;
     };
 
     # Keine `applications` hier: solange kein apps.json gesetzt ist, kann man
