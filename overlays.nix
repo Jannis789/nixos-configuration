@@ -147,5 +147,6 @@ in
     gnome-51
     grd-vnc
     selkies
+    sunshine-virtual
     ;
 }
