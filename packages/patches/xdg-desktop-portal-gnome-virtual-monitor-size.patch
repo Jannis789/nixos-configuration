@@ -215,3 +215,55 @@ index 6583144..9be058c 100644
  
    parameters = org_gnome_mutter_screen_cast_stream_get_parameters (stream->proxy);
    if (parameters)
+diff --git a/src/screencast.c b/src/screencast.c
+index be9354f..57ca563 100644
+--- a/src/screencast.c
++++ b/src/screencast.c
+@@ -631,6 +631,37 @@ restore_stream_from_data (ScreenCastSession *screen_cast_session)
+   return TRUE;
+ }
+ 
++/* Lokaler Patch: VIRTUAL-only Anfragen brauchen keinen Dialog.
++ * Ohne das landet jede Anfrage ohne restore_data in create_screen_cast_dialog();
++ * in einer headless Session (kein GTK-Display) wird der Dialog nie beantwortet
++ * und Start haengt fuer immer. */
++static gboolean
++start_virtual_only_session (ScreenCastSession *screen_cast_session)
++{
++  g_autoptr (GPtrArray) streams = NULL;
++  ScreenCastStreamInfo *info;
++  g_autoptr (GError) error = NULL;
++
++  if (!screen_cast_session->select.source_types.virtual_monitor ||
++      screen_cast_session->select.source_types.monitor ||
++      screen_cast_session->select.source_types.window)
++    return FALSE;
++
++  streams = g_ptr_array_new_with_free_func ((GDestroyNotify) screen_cast_stream_info_free);
++  info = g_new0 (ScreenCastStreamInfo, 1);
++  info->type = SCREEN_CAST_SOURCE_TYPE_VIRTUAL;
++  info->id = 0;
++  g_ptr_array_add (streams, info);
++
++  if (!start_session (screen_cast_session, streams, &error))
++    {
++      g_warning ("Virtual-only session failed: %s", error->message);
++      return FALSE;
++    }
++
++  return TRUE;
++}
++
+ static gboolean
+ handle_start (XdpImplScreenCast     *object,
+               GDBusMethodInvocation *invocation,
+@@ -666,7 +697,8 @@ handle_start (XdpImplScreenCast     *object,
+ 
+   screen_cast_session->start_invocation = invocation;
+ 
+-  if (!restore_stream_from_data (screen_cast_session))
++  if (!restore_stream_from_data (screen_cast_session) &&
++      !start_virtual_only_session (screen_cast_session))
+     {
+       ScreenCastDialogHandle *dialog_handle;
+ 

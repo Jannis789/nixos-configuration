@@ -37,6 +37,7 @@
 # (persist_mode = UNTIL_REVOKED, Datei unter ~/.config/sunshine/), danach
 # kommt der Stream ohne Dialog hoch — auch nach einem Reboot.
 {
+  config,
   lib,
   pkgs,
   ...
@@ -94,6 +95,84 @@ let
     #   undo = "${displayMode}/bin/sunshine-display-mode restore";
     # }
   ];
+
+  # Dieselbe sunshine.conf, die das NixOS-Modul rendert (eine Quelle:
+  # services.sunshine.settings). Der headless-Dienst startet Sunshine mit
+  # dieser Datei ausdrücklich, weil er den ExecStart des Moduls ersetzt.
+  configFile = (pkgs.formats.keyValue { }).generate "sunshine.conf" config.services.sunshine.settings;
+
+  # Startet EINE komplette, unsichtbare GNOME-Session in einem eigenen
+  # D-Bus und darin Sunshine:
+  #   gnome-shell (headless)  ->  xdg-desktop-portal-gnome + -portal  ->  sunshine
+  # Vorteile gegenüber "virtueller Monitor in der laufenden Session":
+  #   * der virtuelle Monitor ist hier der EINZIGE Monitor, also liegen
+  #     Panel, Fenster und Übersicht im Stream (kein "nur Erweiterung");
+  #   * das physische Layout (Rotation des 27", Primärmonitor) wird nicht
+  #     angefasst - kein ApplyMonitorsConfig auf der Live-Session, was
+  #     gnome-shell schon einmal mit SIGSEGV quittiert hat;
+  #   * mit Linger läuft die Session schon beim Boot, ohne Login.
+  headlessSession = pkgs.writeShellScript "sunshine-headless-session" ''
+    set -eu
+
+    # 1) Compositor (mutter headless-Backend, kein DRM-Gerät, keine Seat).
+    ${pkgs.gnome-shell}/bin/gnome-shell --headless &
+    shell_pid=$!
+    trap 'kill "$shell_pid" 2>/dev/null || true' EXIT
+
+    busctl="${pkgs.systemd}/bin/busctl"
+
+    # Wartet, bis ein Name auf DIESEM (privaten) Bus existiert.
+    wait_for() {
+      i=0
+      while [ "$i" -lt 120 ]; do
+        if "$busctl" --user status "$1" >/dev/null 2>&1; then
+          echo "bereit: $1"
+          return 0
+        fi
+        if ! kill -0 "$shell_pid" 2>/dev/null; then
+          echo "gnome-shell ist beendet - Abbruch" >&2
+          return 1
+        fi
+        sleep 0.5
+        i=$((i + 1))
+      done
+      echo "Timeout beim Warten auf $1" >&2
+      return 1
+    }
+
+    wait_for org.gnome.Mutter.ScreenCast
+
+    # 2) Portal-Backend (gepatcht: virtuelle Stream-Größe = Client-Größe,
+    #    kein Consent-Dialog) und Frontend im selben Bus. Beide müssen hier
+    #    laufen: das Frontend cached die Fähigkeiten des Backends
+    #    (available-cursor-modes) und lehnt sonst jede Anfrage ab.
+    ${pkgs.xdg-desktop-portal-gnome}/libexec/xdg-desktop-portal-gnome &
+    ${pkgs.xdg-desktop-portal}/libexec/xdg-desktop-portal &
+
+    wait_for org.freedesktop.portal.Desktop
+
+    # 3) Sunshine übernimmt den Prozess (exec), damit systemd den Zustand
+    #    korrekt sieht. capture=portal spricht jetzt mit dem Portal DIESER
+    #    Session: der Stream zeigt die headless-Session.
+    exec ${pkgs.sunshine}/bin/sunshine ${configFile}
+  '';
+
+  # Environment des Dienstes: eigene GNOME-Session, eigene Anzeige.
+  # Ohne das findet das Portal seine Backend-Konfiguration (gnome-portals.conf,
+  # gnome.portal) und die GSettings-Schemata nicht.
+  headlessEnv = {
+    XDG_SESSION_TYPE = "wayland";
+    XDG_SESSION_DESKTOP = "gnome";
+    XDG_CURRENT_DESKTOP = "GNOME";
+    GNOME_SHELL_SESSION_MODE = "user";
+    XDG_DATA_DIRS = lib.concatStringsSep ":" [
+      "${pkgs.xdg-desktop-portal-gnome}/share"
+      "${pkgs.gnome-session}/share"
+      "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/gsettings-desktop-schemas"
+      "${pkgs.gnome-shell}/share"
+      "/run/current-system/sw/share"
+    ];
+  };
 in
 {
   services.sunshine = {
@@ -201,4 +280,52 @@ in
 
   # Werkzeug auch in der interaktiven Shell haben (Debug/„Monitor zurück“).
   environment.systemPackages = [ displayMode ];
+
+  # --- Eine eigene, unsichtbare GNOME-Session für den Stream ------------
+  # Statt den virtuellen Monitor in die laufende Sitzung zu hängen (nur
+  # eine Erweiterung: kein Panel, keine Fenster, und der Umbau des
+  # Live-Layouts hat gnome-shell zum Absturz gebracht), läuft der Stream
+  # in einer eigenen GNOME-Session:
+  #   dbus-run-session → gnome-shell --headless → xdg-desktop-portal(-gnome)
+  #   → sunshine
+  # In dieser Session ist der virtuelle Monitor der einzige Monitor, also
+  # liegen Panel/Fenster/Übersicht im Stream. Der physische Schreibtisch
+  # (inkl. Rotation des 27") bleibt völlig unberührt.
+  #
+  # Die Portal-Patches (overlays.nix / packages/patches) sorgen dafür, dass
+  #   * der virtuelle Monitor in Client-Auflösung angelegt wird
+  #     (RecordVirtual "modes" ← ~/.config/sunshine/virtual_monitor_size,
+  #     Default 1920x1080@60),
+  #   * der Consent-Dialog entfällt, wenn nur VIRTUAL angefragt wird —
+  #     ohne diesen Bypass würde Start headless ewig hängen (der GTK-Dialog
+  #     kann ohne Display nie beantwortet werden).
+  #
+  # Hier wird der ExecStart des NixOS-Moduls ersetzt (nicht ein zweiter
+  # Dienst daneben gestellt), damit nur EINE Sunshine-Instanz läuft und die
+  # gerenderte sunshine.conf (services.sunshine.settings) weiterhin die
+  # einzige Konfigurationsquelle bleibt.
+  systemd.user.services.sunshine = {
+    description = lib.mkForce "Sunshine (headless GNOME-Session)";
+
+    # Nicht an graphical-session.target gebunden: mit Linger
+    # (modules/host/users.nix) startet der Dienst schon beim Boot, ohne
+    # dass sich jemand anmelden muss (Anforderung 1).
+    wantedBy = lib.mkForce [ "default.target" ];
+    after = lib.mkForce [ ];
+    wants = lib.mkForce [ ];
+    partOf = lib.mkForce [ ];
+
+    environment = headlessEnv // {
+      # Das Modul setzt PATH mit mkForce auf null (Tray-Symbole). Für das
+      # Startskript brauchen wir coreutils (sleep) und busctl; mkOverride 40
+      # gewinnt gegen mkForce (Priorität 50).
+      PATH = lib.mkOverride 40 (lib.makeBinPath [ pkgs.coreutils pkgs.systemd pkgs.dbus ]);
+    };
+
+    serviceConfig = {
+      ExecStart = lib.mkForce "${pkgs.dbus}/bin/dbus-run-session -- ${headlessSession}";
+      Restart = lib.mkForce "on-failure";
+      RestartSec = lib.mkForce 5;
+    };
+  };
 }
