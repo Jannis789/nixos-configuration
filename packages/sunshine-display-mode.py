@@ -225,10 +225,14 @@ def apply_layout(layout) -> None:
     gdbus("ApplyMonitorsConfig", str(serial), "1", fmt_layout(layout), "{}")
 
 
+def connector_of(entry) -> str:
+    return entry.get("connector") or entry["monitors"][0][0]
+
+
 def layout_signature(layout) -> list[tuple]:
     return sorted(
         (
-            entry["connector"],
+            connector_of(entry),
             entry["x"],
             entry["y"],
             round(entry["scale"], 3),
