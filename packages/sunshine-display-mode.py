@@ -346,8 +346,21 @@ def cmd_apply(profile_arg: str | None = None) -> int:
     mode = pick_client_mode(modes, width, height, fps)
     scale = pick_scale(mode)
 
-    # Sollzustand des Schreibtischs nur beim ersten Apply sichern.
-    if not os.path.exists(STATE_PATH):
+    # Sollzustand des Schreibtischs nur beim ersten Apply sichern — aber nur,
+    # wenn der gespeicherte Zustand noch zum aktuellen Layout passt. Sonst hat
+    # ein abgebrochener Stream (Undo fehlgeschlagen) den Streaming-Zustand als
+    # "Desktop" hinterlassen und würde beim nächsten Restore stehen bleiben.
+    stale = False
+    if os.path.exists(STATE_PATH):
+        try:
+            with open(STATE_PATH, encoding="utf-8") as handle:
+                saved = json.load(handle)
+            stale = layout_signature(saved["layout"]) != layout_signature(layout)
+        except (OSError, ValueError, KeyError):
+            stale = True
+    if stale:
+        log("gespeicherter Zustand passt nicht zum Desktop — wird überschrieben")
+    if not os.path.exists(STATE_PATH) or stale:
         with open(STATE_PATH, "w", encoding="utf-8") as handle:
             json.dump({"layout": resolved, "connector": connector}, handle)
 
