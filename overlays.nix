@@ -53,38 +53,37 @@ let
         # angelegte Session eine Stunde später weg (UnknownMethod am
         # Objektpfad), und Sunshine schickte jeden Tastendruck weiter an den
         # toten Pfad. Ergebnis: Bild lief, Eingabe tot, keine Fehlermeldung.
-        # Nur LINEAR als DMA-BUF-Modifier anbieten (PipeWire-Negotiation).
-        # 2026-11-25: Der EGL-Import der Portal-Frames scheitert am Kaltstart
-        # ("Couldn't import RGB Image: 0000300C" = EGL_BAD_PARAMETER), obwohl
-        # derselbe Code am 24.11. mit demselben Format (BGRA/ARGB8888) lief.
-        # Sunshine bietet mutter alle von EGL gemeldeten Modifier an; mutter
-        # alloziert danach getilt/komprimiert (radeonsi), und der Import
-        # dieses Layouts ist es, was scheitert. LINEAR ist der einzige
-        # Modifier, den jede GPU/jeder Treiber liefern UND importieren kann.
-        # Kosten: eine Kopie weniger als beim Tiling-Vorteil, dafuer
-        # deterministisch und nicht von der Verkabelung/Boot-Reihenfolge
-        # abhaengig. Rueckbau: diese substituteInPlace-Zeile entfernen.
-        substituteInPlace src/platform/linux/pipewire.cpp \
-          --replace-fail 'dmabuf_infos[n_dmabuf_infos].n_modifiers = MIN(num_modifiers, MAX_DMABUF_MODIFIERS);' \
-                         'mods[0] = DRM_FORMAT_MOD_LINEAR; dmabuf_infos[n_dmabuf_infos].n_modifiers = 1;'
-
-        # MemPtr-Fallback aus dem PipeWire-Angebot nehmen, solange DMA-BUF
-        # verfuegbar ist.
-        # 2026-11-25 (Reboot-Test): Der Import scheiterte diesmal mit
-        # "fourcc=00000000 modifier=0 pitch=0" - also mit einem voellig
-        # leeren Descriptor. Das ist der Speicher-Pfad: mutter/PipeWire
-        # liefert MemPtr-Frames, Sunshine baut daraus keinen DMA-BUF, der
-        # VAAPI-VRAM-Konverter importiert trotzdem -> EGL_BAD_PARAMETER,
-        # jedes Frame verworfen, schwarzes Bild. Welcher der beiden Pfade
-        # zum Zug kommt, entscheidet die PipeWire-Negotiation und ist
-        # nicht stabil (Stream 10:56 DMA-BUF, nach dem Reboot MemPtr).
-        # Ohne Fallback kann nur noch der bewaehrte DMA-BUF-Pfad
-        # ausgehandelt werden; wenn mutter das nicht kann, schlaegt die
-        # Negotiation sichtbar fehl statt still schwarz zu bleiben.
+        # Portal-Capture ohne DMA-BUF: Speicher-Puffer + CPU-Upload.
+        # 2026-11-25, nach drei Reboots belegt:
+        #   * Kaltstart, Angebot "alle Modifier": die Negotiation waehlt
+        #     MemPtr -> Sunshine fuellt keinen DMA-BUF-Descriptor, der
+        #     VAAPI-VRAM-Konverter importiert trotzdem -> EGL_BAD_PARAMETER
+        #     (0x300C, "fourcc=00000000 pitch=0"), jedes Frame verworfen,
+        #     Bild schwarz.
+        #   * Kaltstart, Angebot "nur LINEAR": mutter kann das nicht liefern
+        #     -> "PipeWire stream error 'no more input formats'", der Stream
+        #     startet gar nicht mehr.
+        #   * Warmstart (Dienst neu gestartet, ohne Reboot): DMA-BUF+LINEAR
+        #     funktionierte. Der GPU-Import-Pfad ist also nicht generell
+        #     kaputt, sondern haengt am Zustand des Boots.
+        # Konsequenz: den GPU-Import-Pfad ganz meiden. Sunshine fordert nur
+        # noch MemPtr-Puffer an (use_dmabuf = false) und der Encoder nimmt
+        # den RAM-Konverter (va_ram_t: Textur-Upload aus dem CPU-Puffer -
+        # derselbe Pfad, den x11- und KMS-Backend benutzen). Kostet eine
+        # Speicherkopie pro Frame, ist dafuer unabhaengig von GPU, Modifiern,
+        # Boot-Reihenfolge und Verkabelung.
         # Rueckbau: diese substituteInPlace-Zeile entfernen.
         substituteInPlace src/platform/linux/pipewire.cpp \
-          --replace-fail 'auto format_param = build_format_parameter(&pod_builder, width, height, target_framerate, fmt.pw_format, nullptr, 0);' \
-                         'if (use_dmabuf) { continue; } auto format_param = build_format_parameter(&pod_builder, width, height, target_framerate, fmt.pw_format, nullptr, 0);'
+          --replace-fail 'bool use_dmabuf = n_dmabuf_infos > 0 &&' \
+                         'bool use_dmabuf = false &&'
+
+        # Der Konverter wurde bisher allein danach gewaehlt, ob die GPU
+        # DMA-BUF-Formate ANBIETET (nicht danach, was PipeWire wirklich
+        # liefert). Bei MemPtr-Frames importiert va_vram_t dann ins Leere
+        # (leerer Descriptor). Mit Speicher-Puffern ist der RAM-Pfad richtig.
+        substituteInPlace src/platform/linux/pipewire.cpp \
+          --replace-fail 'return va::make_avcodec_encode_device(width, height, n_dmabuf_infos > 0);' \
+                         'return va::make_avcodec_encode_device(width, height, false);'
 
         # Diagnose: beim Import-Fehler Format/Modifier/Stride mitloggen, sonst
         # sieht man nur den EGL-Fehlercode und raet.
