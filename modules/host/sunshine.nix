@@ -209,6 +209,16 @@ let
     # 3) Sunshine übernimmt den Prozess (exec), damit systemd den Zustand
     #    korrekt sieht. capture=portal spricht jetzt mit dem Portal DIESER
     #    Session: der Stream zeigt die headless-Session.
+    # 4) Portal-Restore-Token wegwerfen. Er verweist auf eine ScreenCast-
+    #    Session einer FRUEHEREN mutter-Instanz; nach einem Reboot haengt
+    #    CreateSession damit (2026-11-25 beobachtet: Dienst "active", aber
+    #    Sunshine oeffnete nie 47989/47984/48010 -> moonlight-web meldet
+    #    "couldn't establish a connection"/HostNotFound, es laesst sich
+    #    keine Session mehr starten). Der Token spart nur den Consent-
+    #    Dialog - den umgeht der Portal-Patch fuer VIRTUAL ohnehin.
+    #    Kostet nichts und macht den Boot deterministisch.
+    rm -f "''${XDG_CONFIG_HOME:-$HOME/.config}/sunshine/portal_token"
+
     exec ${pkgs.sunshine}/bin/sunshine ${configFile}
   '';
 
