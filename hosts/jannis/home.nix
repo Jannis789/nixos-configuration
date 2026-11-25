@@ -32,6 +32,7 @@
   # nutzt den agenix-Pfad direkt (siehe modules/rclone-kdbx.nix).
   systemd.user.tmpfiles.rules = [
     "L+ %h/.config/rclone/rclone.conf - - - - /run/agenix/rclone-kdbx-conf"
+    "L+ %h/.local/share/kdbx-keychain/export.key - - - - /run/agenix/kdbx-export-key"
   ];
 
   # GNOME Secrets öffnet beim Login den echten Tresor („always open“ ab
@@ -60,8 +61,9 @@
     remember-unlock-method = true;
     last-used-key-provider = builtins.toJSON {
       "file:///home/jannis/Cloud/KeeWeb/export.kdbx" = builtins.toJSON {
-        # Plain-Path (kein file://) — exakt das Format, das gsecrets selbst schreibt
-        FileProvider.url = "/home/jannis/Cloud/KeeWeb/export.key";
+        # Plain-Path (kein file://) — exakt das Format, das gsecrets selbst schreibt;
+        # Quelle = agenix-Deployment (siehe tmpfiles-Regel oben), nicht die bisync-Kopie
+        FileProvider.url = "/home/jannis/.local/share/kdbx-keychain/export.key";
       };
     };
   };

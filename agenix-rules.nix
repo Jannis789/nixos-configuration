@@ -15,6 +15,9 @@ in
   # rclone-Config für kdbx-keychain (Dropbox client_id/secret + OAuth-Refresh-Token);
   # ersetzt die ehemals manuell gepflegte ~/.config/rclone/rclone.conf
   "secrets/rclone-kdbx-conf.age".publicKeys = [ lannitz ];
+  # KeePass-Keyfile zum echten Tresor (rotiert nie → statisch in agenix)
+  "secrets/kdbx-export-key.age".publicKeys = [ lannitz ];
+  "secrets/kdbx-export-key.age".publicKeys = [ lannitz ];
   "secrets/authelia-jwt.age".publicKeys = [ lannitz ];
   "secrets/authelia-storage-key.age".publicKeys = [ lannitz ];
   "secrets/authelia-users.age".publicKeys = [ lannitz ];
