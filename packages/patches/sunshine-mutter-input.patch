@@ -1,5 +1,4 @@
 diff --git a/src/platform/virtualhid_input.cpp b/src/platform/virtualhid_input.cpp
-index 362f50a..625337d 100644
 --- a/src/platform/virtualhid_input.cpp
 +++ b/src/platform/virtualhid_input.cpp
 @@ -6,6 +6,7 @@
@@ -27,11 +26,10 @@ index 362f50a..625337d 100644
  // local includes
  #include "src/config.h"
  #include "src/logging.h"
-@@ -26,6 +34,399 @@
- using namespace std::literals;
+@@ -27,6 +35,470 @@
  
  namespace platf::virtualhid {
-+  /**
+   /**
 +   * @brief Keyboard/pointer injection into the compositor owning the session bus.
 +   *
 +   * libvirtualhid only knows kernel-level virtual HID devices (/dev/uhid,
@@ -58,6 +56,24 @@ index 362f50a..625337d 100644
 +    bool available() {
 +      std::lock_guard lock {mutex_};
 +      return ensure_locked();
++    }
++
++    /**
++     * @brief Drop the current session; the next use creates a fresh one.
++     *
++     * mutter destroys RemoteDesktop sessions behind our back: on 2026-11-25 the
++     * session created at 08:21 was simply gone an hour later (the object path
++     * answered UnknownMethod), and every keyboard/pointer event since then was
++     * sent to a dead path and failed silently - video kept running, input was
++     * dead. input_context_t::refresh_keyboard() runs at the start of every
++     * stream, so that is the natural place to start over.
++     */
++    void reset() {
++      std::lock_guard lock {mutex_};
++      if (state_ == state_e::active) {
++        BOOST_LOG(info) << "mutter input: resetting session "sv << session_path_;
++        invalidate_locked();
++      }
 +    }
 +
 +    void motion_relative(double dx, double dy) {
@@ -302,7 +318,11 @@ index 362f50a..625337d 100644
 +
 +    bool ensure_locked() {
 +      if (state_ == state_e::active) {
-+        return true;
++        if (session_alive_locked()) {
++          return true;
++        }
++        BOOST_LOG(warning) << "mutter input: session "sv << session_path_ << " is gone - recreating"sv;
++        invalidate_locked();
 +      }
 +
 +      const auto now = std::chrono::steady_clock::now();
@@ -385,6 +405,52 @@ index 362f50a..625337d 100644
 +      return true;
 +    }
 +
++    /**
++     * @brief Cheap liveness probe for the session object, at most every 5 s.
++     *
++     * A dead object path is answered immediately with UnknownMethod, so this is
++     * a single cheap round trip even in the failure case. The timeout keeps the
++     * input thread from ever blocking on a wedged compositor.
++     */
++    bool session_alive_locked() {
++      const auto now = std::chrono::steady_clock::now();
++      if (now - last_probe_ < std::chrono::seconds {5}) {
++        return true;
++      }
++      last_probe_ = now;
++
++      if (!connection_ || session_path_.empty()) {
++        return false;
++      }
++
++      g_autoptr(GError) error = nullptr;
++      g_autoptr(GVariant) properties = g_dbus_connection_call_sync(
++        connection_,
++        "org.gnome.Mutter.RemoteDesktop",
++        session_path_.c_str(),
++        "org.freedesktop.DBus.Properties",
++        "GetAll",
++        g_variant_new("(s)", "org.gnome.Mutter.RemoteDesktop.Session"),
++        nullptr,
++        G_DBUS_CALL_FLAGS_NO_AUTO_START,
++        250,
++        nullptr,
++        &error
++      );
++      return properties != nullptr;
++    }
++
++    void invalidate_locked() {
++      if (proxy_) {
++        g_object_unref(proxy_);
++        proxy_ = nullptr;
++      }
++      session_path_.clear();
++      state_ = state_e::unknown;
++      have_last_ = false;
++      last_probe_ = {};
++    }
++
 +    void send_locked(const char *method, GVariant *parameters) {
 +      g_dbus_proxy_call(proxy_, method, parameters, G_DBUS_CALL_FLAGS_NONE, -1, nullptr, nullptr, nullptr);
 +    }
@@ -392,6 +458,7 @@ index 362f50a..625337d 100644
 +    std::mutex mutex_;
 +    state_e state_ = state_e::unknown;
 +    std::chrono::steady_clock::time_point last_attempt_ {};
++    std::chrono::steady_clock::time_point last_probe_ {};
 +    bool requested_checked_ = false;
 +    bool requested_ = false;
 +    GDBusConnection *connection_ = nullptr;
@@ -415,6 +482,8 @@ index 362f50a..625337d 100644
 +      return false;
 +    }
 +
++    void reset() {}
++
 +    void motion_relative(double, double) {}
 +    void motion_absolute(const touch_port_t &, float, float) {}
 +    void button(int, bool) {}
@@ -424,13 +493,16 @@ index 362f50a..625337d 100644
 +  };
 +#endif
 +
-   /**
++  /**
     * @brief Runtime state for one virtual gamepad.
     */
-@@ -459,6 +860,11 @@ namespace platf::virtualhid {
+   struct gamepad_context_t {
+@@ -459,6 +931,13 @@
  
    void input_context_t::refresh_keyboard() {
      keyboard.reset();
++    // Neuer Stream: die Session des vorherigen kann tot sein (siehe reset()).
++    mutter_input_t::instance().reset();
 +    if (mutter_input_t::instance().available()) {
 +      // Injecting through mutter; a machine-wide uinput keyboard would drive
 +      // the physical seat instead of the headless compositor.
@@ -439,7 +511,7 @@ index 362f50a..625337d 100644
      if (!runtime || !runtime->capabilities().supports_keyboard) {
        return;
      }
-@@ -476,6 +882,9 @@ namespace platf::virtualhid {
+@@ -476,6 +955,9 @@
  
    void input_context_t::refresh_mouse() {
      mouse.reset();
@@ -449,7 +521,7 @@ index 362f50a..625337d 100644
      if (!runtime || !runtime->capabilities().supports_mouse) {
        return;
      }
-@@ -497,6 +906,13 @@ namespace platf::virtualhid {
+@@ -497,6 +979,13 @@
        return;
      }
  
@@ -463,7 +535,7 @@ index 362f50a..625337d 100644
      const auto &capabilities = global->runtime->capabilities();
      if (capabilities.supports_touchscreen) {
        lvh::CreateTouchscreenOptions options;
-@@ -794,12 +1210,22 @@ namespace platf::virtualhid {
+@@ -794,12 +1283,22 @@
    }
  
    void move_mouse(input_context_t &context, int delta_x, int delta_y) {
@@ -486,7 +558,7 @@ index 362f50a..625337d 100644
      if (context.mouse) {
        log_failure(
          "submit libvirtualhid absolute mouse movement"sv,
-@@ -814,6 +1240,34 @@ namespace platf::virtualhid {
+@@ -814,6 +1313,34 @@
    }
  
    void button_mouse(input_context_t &context, int button, bool release) {
@@ -521,7 +593,7 @@ index 362f50a..625337d 100644
      if (context.mouse) {
        const auto converted = mouse_button(button);
        if (!converted) {
-@@ -825,30 +1279,74 @@ namespace platf::virtualhid {
+@@ -825,30 +1352,74 @@
    }
  
    void scroll(input_context_t &context, int high_res_distance) {
@@ -596,7 +668,7 @@ index 362f50a..625337d 100644
      if (!context.touch) {
        return;
      }
-@@ -893,6 +1391,11 @@ namespace platf::virtualhid {
+@@ -893,6 +1464,11 @@
    }
  
    void pen_update(client_context_t &context, const touch_port_t &touch_port, const pen_input_t &pen) {

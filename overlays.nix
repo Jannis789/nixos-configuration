@@ -46,6 +46,13 @@ let
         # Tastatur/Maus über org.gnome.Mutter.RemoteDesktop in den Compositor
         # einspeisen, statt kernelweite uinput-Geräte anzulegen (die landen am
         # physischen Seat und damit am echten Schreibtisch).
+        #
+        # Der Patch verwirft die RemoteDesktop-Session außerdem beim Start
+        # jedes Streams und prüft sie im Betrieb (alle 5 s). Grund: mutter
+        # räumt diese Sessions selbst ab — am 2026-11-25 war die um 08:21
+        # angelegte Session eine Stunde später weg (UnknownMethod am
+        # Objektpfad), und Sunshine schickte jeden Tastendruck weiter an den
+        # toten Pfad. Ergebnis: Bild lief, Eingabe tot, keine Fehlermeldung.
         patch -p1 < ${./packages/patches/sunshine-mutter-input.patch}
       '';
     });
