@@ -209,10 +209,32 @@ let
     # 3) Sunshine übernimmt den Prozess (exec), damit systemd den Zustand
     #    korrekt sieht. capture=portal spricht jetzt mit dem Portal DIESER
     #    Session: der Stream zeigt die headless-Session.
-    exec ${pkgs.sunshine}/bin/sunshine ${configFile}
+    # WICHTIG: ueber den setcap-Wrapper des NixOS-Moduls starten
+    # (capSysAdmin = true -> /run/wrappers/bin/sunshine mit cap_sys_admin+p).
+    # ${pkgs.sunshine}/bin/sunshine direkt zu execen umgeht die
+    # File-Capabilities: KMS-Capture loggt dann alle 200 ms
+    # "Error: Failed to gain CAP_SYS_ADMIN" und findet kein Display
+    # ("Unable to find display or encoder during startup").
+    exec ${config.security.wrapperDir}/sunshine ${configFile}
   '';
 
   # Environment des Dienstes: eigene GNOME-Session, eigene Anzeige.
+  # Wartet (max. 120 s) auf den physischen Schreibtisch: Sunshine braucht
+  # dessen User-Bus (mutter RemoteDesktop fuer Tastatur/Maus) und ein
+  # aktives CRTC fuer KMS.
+  waitForSession = pkgs.writeShellScript "sunshine-wait-desktop" ''
+    n=0
+    until ${pkgs.systemd}/bin/busctl --user status org.gnome.Mutter.RemoteDesktop >/dev/null 2>&1; do
+      n=$((n + 1))
+      if [ "$n" -gt 120 ]; then
+        echo "Desktop nach 120 s nicht bereit - starte trotzdem" >&2
+        break
+      fi
+      sleep 1
+    done
+    exit 0
+  '';
+
   headlessEnv = {
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "gnome";
@@ -369,6 +391,11 @@ in
   };
 
   # Werkzeug auch in der interaktiven Shell haben (Debug/„Monitor zurück“).
+  # KMS-Capture (Notausgang) oeffnet /dev/dri/card1 - das Node gehoert
+  # root:video 0660, ohne die Gruppe scheitert der Zugriff schon vor den
+  # Capabilities.
+  users.users.jannis.extraGroups = [ "video" ];
+
   environment.systemPackages = [
     displayMode
     streamHelium
@@ -469,7 +496,26 @@ in
       # wayland-0. Genau dieses Muster beschreibt mutters
       # doc/building-and-running.md (dbus-session.sh new + gnome-shell
       # --headless) für eine zweite Sitzung derselben UID.
-      ExecStart = lib.mkForce "${pkgs.dbus}/bin/dbus-run-session -- ${headlessSession}";
+      # 2026-11-25 (capture = "kms"): Sunshine laeuft jetzt in der
+      # PHYSIKALISCHEN Autologin-Session statt in der privaten
+      # headless-Session. KMS liest den DRM-Framebuffer des ECHTEN Desktops,
+      # und die Eingabe injiziert mutter (RemoteDesktop) auf demselben
+      # User-Bus. In der headless-Session waeren Video (echter Desktop) und
+      # Eingabe (unsichtbarer headless-Compositor) auseinandergefallen:
+      # man saehe den Schreibtisch, wuerde aber ins Leere klicken.
+      # Ueber den setcap-Wrapper: ${pkgs.sunshine}/bin/sunshine direkt
+      # hat kein cap_sys_admin -> "Failed to gain CAP_SYS_ADMIN" im Loop.
+      # Rueckbau auf den Portal-Pfad: ExecStart wieder auf
+      # dbus-run-session -- ${headlessSession} setzen und capture = "portal".
+      ExecStart = lib.mkForce "${config.security.wrapperDir}/sunshine ${configFile}";
+
+      # Ohne Login/Desktop gibt es keinen User-Bus mit mutter -> die
+      # Input-Session schluege fehl und KMS saehe kein aktives CRTC.
+      # Deshalb vor dem Start warten, bis der Autologin-Desktop seinen
+      # RemoteDesktop-Dienst angemeldet hat (max. 120 s, dann trotzdem
+      # starten - Restart=always heilt den Rest). Wichtig fuer den Reboot
+      # ohne SSH: die Unit startet per Linger schon vor/parallel zum Login.
+      ExecStartPre = "${waitForSession}";
       # IMMER neu starten, nicht nur on-failure: Sunshine beendet sich auch
       # nach fatalen Startfehlern ("Unable to find display or encoder",
       # RTSP-Port belegt) mit Exit-Code 0. Beobachtet 2026-11-25: Boot-
