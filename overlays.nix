@@ -68,6 +68,24 @@ let
           --replace-fail 'dmabuf_infos[n_dmabuf_infos].n_modifiers = MIN(num_modifiers, MAX_DMABUF_MODIFIERS);' \
                          'mods[0] = DRM_FORMAT_MOD_LINEAR; dmabuf_infos[n_dmabuf_infos].n_modifiers = 1;'
 
+        # MemPtr-Fallback aus dem PipeWire-Angebot nehmen, solange DMA-BUF
+        # verfuegbar ist.
+        # 2026-11-25 (Reboot-Test): Der Import scheiterte diesmal mit
+        # "fourcc=00000000 modifier=0 pitch=0" - also mit einem voellig
+        # leeren Descriptor. Das ist der Speicher-Pfad: mutter/PipeWire
+        # liefert MemPtr-Frames, Sunshine baut daraus keinen DMA-BUF, der
+        # VAAPI-VRAM-Konverter importiert trotzdem -> EGL_BAD_PARAMETER,
+        # jedes Frame verworfen, schwarzes Bild. Welcher der beiden Pfade
+        # zum Zug kommt, entscheidet die PipeWire-Negotiation und ist
+        # nicht stabil (Stream 10:56 DMA-BUF, nach dem Reboot MemPtr).
+        # Ohne Fallback kann nur noch der bewaehrte DMA-BUF-Pfad
+        # ausgehandelt werden; wenn mutter das nicht kann, schlaegt die
+        # Negotiation sichtbar fehl statt still schwarz zu bleiben.
+        # Rueckbau: diese substituteInPlace-Zeile entfernen.
+        substituteInPlace src/platform/linux/pipewire.cpp \
+          --replace-fail 'auto format_param = build_format_parameter(&pod_builder, width, height, target_framerate, fmt.pw_format, nullptr, 0);' \
+                         'if (use_dmabuf) { continue; } auto format_param = build_format_parameter(&pod_builder, width, height, target_framerate, fmt.pw_format, nullptr, 0);'
+
         # Diagnose: beim Import-Fehler Format/Modifier/Stride mitloggen, sonst
         # sieht man nur den EGL-Fehlercode und raet.
         substituteInPlace src/platform/linux/graphics.cpp \
