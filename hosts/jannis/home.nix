@@ -22,6 +22,8 @@
     ../../modules/terminal-browser.nix
     ../../modules/vscode-insiders.nix
     ../../modules/workspace.nix
+    # kdbx-keychain: Dropbox ↔ lokale Kopie (rclone bisync), siehe ~/Cloud/kdbx-keychain
+    ../../modules/rclone-kdbx.nix
   ];
 
   programs.bash.enable = true;

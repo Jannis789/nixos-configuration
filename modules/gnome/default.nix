@@ -14,11 +14,11 @@
     sources = [ (lib.gvariant.mkTuple [ "xkb" "de" ]) ];
   };
 
-  # Animationen aus: größter Einzelgewinn für gefühlte Responsiveness über
-  # RDP/Selkies (jede Shell-Animation ist ein zusätzlicher Frame-Burst über
-  # die Leitung). PoC 2026-11-24.
+  # Animationen an (2026-11-25): 2026-11-24 als PoC für Streaming-Latenz
+  # (RDP/Selkies) testweise aus, wieder zurückgedreht. Falls Streams ruckeln:
+  # hier wieder auf false setzen statt am laufenden System.
   dconf.settings."org/gnome/desktop/interface" = {
-    enable-animations = false;
+    enable-animations = true;
   };
 
   dconf.settings."org/gnome/settings-daemon/plugins/power" = {
