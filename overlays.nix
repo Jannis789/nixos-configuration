@@ -53,23 +53,26 @@ let
         # angelegte Session eine Stunde später weg (UnknownMethod am
         # Objektpfad), und Sunshine schickte jeden Tastendruck weiter an den
         # toten Pfad. Ergebnis: Bild lief, Eingabe tot, keine Fehlermeldung.
-        # Capture-Frames im Speicher statt als DMA-BUF (PipeWire).
-        # 2026-11-25: Nach dem Kaltstart scheitert der EGL-Import des
-        # Portal-Frames ("Couldn't import RGB Image: 0000300C" =
-        # EGL_BAD_PARAMETER, Format BGRA/ARGB8888 mit Modifier). Sunshine
-        # verwirft dann jedes Frame -> Stream schwarz. Am 24.11. lief
-        # derselbe Code mit demselben Format noch, der DMA-BUF-Zweig haengt
-        # also am Modifier-/Mesa-Zustand des Boots (GPU-spezifisch, nicht
-        # deklarativ vorhersagbar).
-        # Mit use_dmabuf = false fragt Sunshine MemPtr-Puffer an; PipeWire
-        # mappt die mutter-Puffer und Sunshine kopiert sie per CPU (Pfad
-        # gab es schon, Log: "using memory buffers"). Kostet eine Kopie pro
-        # Frame, funktioniert aber unabhaengig von GPU und Modifiern.
-        # Rueckbau: diese substituteInPlace-Zeile entfernen (dann entscheidet
-        # wieder der mem_type wie upstream).
+        # Nur LINEAR als DMA-BUF-Modifier anbieten (PipeWire-Negotiation).
+        # 2026-11-25: Der EGL-Import der Portal-Frames scheitert am Kaltstart
+        # ("Couldn't import RGB Image: 0000300C" = EGL_BAD_PARAMETER), obwohl
+        # derselbe Code am 24.11. mit demselben Format (BGRA/ARGB8888) lief.
+        # Sunshine bietet mutter alle von EGL gemeldeten Modifier an; mutter
+        # alloziert danach getilt/komprimiert (radeonsi), und der Import
+        # dieses Layouts ist es, was scheitert. LINEAR ist der einzige
+        # Modifier, den jede GPU/jeder Treiber liefern UND importieren kann.
+        # Kosten: eine Kopie weniger als beim Tiling-Vorteil, dafuer
+        # deterministisch und nicht von der Verkabelung/Boot-Reihenfolge
+        # abhaengig. Rueckbau: diese substituteInPlace-Zeile entfernen.
         substituteInPlace src/platform/linux/pipewire.cpp \
-          --replace-fail 'bool use_dmabuf = n_dmabuf_infos > 0 &&' \
-                         'bool use_dmabuf = false &&'
+          --replace-fail 'dmabuf_infos[n_dmabuf_infos].n_modifiers = MIN(num_modifiers, MAX_DMABUF_MODIFIERS);' \
+                         'mods[0] = DRM_FORMAT_MOD_LINEAR; dmabuf_infos[n_dmabuf_infos].n_modifiers = 1;'
+
+        # Diagnose: beim Import-Fehler Format/Modifier/Stride mitloggen, sonst
+        # sieht man nur den EGL-Fehlercode und raet.
+        substituteInPlace src/platform/linux/graphics.cpp \
+          --replace-fail 'BOOST_LOG(error) << "Couldn'"'"'t import RGB Image: "sv << util::hex(eglGetError()).to_string_view();' \
+                         'BOOST_LOG(error) << "Couldn'"'"'t import RGB Image: "sv << util::hex(eglGetError()).to_string_view() << " fourcc="sv << util::hex(xrgb.fourcc).to_string_view() << " modifier="sv << util::hex(xrgb.modifier).to_string_view() << " pitch="sv << xrgb.pitches[0] << " offset="sv << xrgb.offsets[0];'
 
         patch -p1 < ${./packages/patches/sunshine-mutter-input.patch}
       '';
