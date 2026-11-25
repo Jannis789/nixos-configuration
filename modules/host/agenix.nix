@@ -62,6 +62,14 @@ in
       group = "users";
       mode = "600";
     };
+    # AMO API-Keys (Firefox-Extension-Signierung, web-ext sign --channel unlisted).
+    # Konsum: scripts/sign-firefox.sh im kdbx-keychain-Workspace.
+    amo-sign-env = {
+      file = ../../secrets/amo-sign-env.age;
+      owner = "jannis";
+      group = "users";
+      mode = "600";
+    };
     # Authelia (Service läuft als authelia-main)
     authelia-jwt = {
       file = ../../secrets/authelia-jwt.age;

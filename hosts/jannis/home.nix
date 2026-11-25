@@ -2,6 +2,7 @@
   secrets,
   pkgs,
   betterfox,
+  lib,
   ...
 }:
 {
@@ -70,8 +71,27 @@
 
   programs.bash.enable = true;
 
+  # Firefox: KDBX-Keychain per Enterprise-Policy (deklarativ statt
+  # about:debugging-Gefrickel). Firefox-Release installiert KEINE unsignden
+  # XPIs per Policy (ERROR_SIGNEDSTATE_REQUIRED) — deshalb signiert
+  # `scripts/sign-firefox.sh` (kdbx-keychain-Workspace) per AMO unlisted.
+  # Sobald die signierte XPI im Repo liegt, aktiviert sich die Policy beim
+  # Rebuild automatisch; vorher ist der Block eval-neutral ausgeblendet.
+  # allowed_permissions grantet optional_host_permissions (<all_urls>)
+  # deklarativ — kein manuelles Permission-Toggling in about:addons.
   programs.firefox = {
     enable = true;
+    policies = {
+      ExtensionSettings = lib.optionalAttrs
+        (builtins.pathExists (../../packages + "/kdbx-keychain.xpi"))
+        {
+          "kdbx-keychain@nix-dev.link" = {
+            installation_mode = "force_installed";
+            install_url = "file://${../../packages + "/kdbx-keychain.xpi"}";
+            allowed_permissions = [ "<all_urls>" ];
+          };
+        };
+    };
     profiles."default" = {
       extraConfig = builtins.readFile "${betterfox}/user.js" + ''
 
