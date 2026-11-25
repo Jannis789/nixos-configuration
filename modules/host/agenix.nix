@@ -37,6 +37,14 @@ in
       group = "users";
       mode = "600";
     };
+    # kdbx-keychain (Browser-Extension + rclone): Dropbox-Zugang + Test-DB-Passwort.
+    # Konsum: Build-Injection der Extension (App-Key) + rclone-Service (Phase 2).
+    dropbox-keychain-env = {
+      file = ../../secrets/dropbox-keychain-env.age;
+      owner = "jannis";
+      group = "users";
+      mode = "600";
+    };
     # Authelia (Service läuft als authelia-main)
     authelia-jwt = {
       file = ../../secrets/authelia-jwt.age;

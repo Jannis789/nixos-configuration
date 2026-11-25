@@ -10,6 +10,8 @@ in
 {
   "secrets/arbeit.age".publicKeys = [ lannitz ];
   "secrets/api-keys-env.age".publicKeys = [ lannitz ];
+  # kdbx-keychain: Dropbox App-Key/-Secret + Passwort der Test-kdbx (export-Zeilen)
+  "secrets/dropbox-keychain-env.age".publicKeys = [ lannitz ];
   "secrets/authelia-jwt.age".publicKeys = [ lannitz ];
   "secrets/authelia-storage-key.age".publicKeys = [ lannitz ];
   "secrets/authelia-users.age".publicKeys = [ lannitz ];

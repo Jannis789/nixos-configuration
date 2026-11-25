@@ -19,6 +19,9 @@
     epiphany
     helium
     fragments
+    # kdbx-keychain (Phase 5): Desktop-Client für die KDBX auf Dropbox
+    # (lokal synchronisiert via rclone, siehe ~/Cloud/kdbx-keychain)
+    gnome-secrets
     rustdesk
     gnomeExtensions.blur-my-shell
     gnomeExtensions.caffeine
