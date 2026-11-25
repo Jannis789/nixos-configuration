@@ -1,6 +1,8 @@
 # kdbx-keychain: bidirektionaler Dropbox-Sync (rclone bisync) als User-Service.
 #
-# Quelle of Truth: dropbox:kdbx-keychain/ ↔ ~/Cloud/kdbx-keychain/
+# Quelle of Truth: Dropbox ↔ lokale Spiegel unter ~/Cloud/:
+#   1. dropbox:kdbx-keychain/ ↔ ~/Cloud/kdbx-keychain/   (Test-Tresor)
+#   2. dropbox:Apps/KeeWeb/   ↔ ~/Cloud/KeeWeb/          (echter Tresor + .key)
 # GNOME Secrets liest/schreibt die lokale Kopie; die Browser-Extension spricht
 # direkt mit der Dropbox-API — beide Seiten treffen sich in der Cloud.
 #
@@ -8,7 +10,7 @@
 # rclone-kdbx-conf (client_id/secret + OAuth-Token); für manuelle rclone-
 # Aufrufe setzt home.nix einen Symlink ~/.config/rclone/rclone.conf darauf.
 #
-# Erster Lauf zieht bei leerer lokaler Seite die DB aus der Cloud (Bootstrap)
+# Erster Lauf pro Paar zieht bei leerer lokaler Seite die Dateien (Bootstrap)
 # und macht danach automatisch `bisync --resync`, dann regulärer bisync.
 { pkgs, ... }:
 let
@@ -24,26 +26,35 @@ let
     fi
     STATE="$HOME/.local/share/kdbx-rclone"
     LOGDIR="$HOME/.local/state/kdbx-rclone"
-    LOCAL="$HOME/Cloud/kdbx-keychain"
-    mkdir -p "$STATE" "$LOGDIR" "$LOCAL"
+    mkdir -p "$STATE" "$LOGDIR"
     LOG="$LOGDIR/bisync.log"
-    REMOTE="''${RCLONE_REMOTE:-dropbox}:kdbx-keychain"
     # Dropbox rundet mtimes auf ganze Sekunden → 367ms-Drift gegenüber der
     # lokalen Nanosekunden-mtime, was bisync's Safety-Abort auslöst. Deshalb
     # size+checksum statt modtime; --download-hash, weil Dropbox kein MD5 hat
-    # (Content-Hash wird per Download berechnet — Datei ≤ 50 MB).
+    # (Content-Hash wird per Download berechnet — Tresore sind winzig).
     ARGS=(--retries=2 --max-size 50M --compare size,checksum --download-hash
           --log-file "$LOG" --log-level INFO)
-    # Bootstrap (Erst-Verknüpfung): lokale Seite leer → Cloud-Kopie ziehen
-    if [ ! -s "$LOCAL/test.kdbx" ]; then
-      ${rclone}/bin/rclone copy "$REMOTE" "$LOCAL" || true
-    fi
-    if [ ! -f "$STATE/bisync-init.done" ]; then
-      ${rclone}/bin/rclone bisync "''${ARGS[@]}" --resync "$REMOTE" "$LOCAL"
-      touch "$STATE/bisync-init.done"
-    else
-      ${rclone}/bin/rclone bisync "''${ARGS[@]}" "$REMOTE" "$LOCAL"
-    fi
+    # Paare: remote|lokal (| als Trenner, Pfade enthalten keine Pipe)
+    PAIRS=(
+      "''${RCLONE_REMOTE:-dropbox}:kdbx-keychain|$HOME/Cloud/kdbx-keychain"
+      "''${KEEWEB_REMOTE:-dropbox}:Apps/KeeWeb|$HOME/Cloud/KeeWeb"
+    )
+    for pair in "''${PAIRS[@]}"; do
+      REMOTE="''${pair%%|*}"
+      LOCAL="''${pair##*|}"
+      mkdir -p "$LOCAL"
+      MARKER="$STATE/init-''${LOCAL//\//_}.done"
+      # Bootstrap (Erst-Verknüpfung): lokale Seite leer → Cloud-Kopie ziehen
+      if [ -z "$(ls -A "$LOCAL")" ]; then
+        ${rclone}/bin/rclone copy "$REMOTE" "$LOCAL" || true
+      fi
+      if [ ! -f "$MARKER" ]; then
+        ${rclone}/bin/rclone bisync "''${ARGS[@]}" --resync "$REMOTE" "$LOCAL"
+        touch "$MARKER"
+      else
+        ${rclone}/bin/rclone bisync "''${ARGS[@]}" "$REMOTE" "$LOCAL"
+      fi
+    done
   '';
 in
 {

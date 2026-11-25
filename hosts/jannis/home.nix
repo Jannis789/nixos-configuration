@@ -34,13 +34,14 @@
     "L+ %h/.config/rclone/rclone.conf - - - - /run/agenix/rclone-kdbx-conf"
   ];
 
-  # GNOME Secrets öffnet beim Login die kdbx-Kopie („always open“ ab Anmeldung,
-  # ADR-004: ein Master-Passwort pro Session). Dateipfad = rclone-Zielordner.
+  # GNOME Secrets öffnet beim Login den echten Tresor („always open“ ab
+  # Anmeldung, ADR-004: Master-Passwort + Keyfile-Auswahl pro Session).
+  # Dateipfad = rclone-Spiegel von dropbox:Apps/KeeWeb/ (modules/rclone-kdbx.nix).
   xdg.configFile."autostart/kdbx-secrets.desktop".text = ''
     [Desktop Entry]
     Type=Application
     Name=Secrets (kdbx-keychain)
-    Exec=${pkgs.gnome-secrets}/bin/secrets /home/jannis/Cloud/kdbx-keychain/test.kdbx
+    Exec=${pkgs.gnome-secrets}/bin/secrets /home/jannis/Cloud/KeeWeb/export.kdbx
     Icon=org.gnome.World.Secrets
     Terminal=false
     NoDisplay=true
