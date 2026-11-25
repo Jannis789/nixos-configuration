@@ -60,7 +60,8 @@
     remember-unlock-method = true;
     last-used-key-provider = builtins.toJSON {
       "file:///home/jannis/Cloud/KeeWeb/export.kdbx" = builtins.toJSON {
-        FileProvider.url = "file:///home/jannis/Cloud/KeeWeb/export.key";
+        # Plain-Path (kein file://) — exakt das Format, das gsecrets selbst schreibt
+        FileProvider.url = "/home/jannis/Cloud/KeeWeb/export.key";
       };
     };
   };
