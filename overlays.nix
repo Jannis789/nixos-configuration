@@ -53,6 +53,24 @@ let
         # angelegte Session eine Stunde später weg (UnknownMethod am
         # Objektpfad), und Sunshine schickte jeden Tastendruck weiter an den
         # toten Pfad. Ergebnis: Bild lief, Eingabe tot, keine Fehlermeldung.
+        # Capture-Frames im Speicher statt als DMA-BUF (PipeWire).
+        # 2026-11-25: Nach dem Kaltstart scheitert der EGL-Import des
+        # Portal-Frames ("Couldn't import RGB Image: 0000300C" =
+        # EGL_BAD_PARAMETER, Format BGRA/ARGB8888 mit Modifier). Sunshine
+        # verwirft dann jedes Frame -> Stream schwarz. Am 24.11. lief
+        # derselbe Code mit demselben Format noch, der DMA-BUF-Zweig haengt
+        # also am Modifier-/Mesa-Zustand des Boots (GPU-spezifisch, nicht
+        # deklarativ vorhersagbar).
+        # Mit use_dmabuf = false fragt Sunshine MemPtr-Puffer an; PipeWire
+        # mappt die mutter-Puffer und Sunshine kopiert sie per CPU (Pfad
+        # gab es schon, Log: "using memory buffers"). Kostet eine Kopie pro
+        # Frame, funktioniert aber unabhaengig von GPU und Modifiern.
+        # Rueckbau: diese substituteInPlace-Zeile entfernen (dann entscheidet
+        # wieder der mem_type wie upstream).
+        substituteInPlace src/platform/linux/pipewire.cpp \
+          --replace-fail 'bool use_dmabuf = n_dmabuf_infos > 0 &&' \
+                         'bool use_dmabuf = false &&'
+
         patch -p1 < ${./packages/patches/sunshine-mutter-input.patch}
       '';
     });
