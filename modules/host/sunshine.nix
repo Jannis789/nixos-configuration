@@ -301,7 +301,13 @@ in
       # Notausgang: capture = "kms" (liest den DRM-Framebuffer direkt,
       # ohne Dialog, braucht cap_sys_admin und die DisplayConfig-Umbauten
       # aus prepCommands, siehe unten).
-      capture = "portal";
+      # 2026-11-25: Notausgang statt Portal. Nach dem Kaltstart scheitert der
+      # DMA-BUF-Import des Portal-Frames (EGL_BAD_PARAMETER, "Couldn't import
+      # RGB Image: 0000300C", Video format 12/RGBA) -> Stream bleibt schwarz,
+      # Eingabe laeuft. KMS liest den DRM-Framebuffer direkt und umgeht den
+      # Portal-Capture; Preis: gestreamt wird der physische Desktop, nicht die
+      # headless-Session. Rueckbau: capture = "portal".
+      capture = "kms";
 
       # AMD (radeonsi über mesa) → h264_vaapi. Fallback auf Software
       # (x264) macht Sunshine selbst, wenn VA-API nicht initialisiert.
