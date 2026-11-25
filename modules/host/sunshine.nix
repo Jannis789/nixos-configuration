@@ -444,6 +444,18 @@ in
       );
     };
 
+    # NixOS-Benutzer-Units sind GLOBAL (/etc/systemd/user): wantedBy =
+    # default.target startet sie in JEDEM User-Manager — auch im dynamischen
+    # gdm-greeter-Account. Beim Boot 2026-11-25 lief dadurch eine ZWEITE
+    # headless Session (gnome-shell-Coredump unter UID 60578 in
+    # …/user@60578.service/app.slice/sunshine.service), die mit jannis'
+    # Instanz um Port 48010 stritt ("Couldn't bind RTSP server … Address
+    # already in use", gestern 20:37 und heute 07:48). Bedingung hält die
+    # Unit auf den intendierten Account — derselbe wie beim Autologin.
+    unitConfig = {
+      ConditionUser = config.services.displayManager.autoLogin.user;
+    };
+
     serviceConfig = {
       # dbus-run-session: DIESELBE UID wie der physische Schreibtisch, aber
       # ein eigener Session-Bus. Nur so können Apps zweimal laufen (Shell,
@@ -452,7 +464,13 @@ in
       # doc/building-and-running.md (dbus-session.sh new + gnome-shell
       # --headless) für eine zweite Sitzung derselben UID.
       ExecStart = lib.mkForce "${pkgs.dbus}/bin/dbus-run-session -- ${headlessSession}";
-      Restart = lib.mkForce "on-failure";
+      # IMMER neu starten, nicht nur on-failure: Sunshine beendet sich auch
+      # nach fatalen Startfehlern ("Unable to find display or encoder",
+      # RTSP-Port belegt) mit Exit-Code 0. Beobachtet 2026-11-25: Boot-
+      # Crash der headless gnome-shell → Result=success → on-failure
+      # griff nie, der Dienst blieb stumm tot. "always" lässt die Unit
+      # nach einem solchen Crash nach RestartSec selbst heilen.
+      Restart = lib.mkForce "always";
       RestartSec = lib.mkForce 5;
     };
   };
