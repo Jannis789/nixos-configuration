@@ -12,6 +12,9 @@ in
   "secrets/api-keys-env.age".publicKeys = [ lannitz ];
   # kdbx-keychain: Dropbox App-Key/-Secret + Passwort der Test-kdbx (export-Zeilen)
   "secrets/dropbox-keychain-env.age".publicKeys = [ lannitz ];
+  # rclone-Config für kdbx-keychain (Dropbox client_id/secret + OAuth-Refresh-Token);
+  # ersetzt die ehemals manuell gepflegte ~/.config/rclone/rclone.conf
+  "secrets/rclone-kdbx-conf.age".publicKeys = [ lannitz ];
   "secrets/authelia-jwt.age".publicKeys = [ lannitz ];
   "secrets/authelia-storage-key.age".publicKeys = [ lannitz ];
   "secrets/authelia-users.age".publicKeys = [ lannitz ];

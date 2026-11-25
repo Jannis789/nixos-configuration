@@ -45,6 +45,16 @@ in
       group = "users";
       mode = "600";
     };
+    # rclone-Config (kdbx-keychain): Dropbox client_id/secret + OAuth-Token.
+    # Der bisync-Service nutzt den agenix-Pfad direkt; ein Symlink unter
+    # ~/.config/rclone/ (home.nix, tmpfiles) macht die Config für manuelle
+    # rclone-Aufrufe verfügbar. Kein Secret mehr als Klartext in $HOME.
+    rclone-kdbx-conf = {
+      file = ../../secrets/rclone-kdbx-conf.age;
+      owner = "jannis";
+      group = "users";
+      mode = "600";
+    };
     # Authelia (Service läuft als authelia-main)
     authelia-jwt = {
       file = ../../secrets/authelia-jwt.age;

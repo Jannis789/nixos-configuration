@@ -26,6 +26,27 @@
     ../../modules/rclone-kdbx.nix
   ];
 
+  # ── kdbx-keychain: deklarative Verknüpfungen ──────────────────────────────
+  # rclone-Creds leben im agenix-Secret (kein Klartext in $HOME). Der Symlink
+  # macht die Config für manuelle rclone-Aufrufe lesbar; der bisync-Service
+  # nutzt den agenix-Pfad direkt (siehe modules/rclone-kdbx.nix).
+  systemd.user.tmpfiles.rules = [
+    "L+ %h/.config/rclone/rclone.conf - - - - /run/agenix/rclone-kdbx-conf"
+  ];
+
+  # GNOME Secrets öffnet beim Login die kdbx-Kopie („always open“ ab Anmeldung,
+  # ADR-004: ein Master-Passwort pro Session). Dateipfad = rclone-Zielordner.
+  xdg.configFile."autostart/kdbx-secrets.desktop".text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=Secrets (kdbx-keychain)
+    Exec=${pkgs.gnome-secrets}/bin/secrets /home/jannis/Cloud/kdbx-keychain/test.kdbx
+    Icon=org.gnome.World.Secrets
+    Terminal=false
+    NoDisplay=true
+    X-GNOME-Autostart-enabled=true
+  '';
+
   programs.bash.enable = true;
 
   programs.firefox = {
