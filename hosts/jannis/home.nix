@@ -48,6 +48,23 @@
     X-GNOME-Autostart-enabled=true
   '';
 
+  # GNOME Secrets deklarativ: echten Tresor + Keyfile verknüpfen.
+  # Wertformat laut gsecrets-Quelle (config_manager.py + provider/file_provider.py):
+  #   last-used-key-provider = { <db-uri>: <json "{FileProvider: {url: <keyfile-uri>}}> }
+  #   remember-composite-key = true → Unlock-Dialog stellt das Keyfile automatisch ein
+  # (nur das Keyfile wird vorgeladen — das Master-Passwort bleibt naturgemäß manuell).
+  dconf.settings."org/gnome/World/Secrets" = {
+    last-opened-database = "file:///home/jannis/Cloud/KeeWeb/export.kdbx";
+    last-opened-list = [ "file:///home/jannis/Cloud/KeeWeb/export.kdbx" ];
+    remember-composite-key = true;
+    remember-unlock-method = true;
+    last-used-key-provider = builtins.toJSON {
+      "file:///home/jannis/Cloud/KeeWeb/export.kdbx" = builtins.toJSON {
+        FileProvider.url = "file:///home/jannis/Cloud/KeeWeb/export.key";
+      };
+    };
+  };
+
   programs.bash.enable = true;
 
   programs.firefox = {
