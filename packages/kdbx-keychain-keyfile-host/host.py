@@ -5,6 +5,11 @@ kdbx-keychain-Extension. Protokoll: Chrome-NM (4-Byte-LE-Länge + UTF-8-JSON).
 Liest /run/agenix/kdbx-export-key zur Laufzeit — nichts liegt im Build und
 nichts im Nix-Store; die Bytes landen ausschließlich in der storage.session
 der Extension (ADR-004). Ein Shot pro Aufruf: lesen, antworten, beenden.
+
+Hinweis (NMH-Lookup Firefox): das Manifest darf KEIN allowed_origins enthalten —
+Firefox 161 lehnt das Chrome-only-Feld beim Schema-Check ab und verwirft dann
+das GANZE Manifest (erscheint außen als clean disconnect ohne lastError).
+Deshalb liefert das Paket zwei Manifeste: Firefox ohne, Chrome mit.
 """
 import base64
 import json
