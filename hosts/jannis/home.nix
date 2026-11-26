@@ -29,6 +29,17 @@ let
       };
     };
   };
+
+  # Starter mit dediziertem Profil: home-manager symlinkt ~/.mozilla/firefox/
+  # profiles.ini in den Read-Only-Store — Dev Edition kann dort ihr eigenes
+  # Profil nicht registrieren ("profile cannot be loaded"). --profile umgeht
+  # die Profilmanager-INI komplett; die Extension-Policy kommt aus dem
+  # Wrapper-Distribution-Dir und greift unverändert.
+  firefox-dev = pkgs.writeShellScriptBin "firefox-dev" ''
+    mkdir -p "$HOME/.config/kdbx-dev-firefox/profile"
+    exec ${firefox-dev-edition}/bin/firefox-devedition \
+      --profile "$HOME/.config/kdbx-dev-firefox/profile" "$@"
+  '';
 in
 {
   home.username = "jannis";
@@ -156,7 +167,7 @@ in
   home.file.".ssh/authorized_keys".text = secrets.SSH_KEYS.lannitz.public + "\n";
 
   home.packages = with pkgs; [
-    firefox-dev-edition
+    firefox-dev
     ghostty
     fastfetch
   ];
