@@ -178,9 +178,9 @@ in
   # Chrome/Chromium: NMH-Manifest deklarativ (Firefox bekommt es über die
   # wrapper-Option nativeMessagingHosts, siehe oben).
   home.file.".config/google-chrome/NativeMessagingHosts/kdbx_keychain_keyfile.json".source =
-    "${kdbxNmh}/share/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
+    "${kdbxNmh}/lib/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
   home.file.".config/chromium/NativeMessagingHosts/kdbx_keychain_keyfile.json".source =
-    "${kdbxNmh}/share/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
+    "${kdbxNmh}/lib/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
 
   home.packages = with pkgs; [
     firefox-dev

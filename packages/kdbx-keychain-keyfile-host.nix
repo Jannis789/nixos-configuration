@@ -25,12 +25,12 @@ in
 runCommand "kdbx-keychain-keyfile-host"
   {
     meta.description = "Native-Messaging-Host: agenix-Keyfile für kdbx-keychain";
-    passthru.manifest = "share/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
+    passthru.manifest = "lib/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
   }
   ''
-    mkdir -p $out/bin $out/share/mozilla/native-messaging-hosts
+    mkdir -p $out/bin $out/lib/mozilla/native-messaging-hosts
     cp ${host}/bin/kdbx-keychain-keyfile-host $out/bin/
-    cat > $out/share/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json <<JSON
+    cat > $out/lib/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json <<JSON
 {
   "name": "kdbx_keychain_keyfile",
   "description": "liefert das agenix-Keyfile an kdbx-keychain (ADR-010)",
