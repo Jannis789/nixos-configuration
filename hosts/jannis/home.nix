@@ -15,10 +15,14 @@ let
   #   kdbx-workspace: scripts/dev-install.sh  →  firefox-devedition neu starten
   # Bewusst NICHT über programs.firefox — Release-Browser und -Profil bleiben
   # unangetastet. Produktion (signierte XPI via AMO) siehe unten.
+  # Native-Messaging-Host (ADR-010): liefert das agenix-Keyfile zur Unlock-Zeit.
+  kdbxNmh = pkgs.callPackage ../../packages/kdbx-keychain-keyfile-host.nix { };
+
   firefox-dev-edition = pkgs.firefox-devedition-bin.override {
     extraPrefs = ''
       pref("xpinstall.signatures.required", false);
     '';
+    nativeMessagingHosts = [ kdbxNmh ];
     extraPolicies = {
       ExtensionSettings = {
         "kdbx-keychain@nix-dev.link" = {
@@ -117,6 +121,11 @@ in
   # deklarativ — kein manuelles Permission-Toggling in about:addons.
   programs.firefox = {
     enable = true;
+    # NMH-Manifest auch im Release-Firefox registrieren (inert, solange die
+    # Extension dort nicht installiert ist — schadet nicht, hilft später).
+    package = pkgs.firefox.override {
+      nativeMessagingHosts = [ kdbxNmh ];
+    };
     policies = {
       ExtensionSettings = lib.optionalAttrs
         (builtins.pathExists (../../packages + "/kdbx-keychain.xpi"))
@@ -165,6 +174,13 @@ in
   };
 
   home.file.".ssh/authorized_keys".text = secrets.SSH_KEYS.lannitz.public + "\n";
+
+  # Chrome/Chromium: NMH-Manifest deklarativ (Firefox bekommt es über die
+  # wrapper-Option nativeMessagingHosts, siehe oben).
+  home.file.".config/google-chrome/NativeMessagingHosts/kdbx_keychain_keyfile.json".source =
+    "${kdbxNmh}/share/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
+  home.file.".config/chromium/NativeMessagingHosts/kdbx_keychain_keyfile.json".source =
+    "${kdbxNmh}/share/mozilla/native-messaging-hosts/kdbx_keychain_keyfile.json";
 
   home.packages = with pkgs; [
     firefox-dev
