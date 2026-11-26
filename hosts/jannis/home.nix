@@ -155,52 +155,6 @@ in
 
   home.file.".ssh/authorized_keys".text = secrets.SSH_KEYS.lannitz.public + "\n";
 
-  # Firefox Dev Edition: deklarativer DEV-Browser für kdbx-keychain.
-  # Release-Firefox lehnt unsignde XPIs ab (auch per Policy — empirisch
-  # ERROR_SIGNEDSTATE_REQUIRED, Nov 2026). Dev Edition erlaubt sie, braucht
-  # aber das explizite pref (extraPrefs); die Policy installiert die XPI aus
-  # dem Workspace-Build neu, sobald sich die Datei ändert. Dev-Loop:
-  #   kdbx-workspace: scripts/dev-install.sh  →  firefox-devedition neu starten
-  # Bewusst NICHT über programs.firefox — Release-Browser und -Profil bleiben
-  # unangetastet. Produktion (signierte XPI via AMO) siehe oben.
-  firefox-dev-edition = pkgs.firefox-devedition-bin.override {
-    extraPrefs = ''
-      pref("xpinstall.signatures.required", false);
-    '';
-    extraPolicies = {
-      ExtensionSettings = {
-        "kdbx-keychain@nix-dev.link" = {
-          installation_mode = "force_installed";
-          install_url =
-            "file://${config.home.homeDirectory}/workspace/kdbx-keychain-extension/packages/extension/dist/firefox/kdbx-keychain-dev.xpi";
-        };
-      };
-    };
-  };
-
-  # Firefox Dev Edition: deklarativer DEV-Browser für kdbx-keychain.
-  # Release-Firefox lehnt unsignde XPIs ab (auch per Policy — empirisch
-  # ERROR_SIGNEDSTATE_REQUIRED, Nov 2026). Dev Edition erlaubt sie, braucht
-  # aber das explizite pref (extraPrefs); die Policy installiert die XPI aus
-  # dem Workspace-Build neu, sobald sich die Datei ändert. Dev-Loop:
-  #   kdbx-workspace: scripts/dev-install.sh  →  firefox-devedition neu starten
-  # Bewusst NICHT über programs.firefox — Release-Browser und -Profil bleiben
-  # unangetastet. Produktion (signierte XPI via AMO) siehe oben.
-  firefox-dev-edition = pkgs.firefox-devedition-bin.override {
-    extraPrefs = ''
-      pref("xpinstall.signatures.required", false);
-    '';
-    extraPolicies = {
-      ExtensionSettings = {
-        "kdbx-keychain@nix-dev.link" = {
-          installation_mode = "force_installed";
-          install_url =
-            "file://${config.home.homeDirectory}/workspace/kdbx-keychain-extension/packages/extension/dist/firefox/kdbx-keychain-dev.xpi";
-        };
-      };
-    };
-  };
-
   home.packages = with pkgs; [
     firefox-dev-edition
     ghostty
