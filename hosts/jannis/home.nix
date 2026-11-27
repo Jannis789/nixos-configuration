@@ -73,7 +73,7 @@ in
   # nutzt den agenix-Pfad direkt (siehe modules/rclone-kdbx.nix).
   systemd.user.tmpfiles.rules = [
     "L+ %h/.config/rclone/rclone.conf - - - - /run/agenix/rclone-kdbx-conf"
-    "L+ %h/.local/share/kdbx-keychain/export.key - - - - /run/agenix/kdbx-export-key"
+    "L+ %h/.local/share/kdbx-keychain/export.key - - - - /run/agenix/kdbx-export-key.key"
   ];
 
   # GNOME Secrets öffnet beim Login den echten Tresor („always open“ ab

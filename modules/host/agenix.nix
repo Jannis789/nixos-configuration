@@ -56,8 +56,8 @@ in
       mode = "600";
     };
     # KeePass-Keyfile (export.key) — rotiert nie, liegt statisch in agenix
-    kdbx-export-key = {
-      file = ../../secrets/kdbx-export-key.age;
+    kdbx-export-key.key = {
+      file = ../../secrets/kdbx-export-key.key.age;
       owner = "jannis";
       group = "users";
       mode = "600";

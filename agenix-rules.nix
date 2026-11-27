@@ -16,7 +16,7 @@ in
   # ersetzt die ehemals manuell gepflegte ~/.config/rclone/rclone.conf
   "secrets/rclone-kdbx-conf.age".publicKeys = [ lannitz ];
   # KeePass-Keyfile zum echten Tresor (rotiert nie → statisch in agenix)
-  "secrets/kdbx-export-key.age".publicKeys = [ lannitz ];
+  "secrets/kdbx-export-key.key.age".publicKeys = [ lannitz ];
   # AMO API-Keys fürs web-ext sign der Firefox-Extension (unlisted self-distribution)
   "secrets/amo-sign-env.age".publicKeys = [ lannitz ];
   "secrets/authelia-jwt.age".publicKeys = [ lannitz ];

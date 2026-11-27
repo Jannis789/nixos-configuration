@@ -2,7 +2,7 @@
 """Native-Messaging-Host (ADR-010): liefert das agenix-Keyfile an die
 kdbx-keychain-Extension. Protokoll: Chrome-NM (4-Byte-LE-Länge + UTF-8-JSON).
 
-Liest /run/agenix/kdbx-export-key zur Laufzeit — nichts liegt im Build und
+Liest /run/agenix/kdbx-export-key.key zur Laufzeit — nichts liegt im Build und
 nichts im Nix-Store; die Bytes landen ausschließlich in der storage.session
 der Extension (ADR-004). Ein Shot pro Aufruf: lesen, antworten, beenden.
 
@@ -16,7 +16,7 @@ import json
 import struct
 import sys
 
-KEYFILE = "/run/agenix/kdbx-export-key"
+KEYFILE = "/run/agenix/kdbx-export-key.key"
 
 
 def read_message():

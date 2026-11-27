@@ -3,7 +3,7 @@
   writers,
 }:
 # Native-Messaging-Host für kdbx-keychain (ADR-010): stellt das agenix-Keyfile
-# (/run/agenix/kdbx-export-key) per chrome-NM-Protokoll bereit. Nichts liegt im
+# (/run/agenix/kdbx-export-key.key) per chrome-NM-Protokoll bereit. Nichts liegt im
 # Build und nichts im Nix-Store; die Bytes landen ausschließlich in der
 # storage.session der Extension (ADR-004).
 #
