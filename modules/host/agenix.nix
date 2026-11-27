@@ -55,13 +55,7 @@ in
       group = "users";
       mode = "600";
     };
-    # KeePass-Keyfile (export.key) — rotiert nie, liegt statisch in agenix
-    kdbx-export-key.key = {
-      file = ../../secrets/kdbx-export-key.key.age;
-      owner = "jannis";
-      group = "users";
-      mode = "600";
-    };
+    # KeePass-Keyfile (export.key) — siehe listToAttrs-Merge am Ende des Attrsets
     # AMO API-Keys (Firefox-Extension-Signierung, web-ext sign --channel unlisted).
     # Konsum: scripts/sign-firefox.sh im kdbx-keychain-Workspace.
     amo-sign-env = {
@@ -97,7 +91,20 @@ in
 
     cockpit-origin-cert.file = ../../secrets/cockpit-origin-cert.age;
     cockpit-origin-key.file = ../../secrets/cockpit-origin-key.age;
-  };
+  } // builtins.listToAttrs [
+    # KeePass-Keyfile (kdbx-export-key.key) — rotiert nie, liegt statisch in agenix.
+    # Dotted Name MUSS über listToAttrs: im Literal liest das Modulsystem
+    # "a.b" als Verschachtelung. Name = Entschlüsselungsname in /run/agenix.d/N/.
+    {
+      name = "kdbx-export-key.key";
+      value = {
+        file = ../../secrets/kdbx-export-key.key.age;
+        owner = "jannis";
+        group = "users";
+        mode = "600";
+      };
+    }
+  ];
 
   environment.systemPackages = [
     agenixWrapped
