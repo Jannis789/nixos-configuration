@@ -184,6 +184,27 @@ in
   home.file.".config/chromium/NativeMessagingHosts/kdbx_keychain_keyfile.json".source =
     "${kdbxNmh}/share/native-messaging-hosts/chrome/kdbx_keychain_keyfile.json";
 
+  # ADR-012: Dropbox-App-Credentials als Host-Deploy für die Extension.
+  # Firefox liest chrome.storage.managed aus ~/.mozilla/managed-storage/
+  # <extension-id>.json. Lazy per Activation (jeder Switch): nur anlegen,
+  # wenn dort noch kein appKey steht — bestehende Datei bleibt unangetastet.
+  # Quelle ist die bestehende dropbox-keychain-env (kein neues age-Secret).
+  home.activation.kdbxKeychainManagedStorage = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ENV_FILE=/run/agenix/dropbox-keychain-env
+    OUT_DIR=$HOME/.mozilla/managed-storage
+    OUT_FILE=$OUT_DIR/kdbx-keychain@nix-dev.link.json
+    mkdir -p "$OUT_DIR"
+    if [[ -r "$ENV_FILE" ]] && { [[ ! -f "$OUT_FILE" ]] || ! ${pkgs.jq}/bin/jq -e '.appKey | length > 0' "$OUT_FILE" >/dev/null 2>&1; }; then
+      # shellcheck disable=SC1090
+      source "$ENV_FILE"
+      ${pkgs.jq}/bin/jq -n \
+        --arg appKey "''${DROPBOX_APP_KEY:-}" \
+        --arg appSecret "''${DROPBOX_APP_SECRET:-}" \
+        '{appKey: $appKey, appSecret: $appSecret}' > "$OUT_FILE"
+      chmod 600 "$OUT_FILE"
+    fi
+  '';
+
   home.packages = with pkgs; [
     firefox-dev
     ghostty
