@@ -186,8 +186,12 @@ in
 
   # ADR-012: Dropbox-App-Credentials als Host-Deploy für die Extension.
   # Firefox liest chrome.storage.managed aus ~/.mozilla/managed-storage/
-  # <extension-id>.json. Lazy per Activation (jeder Switch): pro Key nur
-  # ergänzen, wenn er dort noch fehlt — bestehende Werte bleiben stehen.
+  # <extension-id>.json — aber NICHT als reines Daten-JSON: die Datei ist ein
+  # Native-Manifest (toolkit/modules/NativeManifests.sys.mjs) der Form
+  # {name, description, type: "storage", data: {...}}. Der name MUSS der
+  # Extension-ID entsprechen, sonst wird die Datei still verworfen.
+  # Lazy per Activation (jeder Switch): pro Key nur ergänzen, wenn er dort
+  # noch fehlt — bestehende Werte bleiben stehen.
   # Quelle ist die bestehende dropbox-keychain-env (kein neues age-Secret).
   home.activation.kdbxKeychainManagedStorage = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ENV_FILE=/run/agenix/dropbox-keychain-env
@@ -202,13 +206,18 @@ in
         --arg appSecret "''${DROPBOX_APP_SECRET:-}" \
         --arg refreshToken "''${DROPBOX_REFRESH_TOKEN:-}" \
         --arg remotePath "''${DEFAULT_REMOTE_PATH:-}" \
-        '{appKey: $appKey, appSecret: $appSecret, refreshToken: $refreshToken, remotePath: $remotePath}')
-      # Lazy: bestehende nicht-leere Keys gewinnen, fehlende werden ergänzt.
-      if [[ -f "$OUT_FILE" ]] && ${pkgs.jq}/bin/jq -e . "$OUT_FILE" >/dev/null 2>&1; then
+        '{name: "kdbx-keychain@nix-dev.link",
+          description: "KDBX Keychain — Host-Deploy der Credentials (ADR-012)",
+          type: "storage",
+          data: {appKey: $appKey, appSecret: $appSecret,
+                 refreshToken: $refreshToken, remotePath: $remotePath}}')
+      # Lazy: bestehende nicht-leere data-Keys gewinnen, fehlende werden
+      # ergänzt; alles außerhalb von data kommt aus dem Manifest-Gerüst.
+      if [[ -f "$OUT_FILE" ]] && ${pkgs.jq}/bin/jq -e '.data' "$OUT_FILE" >/dev/null 2>&1; then
         ${pkgs.jq}/bin/jq -n \
           --argjson old "$(cat "$OUT_FILE")" \
           --argjson new "$NEW" \
-          '$old + ($new | with_entries(select((.value | length) > 0 and (($old[.key] // "") == ""))))' \
+          '$old + {data: (($old.data // {}) + ($new.data | with_entries(select((.value | length) > 0 and ((($old.data // {})[.key] // "") == "")))))}' \
           > "$OUT_FILE"
       else
         printf '%s\n' "$NEW" > "$OUT_FILE"
